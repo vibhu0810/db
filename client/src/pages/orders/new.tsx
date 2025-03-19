@@ -45,14 +45,14 @@ const getTurnaroundTime = (domain: Domain, orderType: OrderType | null) => {
       return "3 working days";
     }
   }
-  return "7-14 business days"; // default fallback
+  return "7-14 business days";
 };
 
 const getContentWritingPrice = (domain: Domain) => {
   if (domain.websiteUrl === "blog.powr.io") {
-    return 80; // $80 for 1000 words
+    return 80;
   }
-  return 0; // default case
+  return 0;
 };
 
 export default function NewOrder() {
@@ -66,6 +66,46 @@ export default function NewOrder() {
   const { data: domain, isLoading: isDomainLoading } = useQuery<Domain>({
     queryKey: [`/api/domains/${domainId}`],
     enabled: !!domainId,
+  });
+
+  const createOrderMutation = useMutation({
+    mutationFn: async (formData: any) => {
+      if (!domain) throw new Error("Domain not found");
+      console.log("Submitting order:", formData); // Debug log
+
+      const orderData = {
+        ...formData,
+        type: selectedType || domain.type,
+        domainId: domain.id,
+        weWriteContent,
+        price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
+      };
+
+      console.log("Processed order data:", orderData); // Debug log
+      const res = await apiRequest("POST", "/api/orders", orderData);
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create order");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "Order created",
+        description: "Your order has been successfully created.",
+      });
+      setLocation("/orders");
+    },
+    onError: (error: Error) => {
+      console.error("Order creation error:", error); // Debug log
+      toast({
+        title: "Error creating order",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const form = useForm({
@@ -86,7 +126,7 @@ export default function NewOrder() {
           }
         ),
         targetUrl: urlSchema,
-        content: weWriteContent 
+        content: weWriteContent
           ? z.string().optional()
           : urlSchema.optional(),
       })
@@ -103,44 +143,13 @@ export default function NewOrder() {
     },
   });
 
-  const createOrderMutation = useMutation({
-    mutationFn: async (formData: any) => {
-      if (!domain) throw new Error("Domain not found");
-
-      const orderData = {
-        ...formData,
-        type: selectedType || domain.type,
-        domainId: domain.id,
-        weWriteContent,
-        price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
-      };
-
-      const res = await apiRequest("POST", "/api/orders", orderData);
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to create order");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-      toast({
-        title: "Order created",
-        description: "Your order has been successfully created.",
-      });
-      setLocation("/orders");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error creating order",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = (data: any) => {
-    createOrderMutation.mutate(data);
+  const onSubmit = async (data: any) => {
+    console.log("Form submitted with data:", data); // Debug log
+    try {
+      await createOrderMutation.mutateAsync(data);
+    } catch (error) {
+      console.error("Form submission error:", error); // Debug log
+    }
   };
 
   if (isDomainLoading) {
@@ -192,7 +201,7 @@ export default function NewOrder() {
               )}
             </CardDescription>
             <div className="mt-2 text-sm text-muted-foreground">
-              * Estimated turnaround time: {turnaroundTime}. This is not a guaranteed timeframe for the {isNicheEdit ? "Niche Edit" : "Guest Post"} to go live. 
+              * Estimated turnaround time: {turnaroundTime}. This is not a guaranteed timeframe for the {isNicheEdit ? "Niche Edit" : "Guest Post"} to go live.
               It is based on previous requests we made live on this domain.
             </div>
           </CardHeader>

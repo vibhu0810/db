@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, decimal, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, decimal, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -9,6 +9,18 @@ export const users = pgTable("users", {
   companyName: text("company_name"),
   companyLogo: text("company_logo"),
 });
+
+// Create insert schema for users
+export const insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+  companyName: true,
+  companyLogo: true,
+});
+
+// Types
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
 
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
@@ -62,14 +74,6 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").notNull(),
 });
 
-// Insert schemas
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  companyName: true,
-  companyLogo: true,
-});
-
 export const insertOrderSchema = createInsertSchema(orders)
   .omit({
     id: true,
@@ -87,13 +91,11 @@ export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true })
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true });
 
 // Types
-export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertDomain = z.infer<typeof insertDomainSchema>;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
-export type User = typeof users.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type Domain = typeof domains.$inferSelect;
 export type Review = typeof reviews.$inferSelect;

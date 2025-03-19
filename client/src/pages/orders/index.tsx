@@ -36,7 +36,7 @@ import { format } from "date-fns";
 import { FileDown, Loader2 } from "lucide-react";
 
 export default function Orders() {
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const { toast } = useToast();
 
@@ -46,7 +46,9 @@ export default function Orders() {
 
   const cancelOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
-      await apiRequest("DELETE", `/api/orders/${orderId}`);
+      await apiRequest("PATCH", `/api/orders/${orderId}`, {
+        status: "Cancelled",
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
@@ -65,7 +67,7 @@ export default function Orders() {
   });
 
   const filteredOrders = orders.filter((order) => {
-    const matchesStatus = !statusFilter || order.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     const matchesSearch =
       !searchQuery ||
       order.sourceUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,19 +86,17 @@ export default function Orders() {
       "Date Completed",
     ].join(",");
 
-    const rows = filteredOrders.map((order) =>
-      [
-        order.sourceUrl,
-        order.targetUrl,
-        order.anchorText,
-        order.price,
-        order.status,
-        format(new Date(order.dateOrdered), "yyyy-MM-dd"),
-        order.dateCompleted
-          ? format(new Date(order.dateCompleted), "yyyy-MM-dd")
-          : "",
-      ].join(",")
-    );
+    const rows = filteredOrders.map((order) => [
+      order.sourceUrl,
+      order.targetUrl,
+      order.anchorText,
+      order.price,
+      order.status,
+      format(new Date(order.dateOrdered), "yyyy-MM-dd"),
+      order.dateCompleted
+        ? format(new Date(order.dateCompleted), "yyyy-MM-dd")
+        : "",
+    ].join(","));
 
     const csv = [headers, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -144,7 +144,7 @@ export default function Orders() {
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Pending">Pending</SelectItem>
               <SelectItem value="In Progress">In Progress</SelectItem>
               <SelectItem value="Completed">Completed</SelectItem>

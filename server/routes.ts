@@ -353,9 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add domains routes with logging
   app.get("/api/domains", async (req, res) => {
     try {
-      if (!req.user?.is_admin) {
-        return res.status(403).json({ error: "Unauthorized: Admin access required" });
-      }
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       console.log("Fetching domains...");
       const domains = await storage.getDomains();
       console.log("Retrieved domains:", domains);
@@ -366,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add domain creation route
+  // Add domain creation route (admin only)
   app.post("/api/domains", async (req, res) => {
     try {
       if (!req.user?.is_admin) {

@@ -250,34 +250,54 @@ storage.createUser({
   }
 ].forEach(domain => storage.createDomain(domain));
 
-// Add some example orders for the test user
+// Add example orders for the test user
 [
   {
     userId: 1,
     sourceUrl: "https://techcrunch.com/sponsored/new-tech-trends",
     targetUrl: "https://example.com/product",
     anchorText: "innovative tech solutions",
+    textEdit: null,
+    notes: null,
+    domainAuthority: "89.5",
+    domainRating: "91.2",
+    websiteTraffic: 8500000,
+    pageTraffic: 150000,
     price: "450",
     status: "Completed",
     dateOrdered: new Date("2024-02-15"),
-    dateCompleted: new Date("2024-02-20"),
+    dateCompleted: new Date("2024-02-20")
   },
   {
     userId: 1,
     sourceUrl: "https://healthandwellness.com/fitness-tips",
     targetUrl: "https://example.com/fitness-app",
     anchorText: "fitness tracking app",
+    textEdit: "Please add the link naturally within the content",
+    notes: "Prefer placement in the second paragraph",
+    domainAuthority: "72.3",
+    domainRating: "68.9",
+    websiteTraffic: 350000,
+    pageTraffic: 45000,
     price: "250",
     status: "In Progress",
     dateOrdered: new Date("2024-03-01"),
+    dateCompleted: null
   },
   {
     userId: 1,
     sourceUrl: "https://financedaily.com/investment-strategies",
     targetUrl: "https://example.com/finance",
     anchorText: "investment platform",
+    textEdit: null,
+    notes: "Looking for placement in the introduction",
+    domainAuthority: "81.7",
+    domainRating: "84.5",
+    websiteTraffic: 1200000,
+    pageTraffic: 95000,
     price: "350",
     status: "Pending",
     dateOrdered: new Date("2024-03-18"),
+    dateCompleted: null
   }
 ].forEach(order => storage.createOrder(order));

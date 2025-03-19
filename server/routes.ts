@@ -26,9 +26,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/orders/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const order = await storage.getOrder(parseInt(req.params.id));
-    if (!order || order.userId !== req.user.id) return res.sendStatus(404);
-    const updated = await storage.updateOrder(order.id, req.body);
+
+    const orderId = parseInt(req.params.id);
+    const order = await storage.getOrder(orderId);
+
+    if (!order || order.userId !== req.user.id) {
+      return res.sendStatus(404);
+    }
+
+    const updateData = { ...req.body };
+
+    // If status is being updated to Completed, set dateCompleted
+    if (updateData.status === "Completed" && order.status !== "Completed") {
+      updateData.dateCompleted = new Date();
+    }
+
+    // If status is being changed from Completed, clear dateCompleted
+    if (updateData.status && updateData.status !== "Completed") {
+      updateData.dateCompleted = null;
+    }
+
+    const updated = await storage.updateOrder(order.id, updateData);
     res.json(updated);
   });
 

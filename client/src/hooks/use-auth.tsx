@@ -7,7 +7,6 @@ import {
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useWelcome } from "./use-welcome";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -33,7 +32,6 @@ const AuthContext = createContext<AuthContextType>(defaultContext);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const { refetch: fetchWelcomeMessage } = useWelcome();
 
   const {
     data: user,
@@ -49,17 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: async (user: SelectUser) => {
+    onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
-
-      // Fetch and show welcome message
-      const welcomeData = await fetchWelcomeMessage();
-      if (welcomeData?.data) {
-        toast({
-          title: welcomeData.data.welcomeMessage,
-          description: welcomeData.data.businessInsight,
-        });
-      }
     },
     onError: (error: Error) => {
       toast({
@@ -75,17 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/register", credentials);
       return await res.json();
     },
-    onSuccess: async (user: SelectUser) => {
+    onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
-
-      // Fetch and show welcome message for new users
-      const welcomeData = await fetchWelcomeMessage();
-      if (welcomeData?.data) {
-        toast({
-          title: welcomeData.data.welcomeMessage,
-          description: welcomeData.data.businessInsight,
-        });
-      }
     },
     onError: (error: Error) => {
       toast({

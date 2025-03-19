@@ -4,7 +4,6 @@ import { createUploadthing } from "uploadthing/server";
 import { uploadRouter } from "./uploadthing";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { generateWelcomeMessage, getBusinessInsight } from "./openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -117,26 +116,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to create order" });
     }
   });
-
-  // Add welcome message route
-  app.get("/api/welcome-message", async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-
-      const welcomeMessage = await generateWelcomeMessage(
-        req.user.username,
-        req.user.companyName
-      );
-
-      const businessInsight = await getBusinessInsight(req.user.companyName);
-
-      res.json({ welcomeMessage, businessInsight });
-    } catch (error) {
-      console.error("Error getting welcome message:", error);
-      res.status(500).json({ error: "Failed to generate welcome message" });
-    }
-  });
-
 
   const httpServer = createServer(app);
   return httpServer;

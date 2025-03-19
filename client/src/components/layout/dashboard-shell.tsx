@@ -3,9 +3,8 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import { Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState } from "react";
 import { Link } from "wouter";
+import { useState } from "react";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { user, logoutMutation } = useAuth();
@@ -45,7 +44,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <ScrollArea className="flex-1 p-6">{children}</ScrollArea>
+        <main className="flex-1 overflow-auto p-6">
+          {/* Debug marker */}
+          <div className="text-xs text-muted-foreground mb-2">Debug: Content Area</div>
+          {children}
+        </main>
       </div>
     </div>
   );

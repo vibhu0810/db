@@ -38,6 +38,8 @@ type DateRange = {
 };
 
 export default function Orders() {
+  console.log('Orders component mounting...'); // Debug log
+
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRange>({});
@@ -47,7 +49,13 @@ export default function Orders() {
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['/api/orders'],
-    queryFn: () => apiRequest("GET", "/api/orders").then(res => res.json()),
+    queryFn: () => {
+      console.log('Fetching orders...'); // Debug log
+      return apiRequest("GET", "/api/orders").then(res => {
+        console.log('Orders response:', res); // Debug log
+        return res.json();
+      });
+    },
   });
 
   const { data: comments = [], isLoading: isLoadingComments } = useQuery({
@@ -87,14 +95,6 @@ export default function Orders() {
       });
     },
   });
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
-      </div>
-    );
-  }
 
   const filteredOrders = orders.filter((order) => {
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
@@ -140,8 +140,19 @@ export default function Orders() {
     window.URL.revokeObjectURL(url);
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Debug marker */}
+      <div className="text-xs text-muted-foreground">Debug: Orders Page Content</div>
+
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
         <Button onClick={exportToCSV}>
@@ -178,7 +189,7 @@ export default function Orders() {
         />
       </div>
 
-      <div className="border rounded-lg">
+      <div className="rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>

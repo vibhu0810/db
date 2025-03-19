@@ -22,6 +22,8 @@ import { Link } from "wouter";
 import { Loader2, ExternalLink } from "lucide-react";
 
 export default function DomainsPage() {
+  console.log('Domains component mounting...'); // Debug log
+
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [drRange, setDrRange] = useState("all");
@@ -30,7 +32,13 @@ export default function DomainsPage() {
 
   const { data: domains = [], isLoading } = useQuery({
     queryKey: ['/api/domains'],
-    queryFn: () => apiRequest("GET", "/api/domains").then(res => res.json()),
+    queryFn: () => {
+      console.log('Fetching domains...'); // Debug log
+      return apiRequest("GET", "/api/domains").then(res => {
+        console.log('Domains response:', res); // Debug log
+        return res.json();
+      });
+    },
   });
 
   if (isLoading) {
@@ -75,6 +83,9 @@ export default function DomainsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Debug marker */}
+      <div className="text-xs text-muted-foreground">Debug: Domains Page Content</div>
+
       <h2 className="text-3xl font-bold tracking-tight">Domain Inventory</h2>
 
       <div className="space-y-4">

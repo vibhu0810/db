@@ -1,6 +1,6 @@
 import { users } from "@shared/schema";
 import type { User, InsertUser } from "@shared/schema";
-import type { Domain, InsertDomain } from "@shared/schema"; // Added import for Domain types
+import type { Domain, InsertDomain, Order, OrderComment, InsertOrderComment } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
@@ -9,7 +9,6 @@ import { promisify } from "util";
 const MemoryStore = createMemoryStore(session);
 const scryptAsync = promisify(scrypt);
 
-// Helper function to hash password for initial data
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -28,6 +27,14 @@ export interface IStorage {
   getDomain(id: number): Promise<Domain | undefined>;
   createDomain(domain: InsertDomain): Promise<Domain>;
 
+  // Order operations
+  getOrders(userId: number): Promise<Order[]>;
+  createOrder(order: any): Promise<Order>;
+
+  // Comment operations
+  getOrderComments(orderId: number): Promise<OrderComment[]>;
+  createOrderComment(comment: InsertOrderComment): Promise<OrderComment>;
+
   // Session store
   sessionStore: session.Store;
 }
@@ -35,18 +42,24 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private domains: Map<number, Domain>;
+  private orders: Map<number, Order>;
+  private comments: Map<number, OrderComment>;
   private currentIds: { [key: string]: number };
   sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
     this.domains = new Map();
+    this.orders = new Map();
+    this.comments = new Map();
     this.currentIds = {
-      users: 2, 
-      domains: 3, // Updated to reflect the addition of a new domain
+      users: 2,
+      domains: 3,
+      orders: 1,
+      comments: 1,
     };
     this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, 
+      checkPeriod: 86400000,
     });
 
     // Initialize with test data
@@ -71,12 +84,12 @@ export class MemStorage implements IStorage {
       id: 1,
       websiteName: "Engagebay",
       websiteUrl: "engagebay.com",
-      domainAuthority: 52,
-      domainRating: 78,
+      domainAuthority: "52",
+      domainRating: "78",
       websiteTraffic: 34200,
       niche: "Marketing",
       type: "niche_edit",
-      nicheEditPrice: 300,
+      nicheEditPrice: "300",
       guestPostPrice: null,
       guidelines: "Branded anchor text is not allowed."
     };
@@ -85,13 +98,13 @@ export class MemStorage implements IStorage {
       id: 2,
       websiteName: "POWR Blog",
       websiteUrl: "blog.powr.io",
-      domainAuthority: 55,
-      domainRating: 89,
+      domainAuthority: "55",
+      domainRating: "89",
       websiteTraffic: 18300,
       niche: "Technology",
       type: "both",
-      guestPostPrice: 500,
-      nicheEditPrice: 230,
+      guestPostPrice: "500",
+      nicheEditPrice: "230",
       guidelines: "Linking domain must be DR 50+"
     };
 
@@ -112,8 +125,8 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentIds.users++;
-    const user = { 
-      ...insertUser, 
+    const user = {
+      ...insertUser,
       id,
       companyName: insertUser.companyName || null,
       companyLogo: insertUser.companyLogo || null
@@ -141,9 +154,53 @@ export class MemStorage implements IStorage {
 
   async createDomain(domain: InsertDomain): Promise<Domain> {
     const id = this.currentIds.domains++;
-    const newDomain = { ...domain, id };
+    const newDomain = {
+      ...domain,
+      id,
+      domainAuthority: domain.domainAuthority || null,
+      domainRating: domain.domainRating || null,
+      websiteTraffic: domain.websiteTraffic || null,
+      guestPostPrice: domain.guestPostPrice || null,
+      nicheEditPrice: domain.nicheEditPrice || null,
+      guidelines: domain.guidelines || null,
+    };
     this.domains.set(id, newDomain);
     return newDomain;
+  }
+
+  // Order operations
+  async getOrders(userId: number): Promise<Order[]> {
+    return Array.from(this.orders.values()).filter(order => order.userId === userId);
+  }
+
+  async createOrder(orderData: any): Promise<Order> {
+    const id = this.currentIds.orders++;
+    const order = {
+      ...orderData,
+      id,
+      dateOrdered: new Date().toISOString(),
+      dateCompleted: null,
+    };
+    this.orders.set(id, order);
+    return order;
+  }
+
+  // Comment operations
+  async getOrderComments(orderId: number): Promise<OrderComment[]> {
+    return Array.from(this.comments.values())
+      .filter(comment => comment.orderId === orderId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }
+
+  async createOrderComment(comment: InsertOrderComment): Promise<OrderComment> {
+    const id = this.currentIds.comments++;
+    const newComment = {
+      ...comment,
+      id,
+      createdAt: new Date().toISOString(),
+    };
+    this.comments.set(id, newComment);
+    return newComment;
   }
 }
 

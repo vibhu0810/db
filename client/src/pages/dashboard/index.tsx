@@ -36,11 +36,19 @@ export default function Dashboard() {
 
   const isLoading = ordersLoading || domainsLoading;
 
+  // Filter orders from the last 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const recentOrders = orders.filter(order => 
+    new Date(order.dateOrdered) >= thirtyDaysAgo
+  );
+
   // Calculate metrics
-  const totalOrders = orders.length;
-  const completedOrders = orders.filter((o) => o.status === "Completed");
+  const totalOrders = recentOrders.length;
+  const completedOrders = recentOrders.filter((o) => o.status === "Completed");
   const completedOrdersCount = completedOrders.length;
-  const totalSpent = orders.reduce((sum, order) => sum + Number(order.price), 0);
+  const totalSpent = recentOrders.reduce((sum, order) => sum + Number(order.price), 0);
 
   // Calculate average DR from completed orders only
   const completedOrderDomains = completedOrders
@@ -54,8 +62,8 @@ export default function Dashboard() {
         ) / completedOrderDomains.length
       : 0;
 
-  // Prepare chart data
-  const monthlyOrders = orders.reduce((acc: any[], order) => {
+  // Prepare chart data for the last 30 days
+  const monthlyOrders = recentOrders.reduce((acc: any[], order) => {
     const month = new Date(order.dateOrdered).toLocaleString("default", {
       month: "short",
     });
@@ -82,7 +90,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user?.firstName || user?.username}!</h2>
-          <p className="text-muted-foreground mt-2">Here's what's happening with your orders</p>
+          <p className="text-muted-foreground mt-2">Here's what's happening with your orders in the last 30 days</p>
         </div>
         <div className="flex gap-4">
           <Link href="/orders/new">

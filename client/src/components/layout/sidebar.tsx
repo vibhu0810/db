@@ -7,9 +7,12 @@ import {
   FileText,
   MessageSquare,
   User,
+  Settings,
+  Users,
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
-const navigation = [
+const userNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
@@ -18,13 +21,26 @@ const navigation = [
   { name: "Profile", href: "/profile", icon: User },
 ];
 
+const adminNavigation = [
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Orders", href: "/orders", icon: ShoppingCart },
+  { name: "Domains", href: "/domains", icon: Globe },
+  { name: "Users", href: "/users", icon: Users },
+  { name: "Settings", href: "/settings", icon: Settings },
+];
+
 export function Sidebar() {
   const [location] = useLocation();
+  const { isAdmin } = useAuth();
+
+  const navigation = isAdmin ? adminNavigation : userNavigation;
 
   return (
     <div className="w-64 border-r bg-sidebar text-sidebar-foreground">
       <div className="h-14 border-b flex items-center px-6">
-        <span className="text-lg font-semibold">LinkManager</span>
+        <span className="text-lg font-semibold">
+          {isAdmin ? "Admin Dashboard" : "LinkManager"}
+        </span>
       </div>
       <nav className="p-4 space-y-2">
         {navigation.map((item) => {

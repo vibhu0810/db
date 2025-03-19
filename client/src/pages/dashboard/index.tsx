@@ -1,18 +1,20 @@
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Order, Domain } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
 import {
   CircleDollarSign,
   LineChart,
   ShoppingCart,
   TrendingUp,
-  PlusCircle,
   Globe,
   Loader2,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import {
   LineChart as RechartsLineChart,
@@ -25,9 +27,12 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
+
   const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
-    queryKey: ["/api/orders"],
+    queryKey: ["/api/orders/all"],
+    queryFn: () => apiRequest("GET", "/api/orders/all").then(res => res.json()),
+    enabled: isAdmin,
   });
 
   const { data: domains = [], isLoading: domainsLoading } = useQuery<Domain[]>({
@@ -40,39 +45,42 @@ export default function Dashboard() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const recentOrders = orders.filter(order => 
+  const recentOrders = orders.filter(order =>
     new Date(order.dateOrdered) >= thirtyDaysAgo
   );
 
   // Calculate metrics
   const totalOrders = recentOrders.length;
-  const completedOrders = recentOrders.filter((o) => o.status === "Completed");
-  const completedOrdersCount = completedOrders.length;
-  const totalSpent = recentOrders.reduce((sum, order) => sum + Number(order.price), 0);
+  const pendingOrders = recentOrders.filter(o => o.status === "Sent").length;
+  const completedOrders = recentOrders.filter(o => o.status === "Completed").length;
+  const rejectedOrders = recentOrders.filter(o => o.status === "Rejected").length;
 
-  // Calculate average DR from completed orders only
-  const completedOrderDomains = completedOrders
-    .map((order) => domains.find((d) => d.id === order.domainId))
-    .filter(Boolean);
-  const averageDR =
-    completedOrderDomains.length > 0
-      ? completedOrderDomains.reduce(
-          (sum, domain) => sum + Number(domain?.domainRating || 0),
-          0
-        ) / completedOrderDomains.length
-      : 0;
+  // Calculate completion rate
+  const completionRate = totalOrders > 0
+    ? ((completedOrders / totalOrders) * 100).toFixed(1)
+    : "0.0";
+
+  // Get orders that need attention (recently submitted or pending)
+  const ordersNeedingAttention = orders
+    .filter(o => o.status === "Sent")
+    .sort((a, b) => new Date(b.dateOrdered).getTime() - new Date(a.dateOrdered).getTime())
+    .slice(0, 5);
 
   // Prepare chart data for the last 30 days
-  const monthlyOrders = recentOrders.reduce((acc: any[], order) => {
+  const monthlyOrderStats = recentOrders.reduce((acc: any[], order) => {
     const month = new Date(order.dateOrdered).toLocaleString("default", {
       month: "short",
     });
     const existing = acc.find((item) => item.month === month);
     if (existing) {
-      existing.orders += 1;
-      existing.spent += Number(order.price);
+      existing[order.status] = (existing[order.status] || 0) + 1;
     } else {
-      acc.push({ month, orders: 1, spent: Number(order.price) });
+      acc.push({
+        month,
+        Completed: order.status === "Completed" ? 1 : 0,
+        Sent: order.status === "Sent" ? 1 : 0,
+        Rejected: order.status === "Rejected" ? 1 : 0,
+      });
     }
     return acc;
   }, []);
@@ -87,132 +95,148 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user?.firstName || user?.username}!</h2>
-          <p className="text-muted-foreground mt-2">Here's what's happening with your orders in the last 30 days</p>
-        </div>
-        <div className="flex gap-4">
-          <Link href="/orders/new">
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Order
-            </Button>
-          </Link>
-          <Link href="/domains">
-            <Button variant="outline">
-              <Globe className="mr-2 h-4 w-4" />
-              Browse Domains
-            </Button>
-          </Link>
-        </div>
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user?.firstName || user?.username}!</h2>
+        <p className="text-muted-foreground mt-2">Here's an overview of order fulfillment in the last 30 days</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Orders Pending</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalOrders}</div>
+            <div className="text-2xl font-bold">{pendingOrders}</div>
             <p className="text-xs text-muted-foreground">
-              {completedOrdersCount} completed
+              Awaiting fulfillment
             </p>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-            <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalSpent.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{completedOrders}</div>
             <p className="text-xs text-muted-foreground">
-              Avg ${(totalSpent / totalOrders || 0).toFixed(2)} per order
+              Successfully fulfilled
             </p>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average DR</CardTitle>
-            <LineChart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Rejected Orders</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{averageDR.toFixed(1)}</div>
+            <div className="text-2xl font-bold">{rejectedOrders}</div>
             <p className="text-xs text-muted-foreground">
-              From completed orders
+              Not fulfilled
             </p>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {((completedOrdersCount / totalOrders || 0) * 100).toFixed(1)}%
+              {completionRate}%
             </div>
             <p className="text-xs text-muted-foreground">
-              Order completion rate
+              Order success rate
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="col-span-4 hover:shadow-lg transition-shadow">
-        <CardHeader>
-          <CardTitle>Orders Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <RechartsLineChart data={monthlyOrders}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis yAxisId="left" name="Orders" />
-              <YAxis yAxisId="right" orientation="right" name="Spent" />
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="bg-background border rounded-lg p-2 shadow-lg">
-                        <p className="text-sm font-medium">{payload[0].payload.month}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Orders: {payload[0].value}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Spent: ${payload[1].value.toFixed(2)}
-                        </p>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="orders"
-                name="Orders"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="spent"
-                name="Spent"
-                stroke="hsl(var(--secondary))"
-                strokeWidth={2}
-              />
-            </RechartsLineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="hover:shadow-lg transition-shadow md:col-span-2">
+          <CardHeader>
+            <CardTitle>Orders Overview</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsLineChart data={monthlyOrderStats}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-background border rounded-lg p-2 shadow-lg">
+                          <p className="text-sm font-medium">{label}</p>
+                          {payload.map((entry) => (
+                            <p key={entry.name} className="text-sm text-muted-foreground">
+                              {entry.name}: {entry.value}
+                            </p>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Completed"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Sent"
+                  stroke="hsl(var(--warning))"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Rejected"
+                  stroke="hsl(var(--destructive))"
+                  strokeWidth={2}
+                />
+              </RechartsLineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow md:col-span-2">
+          <CardHeader>
+            <CardTitle>Orders Needing Attention</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {ordersNeedingAttention.map((order) => (
+                <div key={order.id} className="flex items-center justify-between border-b pb-4 last:border-0">
+                  <div>
+                    <p className="font-medium">{order.sourceUrl}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Ordered by: {order.user?.companyName || order.user?.username}
+                    </p>
+                  </div>
+                  <Link href="/orders">
+                    <button className="text-primary hover:underline text-sm">
+                      View Details →
+                    </button>
+                  </Link>
+                </div>
+              ))}
+              {ordersNeedingAttention.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No pending orders at the moment
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

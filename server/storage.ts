@@ -1,5 +1,6 @@
 import { users } from "@shared/schema";
 import type { User, InsertUser } from "@shared/schema";
+import type { Domain, InsertDomain } from "@shared/schema"; // Added import for Domain types
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
@@ -22,26 +23,35 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<User>): Promise<User>;
 
+  // Domain operations
+  getDomains(): Promise<Domain[]>;
+  getDomain(id: number): Promise<Domain | undefined>;
+  createDomain(domain: InsertDomain): Promise<Domain>;
+
   // Session store
   sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
+  private domains: Map<number, Domain>;
   private currentIds: { [key: string]: number };
   sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
+    this.domains = new Map();
     this.currentIds = {
-      users: 2, // Start from 2 since we have one initial user
+      users: 2, 
+      domains: 2, 
     };
     this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // Clear expired entries every 24h
+      checkPeriod: 86400000, 
     });
 
-    // Initialize with a test user
+    // Initialize with test data
     this.initializeTestUser();
+    this.initializeTestDomains();
   }
 
   private async initializeTestUser() {
@@ -54,6 +64,22 @@ export class MemStorage implements IStorage {
       companyLogo: null
     };
     this.users.set(testUser.id, testUser);
+  }
+
+  private initializeTestDomains() {
+    const engagebay: Domain = {
+      id: 1,
+      websiteName: "Engagebay",
+      websiteUrl: "engagebay.com",
+      domainAuthority: 52,
+      domainRating: 78,
+      websiteTraffic: 34200,
+      niche: "Marketing",
+      type: "niche_edit",
+      price: 300,
+      availableSlots: 5
+    };
+    this.domains.set(engagebay.id, engagebay);
   }
 
   // User operations
@@ -85,6 +111,22 @@ export class MemStorage implements IStorage {
     const updated = { ...user, ...update };
     this.users.set(id, updated);
     return updated;
+  }
+
+  // Domain operations
+  async getDomains(): Promise<Domain[]> {
+    return Array.from(this.domains.values());
+  }
+
+  async getDomain(id: number): Promise<Domain | undefined> {
+    return this.domains.get(id);
+  }
+
+  async createDomain(domain: InsertDomain): Promise<Domain> {
+    const id = this.currentIds.domains++;
+    const newDomain = { ...domain, id };
+    this.domains.set(id, newDomain);
+    return newDomain;
   }
 }
 

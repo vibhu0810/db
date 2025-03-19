@@ -33,8 +33,6 @@ import { z } from "zod";
 
 type OrderType = "guest_post" | "niche_edit";
 
-const urlSchema = z.string().url("Please enter a valid URL");
-
 // Helper functions remain the same...
 const getTurnaroundTime = (domain: Domain, orderType: OrderType | null) => {
   if (domain.websiteUrl === "engagebay.com") {
@@ -67,41 +65,6 @@ export default function NewOrder() {
   const { data: domain, isLoading: isDomainLoading } = useQuery<Domain>({
     queryKey: [`/api/domains/${domainId}`],
     enabled: !!domainId,
-  });
-
-  const form = useForm<InsertOrder>({
-    resolver: zodResolver(
-      insertOrderSchema.extend({
-        sourceUrl: z.string().refine(
-          (url) => {
-            if (!domain || selectedType === "guest_post") return true;
-            try {
-              const urlObj = new URL(url);
-              return urlObj.hostname.includes(domain.websiteUrl);
-            } catch {
-              return false;
-            }
-          },
-          {
-            message: `Link URL must be from ${domain?.websiteUrl}`,
-          }
-        ),
-        targetUrl: urlSchema,
-        content: weWriteContent
-          ? z.string().optional()
-          : urlSchema.optional(),
-      })
-    ),
-    defaultValues: {
-      sourceUrl: "",
-      targetUrl: "",
-      anchorText: "",
-      textEdit: "",
-      notes: "",
-      title: "",
-      dateOrdered: new Date().toISOString(),
-      status: "Sent",
-    },
   });
 
   const createOrderMutation = useMutation({
@@ -146,24 +109,49 @@ export default function NewOrder() {
     },
   });
 
+  const formValidationSchema = insertOrderSchema.extend({
+    sourceUrl: z.string().min(1, "Source URL is required").refine(
+      (url) => {
+        if (!domain || selectedType === "guest_post") return true;
+        try {
+          const urlObj = new URL(url);
+          return urlObj.hostname.includes(domain.websiteUrl);
+        } catch {
+          return false;
+        }
+      },
+      {
+        message: `Link URL must be from ${domain?.websiteUrl}`,
+      }
+    ),
+    targetUrl: z.string().min(1, "Target URL is required").url("Please enter a valid URL"),
+    anchorText: z.string().min(1, "Anchor text is required"),
+    title: z.string().optional(),
+    textEdit: z.string().optional(),
+    content: weWriteContent ? z.string().optional() : z.string().url("Please enter a valid content URL"),
+  });
+
+  const form = useForm<InsertOrder>({
+    resolver: zodResolver(formValidationSchema),
+    defaultValues: {
+      sourceUrl: "",
+      targetUrl: "",
+      anchorText: "",
+      textEdit: "",
+      notes: "",
+      title: "",
+      dateOrdered: new Date().toISOString(),
+      status: "Sent",
+    },
+  });
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted manually");
-    const formData = form.getValues();
-    console.log("Form values:", formData);
-    console.log("Form state:", form.formState);
-
-    if (!form.formState.isValid) {
-      console.log("Form validation errors:", form.formState.errors);
-      toast({
-        title: "Validation Error",
-        description: "Please check all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createOrderMutation.mutate(formData);
+    form.handleSubmit((data) => {
+      console.log("Form values:", data);
+      console.log("Form state:", form.formState);
+      createOrderMutation.mutate(data);
+    })(e);
   };
 
   if (isDomainLoading) {

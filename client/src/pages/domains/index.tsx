@@ -20,59 +20,94 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Loader2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink, ArrowUpDown } from "lucide-react";
+
+type SortConfig = {
+  column: keyof Domain | null;
+  direction: 'asc' | 'desc';
+};
 
 export default function DomainsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [daRange, setDaRange] = useState("all");
   const [drRange, setDrRange] = useState("all");
   const [trafficRange, setTrafficRange] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    column: null,
+    direction: 'asc'
+  });
 
   const { data: domains = [], isLoading } = useQuery<Domain[]>({
     queryKey: ['/api/domains']
   });
 
-  const filteredDomains = domains.filter((domain) => {
-    const matchesType = typeFilter === "all" || domain.type === typeFilter || domain.type === "both";
-    const matchesSearch = !searchQuery ||
-      domain.websiteUrl.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleSort = (column: keyof Domain) => {
+    setSortConfig(current => ({
+      column,
+      direction: current.column === column && current.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
 
-    // DA Range Filter
-    const matchesDA = daRange === "all" ||
-      (daRange === "0-30" && domain.domainAuthority <= 30) ||
-      (daRange === "31-50" && domain.domainAuthority > 30 && domain.domainAuthority <= 50) ||
-      (daRange === "51-70" && domain.domainAuthority > 50 && domain.domainAuthority <= 70) ||
-      (daRange === "71+" && domain.domainAuthority > 70);
+  const filteredAndSortedDomains = domains
+    .filter((domain) => {
+      const matchesType = typeFilter === "all" || domain.type === typeFilter || domain.type === "both";
+      const matchesSearch = !searchQuery ||
+        domain.websiteUrl.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // DR Range Filter
-    const matchesDR = drRange === "all" ||
-      (drRange === "0-30" && domain.domainRating <= 30) ||
-      (drRange === "31-50" && domain.domainRating > 30 && domain.domainRating <= 50) ||
-      (drRange === "51-70" && domain.domainRating > 50 && domain.domainRating <= 70) ||
-      (drRange === "71+" && domain.domainRating > 70);
+      // DR Range Filter
+      const matchesDR = drRange === "all" ||
+        (drRange === "0-30" && domain.domainRating <= 30) ||
+        (drRange === "31-50" && domain.domainRating > 30 && domain.domainRating <= 50) ||
+        (drRange === "51-70" && domain.domainRating > 50 && domain.domainRating <= 70) ||
+        (drRange === "71+" && domain.domainRating > 70);
 
-    // Traffic Range Filter
-    const matchesTraffic = trafficRange === "all" ||
-      (trafficRange === "0-5k" && domain.websiteTraffic <= 5000) ||
-      (trafficRange === "5k-20k" && domain.websiteTraffic > 5000 && domain.websiteTraffic <= 20000) ||
-      (trafficRange === "20k-50k" && domain.websiteTraffic > 20000 && domain.websiteTraffic <= 50000) ||
-      (trafficRange === "50k+" && domain.websiteTraffic > 50000);
+      // Traffic Range Filter
+      const matchesTraffic = trafficRange === "all" ||
+        (trafficRange === "0-5k" && domain.websiteTraffic <= 5000) ||
+        (trafficRange === "5k-20k" && domain.websiteTraffic > 5000 && domain.websiteTraffic <= 20000) ||
+        (trafficRange === "20k-50k" && domain.websiteTraffic > 20000 && domain.websiteTraffic <= 50000) ||
+        (trafficRange === "50k+" && domain.websiteTraffic > 50000);
 
-    // Price Range Filter (checking both guest post and niche edit prices)
-    const lowestPrice = Math.min(
-      domain.guestPostPrice || Infinity,
-      domain.nicheEditPrice || Infinity
-    );
-    const matchesPrice = priceRange === "all" ||
-      (priceRange === "0-100" && lowestPrice <= 100) ||
-      (priceRange === "101-300" && lowestPrice > 100 && lowestPrice <= 300) ||
-      (priceRange === "301-500" && lowestPrice > 300 && lowestPrice <= 500) ||
-      (priceRange === "501+" && lowestPrice > 500);
+      // Price Range Filter (checking both guest post and niche edit prices)
+      const lowestPrice = Math.min(
+        domain.guestPostPrice || Infinity,
+        domain.nicheEditPrice || Infinity
+      );
+      const matchesPrice = priceRange === "all" ||
+        (priceRange === "0-100" && lowestPrice <= 100) ||
+        (priceRange === "101-300" && lowestPrice > 100 && lowestPrice <= 300) ||
+        (priceRange === "301-500" && lowestPrice > 300 && lowestPrice <= 500) ||
+        (priceRange === "501+" && lowestPrice > 500);
 
-    return matchesType && matchesSearch && matchesDA && matchesDR && matchesTraffic && matchesPrice;
-  });
+      return matchesType && matchesSearch && matchesDR && matchesTraffic && matchesPrice;
+    })
+    .sort((a, b) => {
+      if (!sortConfig.column) return 0;
+
+      let aValue, bValue;
+
+      // Special handling for price comparison
+      if (sortConfig.column === 'guestPostPrice' || sortConfig.column === 'nicheEditPrice') {
+        aValue = Math.min(a.guestPostPrice || Infinity, a.nicheEditPrice || Infinity);
+        bValue = Math.min(b.guestPostPrice || Infinity, b.nicheEditPrice || Infinity);
+      } else {
+        aValue = a[sortConfig.column];
+        bValue = b[sortConfig.column];
+      }
+
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortConfig.direction === 'asc' ? 
+          aValue.localeCompare(bValue) : 
+          bValue.localeCompare(aValue);
+      }
+
+      return 0;
+    });
 
   if (isLoading) {
     return (
@@ -106,19 +141,6 @@ export default function DomainsPage() {
                 <SelectItem value="guest_post">Guest Post</SelectItem>
                 <SelectItem value="niche_edit">Niche Edit</SelectItem>
                 <SelectItem value="both">Both</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={daRange} onValueChange={setDaRange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Domain Authority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All DA</SelectItem>
-                <SelectItem value="0-30">DA 0-30</SelectItem>
-                <SelectItem value="31-50">DA 31-50</SelectItem>
-                <SelectItem value="51-70">DA 51-70</SelectItem>
-                <SelectItem value="71+">DA 71+</SelectItem>
               </SelectContent>
             </Select>
 
@@ -167,19 +189,43 @@ export default function DomainsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Website</TableHead>
-                <TableHead>DA</TableHead>
-                <TableHead>DR</TableHead>
-                <TableHead>Traffic</TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('websiteUrl')}>
+                    Website
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('domainRating')}>
+                    DR
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('websiteTraffic')}>
+                    Traffic
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Guest Post Price</TableHead>
-                <TableHead>Niche Edit Price</TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('guestPostPrice')}>
+                    Guest Post Price
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('nicheEditPrice')}>
+                    Niche Edit Price
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead>Guidelines</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredDomains.map((domain) => (
+              {filteredAndSortedDomains.map((domain) => (
                 <TableRow key={domain.id}>
                   <TableCell>
                     <a 
@@ -192,7 +238,6 @@ export default function DomainsPage() {
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   </TableCell>
-                  <TableCell>{domain.domainAuthority}</TableCell>
                   <TableCell>{domain.domainRating}</TableCell>
                   <TableCell>{domain.websiteTraffic?.toLocaleString()}</TableCell>
                   <TableCell>

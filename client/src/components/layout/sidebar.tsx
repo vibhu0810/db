@@ -7,7 +7,6 @@ import {
   FileText,
   MessageSquare,
   User,
-  Settings,
   Users,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -26,7 +25,6 @@ const adminNavigation = [
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Users", href: "/users", icon: Users },
-  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {

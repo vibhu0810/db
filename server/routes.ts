@@ -179,6 +179,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add this route for admin to get all orders with user details
+  app.get("/api/orders/all", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+
+      const orders = await storage.getAllOrders();
+      const users = await storage.getUsers();
+
+      // Join orders with user data
+      const ordersWithUserDetails = orders.map(order => {
+        const user = users.find(u => u.id === order.userId);
+        return {
+          ...order,
+          user: user ? {
+            username: user.username,
+            companyName: user.companyName,
+            email: user.email
+          } : null
+        };
+      });
+
+      res.json(ordersWithUserDetails);
+    } catch (error) {
+      console.error("Error fetching all orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+
   const httpServer = createServer(app);
   return httpServer;
 }

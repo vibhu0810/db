@@ -18,13 +18,39 @@ const scryptAsync = promisify(scrypt);
 export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  const hashedPassword = `${buf.toString("hex")}.${salt}`;
+  console.log("Generated hash:", { hashedPassword, salt, hashLength: buf.length });
+  return hashedPassword;
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  console.log("Password comparison:", { 
+    stored,
+    storedLength: stored.length,
+    suppliedLength: supplied.length 
+  });
+
   const [hashed, salt] = stored.split(".");
+  console.log("Split parts:", { 
+    hashedPart: hashed,
+    hashedLength: hashed?.length,
+    saltPart: salt,
+    saltLength: salt?.length 
+  });
+
+  if (!hashed || !salt) {
+    console.error("Invalid stored password format - missing hash or salt");
+    return false;
+  }
+
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+
+  console.log("Buffer comparison:", {
+    hashedBufLength: hashedBuf.length,
+    suppliedBufLength: suppliedBuf.length
+  });
+
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 

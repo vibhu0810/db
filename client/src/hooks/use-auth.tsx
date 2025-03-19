@@ -19,7 +19,17 @@ type AuthContextType = {
 
 type LoginData = Pick<InsertUser, "username" | "password">;
 
-export const AuthContext = createContext<AuthContextType | null>(null);
+const defaultContext: AuthContextType = {
+  user: null,
+  isLoading: true,
+  error: null,
+  loginMutation: {} as UseMutationResult<SelectUser, Error, LoginData>,
+  logoutMutation: {} as UseMutationResult<void, Error, void>,
+  registerMutation: {} as UseMutationResult<SelectUser, Error, InsertUser>,
+};
+
+const AuthContext = createContext<AuthContextType>(defaultContext);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const {
@@ -104,3 +114,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export { AuthContext };

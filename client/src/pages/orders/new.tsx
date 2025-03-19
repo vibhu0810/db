@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { Domain } from "@shared/schema";
+import { Domain, InsertOrder } from "@shared/schema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertOrderSchema } from "@shared/schema";
@@ -68,7 +68,7 @@ export default function NewOrder() {
     enabled: !!domainId,
   });
 
-  const form = useForm({
+  const form = useForm<InsertOrder>({
     resolver: zodResolver(
       insertOrderSchema.extend({
         sourceUrl: z.string().refine(
@@ -104,7 +104,7 @@ export default function NewOrder() {
   });
 
   const createOrderMutation = useMutation({
-    mutationFn: async (formData: any) => {
+    mutationFn: async (formData: InsertOrder) => {
       if (!domain) throw new Error("Domain not found");
       console.log("Form data being submitted:", formData);
 
@@ -143,7 +143,7 @@ export default function NewOrder() {
     },
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: InsertOrder) => {
     try {
       console.log("Form values before submission:", data);
       console.log("Form validation state:", form.formState);
@@ -254,7 +254,7 @@ export default function NewOrder() {
                           <FormItem>
                             <FormLabel>Post Title</FormLabel>
                             <FormControl>
-                              <Input {...field} required />
+                              <Input {...field} />
                             </FormControl>
                             <FormDescription>
                               Enter the title for your guest post
@@ -300,7 +300,6 @@ export default function NewOrder() {
                                   {...field}
                                   type="url"
                                   placeholder="https://docs.google.com/document/d/..."
-                                  required
                                 />
                               </FormControl>
                               <FormDescription>
@@ -325,7 +324,6 @@ export default function NewOrder() {
                             <Input
                               {...field}
                               placeholder={`https://${domain.websiteUrl}/blog/example`}
-                              required
                             />
                           </FormControl>
                           <FormDescription>
@@ -345,7 +343,7 @@ export default function NewOrder() {
                       <FormItem>
                         <FormLabel>Link to URL</FormLabel>
                         <FormControl>
-                          <Input {...field} required />
+                          <Input {...field} />
                         </FormControl>
                         <FormDescription>
                           The URL you want to link to
@@ -362,7 +360,7 @@ export default function NewOrder() {
                       <FormItem>
                         <FormLabel>Anchor Text</FormLabel>
                         <FormControl>
-                          <Input {...field} required />
+                          <Input {...field} />
                         </FormControl>
                         <FormDescription>
                           The text that will be linked

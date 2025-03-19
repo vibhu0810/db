@@ -26,6 +26,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add user statistics route for admin
+  app.get("/api/users/stats", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+
+      const users = await storage.getUsers();
+      const orders = await storage.getAllOrders();
+
+      const usersWithStats = users.map(user => {
+        const userOrders = orders.filter(order => order.userId === user.id);
+        const stats = {
+          total: userOrders.length,
+          completed: userOrders.filter(o => o.status === "Completed").length,
+          pending: userOrders.filter(o => o.status === "Sent").length,
+          totalSpent: userOrders.reduce((sum, order) => sum + Number(order.price), 0)
+        };
+
+        return {
+          ...user,
+          orders: stats
+        };
+      });
+
+      res.json(usersWithStats);
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      res.status(500).json({ error: "Failed to fetch user statistics" });
+    }
+  });
+
   // Add profile update route
   app.patch("/api/user/profile", async (req, res) => {
     try {

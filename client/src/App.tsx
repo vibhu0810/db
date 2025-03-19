@@ -11,6 +11,7 @@ import DomainsPage from "./pages/domains";
 import OrdersPage from "./pages/orders";
 import NewOrderPage from "./pages/orders/new";
 import ProfilePage from "./pages/profile";
+import UsersPage from "./pages/users";
 
 function App() {
   return (
@@ -37,6 +38,13 @@ function App() {
               <ProtectedRoute>
                 <DashboardShell>
                   <OrdersPage />
+                </DashboardShell>
+              </ProtectedRoute>
+            </Route>
+            <Route path="/users">
+              <ProtectedRoute>
+                <DashboardShell>
+                  <UsersPage />
                 </DashboardShell>
               </ProtectedRoute>
             </Route>

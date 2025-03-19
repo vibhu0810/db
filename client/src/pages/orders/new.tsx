@@ -35,6 +35,19 @@ type OrderType = "guest_post" | "niche_edit";
 
 const urlSchema = z.string().url("Please enter a valid URL");
 
+const getTurnaroundTime = (domain: Domain, orderType: OrderType | null) => {
+    if (domain.websiteUrl === "engagebay.com") {
+      return "3 working days";
+    } else if (domain.websiteUrl === "blog.powr.io") {
+      if (orderType === "guest_post" || domain.type === "guest_post") {
+        return "10 working days post content approval";
+      } else {
+        return "3 working days";
+      }
+    }
+    return "7-14 business days"; // default fallback
+  };
+
 export default function NewOrder() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -130,6 +143,7 @@ export default function NewOrder() {
   const isNicheEdit = selectedType === "niche_edit" || domain.type === "niche_edit";
   const isGuestPost = selectedType === "guest_post" || domain.type === "guest_post";
   const price = isGuestPost ? domain.guestPostPrice : domain.nicheEditPrice;
+  const turnaroundTime = getTurnaroundTime(domain, selectedType);
 
   return (
     <DashboardShell>
@@ -146,7 +160,7 @@ export default function NewOrder() {
               {price && <div className="mt-2 text-lg font-semibold">Price: ${price}</div>}
             </CardDescription>
             <div className="mt-2 text-sm text-muted-foreground">
-              * Estimated turnaround time: 7-14 business days. This is not a guaranteed timeframe for the {isNicheEdit ? "Niche Edit" : "Guest Post"} to go live. 
+              * Estimated turnaround time: {turnaroundTime}. This is not a guaranteed timeframe for the {isNicheEdit ? "Niche Edit" : "Guest Post"} to go live. 
               It is based on previous requests we made live on this domain.
             </div>
           </CardHeader>

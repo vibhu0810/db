@@ -65,13 +65,13 @@ export default function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+            <Tabs defaultValue="login" className="animate-in fade-in-50 duration-500">
+              <TabsList className="grid w-full grid-cols-2 mb-8">
+                <TabsTrigger value="login" className="text-lg">Login</TabsTrigger>
+                <TabsTrigger value="register" className="text-lg">Register</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="login">
+              <TabsContent value="login" className="space-y-4 animate-in slide-in-from-left duration-500">
                 <Form {...loginForm}>
                   <form
                     onSubmit={loginForm.handleSubmit((data) =>
@@ -86,7 +86,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Username</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input 
+                              {...field} 
+                              className="transition-all duration-200 focus:scale-[1.02]"
+                              autoComplete="username"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -99,7 +103,12 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input 
+                              type="password" 
+                              {...field} 
+                              className="transition-all duration-200 focus:scale-[1.02]"
+                              autoComplete="current-password"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -107,7 +116,7 @@ export default function AuthPage() {
                     />
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                       disabled={loginMutation.isPending}
                     >
                       {loginMutation.isPending && (
@@ -119,7 +128,7 @@ export default function AuthPage() {
                 </Form>
               </TabsContent>
 
-              <TabsContent value="register">
+              <TabsContent value="register" className="space-y-4 animate-in slide-in-from-right duration-500">
                 <Form {...registerForm}>
                   <form
                     onSubmit={registerForm.handleSubmit((data) =>
@@ -135,7 +144,10 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>First Name</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input 
+                                {...field} 
+                                className="transition-all duration-200 focus:scale-[1.02]"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -148,7 +160,10 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Last Name</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input 
+                                {...field} 
+                                className="transition-all duration-200 focus:scale-[1.02]"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -163,7 +178,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Username</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input 
+                              {...field} 
+                              className="transition-all duration-200 focus:scale-[1.02]"
+                              autoComplete="username"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -177,7 +196,12 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input type="email" {...field} />
+                            <Input 
+                              type="email" 
+                              {...field} 
+                              className="transition-all duration-200 focus:scale-[1.02]"
+                              autoComplete="email"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -191,7 +215,12 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input 
+                              type="password" 
+                              {...field} 
+                              className="transition-all duration-200 focus:scale-[1.02]"
+                              autoComplete="new-password"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -205,7 +234,10 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Company Name</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input 
+                              {...field} 
+                              className="transition-all duration-200 focus:scale-[1.02]"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -219,7 +251,10 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Country</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input 
+                              {...field} 
+                              className="transition-all duration-200 focus:scale-[1.02]"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -228,7 +263,7 @@ export default function AuthPage() {
 
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                       disabled={registerMutation.isPending}
                     >
                       {registerMutation.isPending && (
@@ -249,7 +284,7 @@ export default function AuthPage() {
             Transform Your Link Building Strategy
           </h2>
           <div className="space-y-6">
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-4 hover:translate-x-2 transition-transform duration-300">
               <div className="mt-1">
                 <Globe2 className="h-6 w-6 text-primary" />
               </div>
@@ -260,7 +295,7 @@ export default function AuthPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-4 hover:translate-x-2 transition-transform duration-300">
               <div className="mt-1">
                 <BarChart2 className="h-6 w-6 text-primary" />
               </div>
@@ -271,7 +306,7 @@ export default function AuthPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-4 hover:translate-x-2 transition-transform duration-300">
               <div className="mt-1">
                 <LinkIcon className="h-6 w-6 text-primary" />
               </div>

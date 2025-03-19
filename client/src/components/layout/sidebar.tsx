@@ -7,7 +7,7 @@ import {
   BarChart3,
   FileText,
   MessageSquare,
-  Settings,
+  User,
 } from "lucide-react";
 
 const navigation = [
@@ -17,7 +17,7 @@ const navigation = [
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Invoice", href: "/invoice", icon: FileText },
   { name: "Chat", href: "/chat", icon: MessageSquare },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Profile", href: "/profile", icon: User },
 ];
 
 export function Sidebar() {

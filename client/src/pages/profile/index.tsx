@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
@@ -31,16 +31,31 @@ export default function ProfilePage() {
   const form = useForm<UpdateProfile>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
-      email: user?.email || "",
-      companyName: user?.companyName || "",
-      country: user?.country || "",
-      billingAddress: user?.billingAddress || "",
-      bio: user?.bio || "",
-      profilePicture: user?.profilePicture || "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      companyName: "",
+      country: "",
+      billingAddress: "",
+      bio: "",
+      profilePicture: "",
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        companyName: user.companyName,
+        country: user.country,
+        billingAddress: user.billingAddress,
+        bio: user.bio || "",
+        profilePicture: user.profilePicture || "",
+      });
+    }
+  }, [user]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: UpdateProfile) => {

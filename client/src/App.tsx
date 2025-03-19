@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import DomainsPage from "./pages/domains";
 import OrdersPage from "./pages/orders";
 import NewOrderPage from "./pages/orders/new";
+import ProfilePage from "./pages/profile";
 
 function App() {
   return (
@@ -25,6 +26,9 @@ function App() {
             </ProtectedRoute>
             <ProtectedRoute path="/orders/new">
               <NewOrderPage />
+            </ProtectedRoute>
+            <ProtectedRoute path="/profile">
+              <ProfilePage />
             </ProtectedRoute>
             <ProtectedRoute path="/">
               <DashboardShell>

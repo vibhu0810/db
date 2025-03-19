@@ -276,31 +276,34 @@ export default function Orders() {
         <Table>
           <TableHeader>
             <TableRow>
-              {isAdmin && (
+              <TableHead>
+                {isAdmin && (
+                  <TableHead>
+                    <SortableHeader field="user.username">User</SortableHeader>
+                  </TableHead>
+                )}
                 <TableHead>
-                  <SortableHeader field="user.username">User</SortableHeader>
+                  <SortableHeader field="sourceUrl">Source URL</SortableHeader>
                 </TableHead>
-              )}
-              <TableHead>
-                <SortableHeader field="sourceUrl">Source URL</SortableHeader>
+                <TableHead>
+                  <SortableHeader field="targetUrl">Target URL</SortableHeader>
+                </TableHead>
+                <TableHead>
+                  <SortableHeader field="anchorText">Anchor Text</SortableHeader>
+                </TableHead>
+                <TableHead>
+                  <SortableHeader field="price">Price</SortableHeader>
+                </TableHead>
+                <TableHead>
+                  <SortableHeader field="status">Status</SortableHeader>
+                </TableHead>
+                <TableHead>
+                  <SortableHeader field="dateOrdered">Date Ordered</SortableHeader>
+                </TableHead>
+                <TableHead>Text Edit/Article</TableHead>
+                {isAdmin && <TableHead>Notes</TableHead>}
+                <TableHead>Comments</TableHead>
               </TableHead>
-              <TableHead>
-                <SortableHeader field="targetUrl">Target URL</SortableHeader>
-              </TableHead>
-              <TableHead>
-                <SortableHeader field="anchorText">Anchor Text</SortableHeader>
-              </TableHead>
-              <TableHead>
-                <SortableHeader field="price">Price</SortableHeader>
-              </TableHead>
-              <TableHead>
-                <SortableHeader field="status">Status</SortableHeader>
-              </TableHead>
-              <TableHead>
-                <SortableHeader field="dateOrdered">Date Ordered</SortableHeader>
-              </TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead>Comments</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -382,7 +385,23 @@ export default function Orders() {
                 <TableCell>
                   {format(new Date(order.dateOrdered), "MMM d, yyyy")}
                 </TableCell>
-                <TableCell>{order.notes}</TableCell>
+                <TableCell className="max-w-[200px]">
+                  <div className="flex items-center space-x-2">
+                    <span className="truncate">{order.textEdit}</span>
+                    {order.textEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(order.textEdit || '')}
+                        className="shrink-0"
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+                {isAdmin && <TableCell>{order.notes}</TableCell>}
                 <TableCell>
                   <Sheet>
                     <SheetTrigger asChild>

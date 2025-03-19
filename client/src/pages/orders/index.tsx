@@ -30,7 +30,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { FileDown, Loader2, ArrowUpDown, MessageSquare } from "lucide-react";
 import { Resizable } from "react-resizable";
 import "react-resizable/css/styles.css";
@@ -342,7 +342,9 @@ export default function Orders() {
                                 >
                                   <p className="text-sm text-muted-foreground">
                                     {format(
-                                      new Date(comment.createdAt),
+                                      typeof comment.createdAt === 'string'
+                                        ? parseISO(comment.createdAt)
+                                        : comment.createdAt,
                                       "MMM d, yyyy h:mm a"
                                     )}
                                   </p>

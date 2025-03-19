@@ -36,17 +36,17 @@ type OrderType = "guest_post" | "niche_edit";
 const urlSchema = z.string().url("Please enter a valid URL");
 
 const getTurnaroundTime = (domain: Domain, orderType: OrderType | null) => {
-    if (domain.websiteUrl === "engagebay.com") {
+  if (domain.websiteUrl === "engagebay.com") {
+    return "3 working days";
+  } else if (domain.websiteUrl === "blog.powr.io") {
+    if (orderType === "guest_post" || domain.type === "guest_post") {
+      return "10 working days post content approval";
+    } else {
       return "3 working days";
-    } else if (domain.websiteUrl === "blog.powr.io") {
-      if (orderType === "guest_post" || domain.type === "guest_post") {
-        return "10 working days post content approval";
-      } else {
-        return "3 working days";
-      }
     }
-    return "7-14 business days"; // default fallback
-  };
+  }
+  return "7-14 business days"; // default fallback
+};
 
 const getContentWritingPrice = (domain: Domain) => {
   if (domain.websiteUrl === "blog.powr.io") {
@@ -71,7 +71,7 @@ export default function NewOrder() {
   const form = useForm({
     resolver: zodResolver(
       insertOrderSchema.extend({
-        sourceUrl: urlSchema.refine(
+        sourceUrl: z.string().refine(
           (url) => {
             if (!domain || selectedType === "guest_post") return true;
             try {
@@ -86,7 +86,7 @@ export default function NewOrder() {
           }
         ),
         targetUrl: urlSchema,
-        content: weWriteContent
+        content: weWriteContent 
           ? z.string().optional()
           : urlSchema.optional(),
       })
@@ -98,21 +98,28 @@ export default function NewOrder() {
       textEdit: "",
       notes: "",
       title: "",
-      status: "Sent",
       dateOrdered: new Date().toISOString(),
+      status: "Sent",
     },
   });
 
   const createOrderMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (formData: any) => {
+      if (!domain) throw new Error("Domain not found");
+
       const orderData = {
-        ...data,
-        type: selectedType || domain?.type,
-        domainId: domain?.id,
+        ...formData,
+        type: selectedType || domain.type,
+        domainId: domain.id,
         weWriteContent,
-        price: selectedType === "guest_post" ? domain?.guestPostPrice : domain?.nicheEditPrice,
+        price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
       };
+
       const res = await apiRequest("POST", "/api/orders", orderData);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create order");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -125,12 +132,16 @@ export default function NewOrder() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Error creating order",
         description: error.message,
         variant: "destructive",
       });
     },
   });
+
+  const onSubmit = (data: any) => {
+    createOrderMutation.mutate(data);
+  };
 
   if (isDomainLoading) {
     return (
@@ -210,9 +221,7 @@ export default function NewOrder() {
             ) : (
               <Form {...form}>
                 <form
-                  onSubmit={form.handleSubmit((data) =>
-                    createOrderMutation.mutate(data)
-                  )}
+                  onSubmit={form.handleSubmit(onSubmit)}
                   className="space-y-4"
                 >
                   {isGuestPost && (

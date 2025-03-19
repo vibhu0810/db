@@ -248,17 +248,43 @@ export default function Orders() {
   };
 
   useEffect(() => {
-    // Check if there's a highlighted order from notifications
-    const storedOrderId = sessionStorage.getItem('highlightedOrderId');
-    if (storedOrderId) {
-      const orderId = parseInt(storedOrderId);
-      setHighlightedOrderId(orderId);
-      // Clear the stored ID
-      sessionStorage.removeItem('highlightedOrderId');
-      // Open the comments sheet for this order
-      setSelectedOrderId(orderId);
+    // Check if there's a notification data from redirect
+    const notificationDataStr = sessionStorage.getItem('notificationData');
+    if (notificationDataStr) {
+      try {
+        const notificationData = JSON.parse(notificationDataStr);
+        const { orderId, type } = notificationData;
+
+        // Set the highlighted order
+        setHighlightedOrderId(orderId);
+
+        // Find the order's page index and set the current page
+        const orderIndex = filteredOrders.findIndex(order => order.id === orderId);
+        if (orderIndex !== -1) {
+          const pageNumber = Math.floor(orderIndex / itemsPerPage) + 1;
+          setCurrentPage(pageNumber);
+        }
+
+        // If it's a comment notification, open the comments sheet
+        if (type === 'comment') {
+          setSelectedOrderId(orderId);
+        }
+
+        // Clear the stored data
+        sessionStorage.removeItem('notificationData');
+
+        // Scroll to the highlighted order after a short delay
+        setTimeout(() => {
+          const element = document.getElementById(`order-${orderId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+      } catch (error) {
+        console.error('Error processing notification data:', error);
+      }
     }
-  }, []);
+  }, [filteredOrders, itemsPerPage]);
 
   if (isLoading) {
     return (
@@ -410,6 +436,7 @@ export default function Orders() {
             {paginatedOrders.map((order) => (
               <TableRow
                 key={order.id}
+                id={`order-${order.id}`}
                 className={cn(
                   highlightedOrderId === order.id && "bg-muted transition-colors duration-500"
                 )}

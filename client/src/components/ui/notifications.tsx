@@ -37,17 +37,26 @@ export function NotificationsDropdown() {
   const unreadCount = notifications.filter((n: any) => !n.read).length;
 
   const handleNotificationClick = async (notification: any) => {
-    // Mark as read
-    if (!notification.read) {
-      await markAsReadMutation.mutate(notification.id);
-    }
+    try {
+      // Mark as read
+      if (!notification.read) {
+        await markAsReadMutation.mutate(notification.id);
+      }
 
-    // Navigate to related order if it exists
-    if (notification.orderId) {
-      setIsOpen(false);
-      // Store the orderId in sessionStorage to highlight it after navigation
-      sessionStorage.setItem('highlightedOrderId', String(notification.orderId));
-      setLocation(`/orders`);
+      // Store notification data for highlighting
+      if (notification.orderId) {
+        // Store both orderId and type to handle different actions
+        sessionStorage.setItem('notificationData', JSON.stringify({
+          orderId: notification.orderId,
+          type: notification.type
+        }));
+
+        // Close dropdown and navigate
+        setIsOpen(false);
+        setLocation('/orders');
+      }
+    } catch (error) {
+      console.error('Error handling notification click:', error);
     }
   };
 

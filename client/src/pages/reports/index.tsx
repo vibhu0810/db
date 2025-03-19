@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { useQuery } from "@tanstack/react-query";
 import { Order, Review } from "@shared/schema";
@@ -65,13 +66,13 @@ export default function Reports() {
   }));
 
   const averageRating =
-    reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+    reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length || 0;
 
   const COLORS = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
+    "hsl(var(--primary))",
+    "hsl(var(--secondary))",
+    "hsl(var(--muted))",
+    "hsl(var(--accent))",
   ];
 
   const exportReport = () => {
@@ -83,7 +84,7 @@ export default function Reports() {
       metrics: {
         totalOrders: filteredOrders.length,
         totalSpent,
-        averageOrderValue: totalSpent / filteredOrders.length,
+        averageOrderValue: totalSpent / filteredOrders.length || 0,
         ordersByStatus,
         averageRating,
       },

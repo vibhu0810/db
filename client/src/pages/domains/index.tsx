@@ -23,17 +23,17 @@ import { Link } from "wouter";
 import { Loader2, ExternalLink } from "lucide-react";
 
 export default function Domains() {
-  const [nicheFilter, setNicheFilter] = useState<string>("");
+  const [nicheFilter, setNicheFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const { data: domains = [], isLoading } = useQuery<Domain[]>({
     queryKey: ['/api/domains']
   });
 
   const filteredDomains = domains.filter((domain) => {
-    const matchesNiche = !nicheFilter || domain.niche === nicheFilter;
-    const matchesType = !typeFilter || domain.type === typeFilter;
+    const matchesNiche = nicheFilter === "all" || domain.niche === nicheFilter;
+    const matchesType = typeFilter === "all" || domain.type === typeFilter;
     const matchesSearch =
       !searchQuery ||
       domain.websiteName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -72,7 +72,7 @@ export default function Domains() {
               <SelectValue placeholder="Filter by niche" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Niches</SelectItem>
+              <SelectItem value="all">All Niches</SelectItem>
               {uniqueNiches.map((niche) => (
                 <SelectItem key={niche} value={niche}>
                   {niche}
@@ -85,7 +85,7 @@ export default function Domains() {
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Types</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="guest_post">Guest Post</SelectItem>
               <SelectItem value="niche_edit">Niche Edit</SelectItem>
             </SelectContent>
@@ -123,9 +123,9 @@ export default function Domains() {
                   <TableCell>
                     {domain.type === "guest_post" ? "Guest Post" : "Niche Edit"}
                   </TableCell>
-                  <TableCell>{Number(domain.domainAuthority).toFixed(1)}</TableCell>
-                  <TableCell>{Number(domain.domainRating).toFixed(1)}</TableCell>
-                  <TableCell>{domain.websiteTraffic.toLocaleString()}</TableCell>
+                  <TableCell>{domain.domainAuthority?.toFixed(1) || "N/A"}</TableCell>
+                  <TableCell>{domain.domainRating?.toFixed(1) || "N/A"}</TableCell>
+                  <TableCell>{domain.websiteTraffic?.toLocaleString() || "N/A"}</TableCell>
                   <TableCell>${Number(domain.price).toFixed(2)}</TableCell>
                   <TableCell>{domain.availableSlots}</TableCell>
                   <TableCell>

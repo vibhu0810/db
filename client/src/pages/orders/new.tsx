@@ -40,7 +40,16 @@ export default function NewOrder() {
   });
 
   const form = useForm({
-    resolver: zodResolver(insertOrderSchema),
+    resolver: zodResolver(
+      insertOrderSchema.extend({
+        title: domain?.type === "guest_post" 
+          ? insertOrderSchema.shape.title
+          : insertOrderSchema.shape.title.optional(),
+        linkUrl: domain?.type === "niche_edit"
+          ? insertOrderSchema.shape.sourceUrl
+          : insertOrderSchema.shape.sourceUrl.optional(),
+      })
+    ),
     defaultValues: {
       sourceUrl: domain?.websiteUrl || "",
       targetUrl: "",
@@ -54,12 +63,26 @@ export default function NewOrder() {
       price: domain?.price || 0,
       status: "Pending",
       dateOrdered: new Date().toISOString(),
+      title: "", // For guest posts
+      linkUrl: "", // For niche edits
     },
   });
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/orders", data);
+      // Process form data based on domain type
+      const orderData = {
+        ...data,
+        // For guest posts, use the domain's website URL as source
+        // For niche edits, use the provided link URL as source
+        sourceUrl: domain?.type === "guest_post" ? domain.websiteUrl : data.linkUrl,
+        // Carry over domain metadata
+        domainAuthority: domain?.domainAuthority,
+        domainRating: domain?.domainRating,
+        websiteTraffic: domain?.websiteTraffic,
+        price: domain?.price,
+      };
+      const res = await apiRequest("POST", "/api/orders", orderData);
       return res.json();
     },
     onSuccess: () => {
@@ -110,7 +133,7 @@ export default function NewOrder() {
           <CardHeader>
             <CardTitle>Order Details</CardTitle>
             <CardDescription>
-              Create a new order for {domain.websiteName}
+              Create a new {domain.type === "guest_post" ? "guest post" : "niche edit"} order for {domain.websiteName}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -121,6 +144,42 @@ export default function NewOrder() {
                 )}
                 className="space-y-4"
               >
+                {domain.type === "guest_post" ? (
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Post Title</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter your guest post title" />
+                        </FormControl>
+                        <FormDescription>
+                          The title of your guest post article
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="linkUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Existing Article URL</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://example.com/article" />
+                        </FormControl>
+                        <FormDescription>
+                          The URL of the existing article where you want to add your link
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <FormField
                   control={form.control}
                   name="targetUrl"

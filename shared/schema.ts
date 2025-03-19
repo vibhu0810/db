@@ -26,6 +26,9 @@ export const orders = pgTable("orders", {
   status: text("status").notNull(),
   dateOrdered: timestamp("date_ordered").notNull(),
   dateCompleted: timestamp("date_completed"),
+  // New fields for different order types
+  title: text("title"), // For guest posts
+  linkUrl: text("link_url"), // For niche edits
 });
 
 export const domains = pgTable("domains", {
@@ -67,10 +70,15 @@ export const insertUserSchema = createInsertSchema(users).pick({
   companyLogo: true,
 });
 
-export const insertOrderSchema = createInsertSchema(orders).omit({
-  id: true,
-  dateCompleted: true,
-});
+export const insertOrderSchema = createInsertSchema(orders)
+  .omit({
+    id: true,
+    dateCompleted: true,
+  })
+  .extend({
+    title: z.string().optional(),
+    linkUrl: z.string().optional(),
+  });
 
 export const insertDomainSchema = createInsertSchema(domains).omit({ id: true });
 

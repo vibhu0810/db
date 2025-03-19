@@ -19,28 +19,22 @@
 
 .react-resizable-handle {
   position: absolute;
-  right: 0;
+  right: -5px;
   bottom: 0;
+  top: 0;
   width: 10px;
-  height: 100%;
   cursor: col-resize;
-  background: transparent;
-}
-
-.react-resizable-handle::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  background-color: #e2e8f0;
-  border-radius: 3px;
-  opacity: 0;
-  transition: opacity 0.2s;
+  background-color: transparent;
 }
 
 .react-resizable-handle:hover::after {
-  opacity: 1;
+  content: "";
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 20px;
+  background-color: hsl(var(--border));
+  border-radius: 3px;
 }

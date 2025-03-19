@@ -35,7 +35,6 @@ import { FileDown, Loader2, ArrowUpDown, MessageSquare } from "lucide-react";
 import { Resizable } from "react-resizable";
 import "react-resizable/css/styles.css";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { addDays } from "date-fns";
 
 type SortField = "dateOrdered" | "price" | "status";
 
@@ -62,8 +61,8 @@ export default function Orders() {
   });
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [newComment, setNewComment] = useState<string>("");
-  const [sourceUrlWidth, setSourceUrlWidth] = useState(200);
-  const [targetUrlWidth, setTargetUrlWidth] = useState(200);
+  const [sourceUrlWidth, setSourceUrlWidth] = useState(300);
+  const [targetUrlWidth, setTargetUrlWidth] = useState(300);
   const [anchorTextWidth, setAnchorTextWidth] = useState(200);
   const { toast } = useToast();
 
@@ -78,7 +77,9 @@ export default function Orders() {
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedOrderId || !newComment.trim()) return;
+      if (!selectedOrderId || !newComment.trim()) {
+        throw new Error("Please enter a comment");
+      }
       const res = await apiRequest("POST", `/api/orders/${selectedOrderId}/comments`, {
         message: newComment.trim(),
       });
@@ -113,7 +114,7 @@ export default function Orders() {
   };
 
   const handleResize = (column: string, { size }: { size: { width: number } }) => {
-    const width = Math.max(100, Math.min(600, size.width));
+    const width = Math.max(200, Math.min(600, size.width));
     switch (column) {
       case 'sourceUrl':
         setSourceUrlWidth(width);
@@ -165,7 +166,6 @@ export default function Orders() {
       "Price",
       "Status",
       "Date Ordered",
-      "Date Completed",
     ].join(",");
 
     const rows = filteredAndSortedOrders.map((order) => [
@@ -175,9 +175,6 @@ export default function Orders() {
       order.price,
       order.status,
       format(new Date(order.dateOrdered), "yyyy-MM-dd"),
-      order.dateCompleted
-        ? format(new Date(order.dateCompleted), "yyyy-MM-dd")
-        : "",
     ].join(","));
 
     const csv = [headers, ...rows].join("\n");
@@ -239,38 +236,38 @@ export default function Orders() {
           />
         </div>
 
-        <div className="border rounded-lg">
+        <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>
+                <TableHead className="relative">
                   <Resizable
                     width={sourceUrlWidth}
-                    height={20}
+                    height={40}
                     onResize={(e, data) => handleResize('sourceUrl', data)}
-                    draggableOpts={{ enableUserSelectHack: false }}
+                    handle={<div className="react-resizable-handle" />}
                   >
-                    <div style={{ width: sourceUrlWidth }}>Source URL</div>
+                    <div style={{ width: sourceUrlWidth }} className="pr-4">Source URL</div>
                   </Resizable>
                 </TableHead>
-                <TableHead>
+                <TableHead className="relative">
                   <Resizable
                     width={targetUrlWidth}
-                    height={20}
+                    height={40}
                     onResize={(e, data) => handleResize('targetUrl', data)}
-                    draggableOpts={{ enableUserSelectHack: false }}
+                    handle={<div className="react-resizable-handle" />}
                   >
-                    <div style={{ width: targetUrlWidth }}>Target URL</div>
+                    <div style={{ width: targetUrlWidth }} className="pr-4">Target URL</div>
                   </Resizable>
                 </TableHead>
-                <TableHead>
+                <TableHead className="relative">
                   <Resizable
                     width={anchorTextWidth}
-                    height={20}
+                    height={40}
                     onResize={(e, data) => handleResize('anchorText', data)}
-                    draggableOpts={{ enableUserSelectHack: false }}
+                    handle={<div className="react-resizable-handle" />}
                   >
-                    <div style={{ width: anchorTextWidth }}>Anchor Text</div>
+                    <div style={{ width: anchorTextWidth }} className="pr-4">Anchor Text</div>
                   </Resizable>
                 </TableHead>
                 <TableHead>
@@ -297,13 +294,13 @@ export default function Orders() {
             <TableBody>
               {filteredAndSortedOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell style={{ width: sourceUrlWidth }} className="truncate">
+                  <TableCell style={{ width: sourceUrlWidth, maxWidth: sourceUrlWidth }} className="truncate">
                     {order.sourceUrl}
                   </TableCell>
-                  <TableCell style={{ width: targetUrlWidth }} className="truncate">
+                  <TableCell style={{ width: targetUrlWidth, maxWidth: targetUrlWidth }} className="truncate">
                     {order.targetUrl}
                   </TableCell>
-                  <TableCell style={{ width: anchorTextWidth }} className="truncate">
+                  <TableCell style={{ width: anchorTextWidth, maxWidth: anchorTextWidth }} className="truncate">
                     {order.anchorText}
                   </TableCell>
                   <TableCell>${Number(order.price).toFixed(2)}</TableCell>
@@ -363,6 +360,7 @@ export default function Orders() {
                             <Button
                               onClick={() => addCommentMutation.mutate()}
                               disabled={!newComment.trim() || addCommentMutation.isPending}
+                              className="w-full"
                             >
                               {addCommentMutation.isPending && (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

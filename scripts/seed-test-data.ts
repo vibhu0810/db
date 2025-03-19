@@ -1,6 +1,6 @@
-import { apiRequest } from "../client/src/lib/queryClient";
-
-const API_BASE_URL = "http://localhost:5000";
+import { db } from "../server/db";
+import { users, domains, orders } from "@shared/schema";
+import { hashPassword } from "../server/auth";
 
 export const testUsers = [
   {
@@ -118,20 +118,18 @@ export const testUsers = [
 async function createTestUsers() {
   console.log("Creating test users...");
 
-  for (const user of testUsers) {
+  for (const userData of testUsers) {
     try {
-      await fetch(`${API_BASE_URL}/api/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(user)
+      const hashedPassword = await hashPassword(userData.password);
+      await db.insert(users).values({
+        ...userData,
+        password: hashedPassword,
       });
-      console.log(`Created user: ${user.username}`);
+      console.log(`Created user: ${userData.username}`);
     } catch (error) {
-      console.error(`Failed to create user ${user.username}:`, error);
+      console.error(`Failed to create user ${userData.username}:`, error);
     }
   }
 }
 
-createTestUsers().catch(console.error);
+export { createTestUsers };

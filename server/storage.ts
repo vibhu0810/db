@@ -1,5 +1,5 @@
 import { users, orders, domains, orderComments } from "@shared/schema";
-import type { User, InsertUser, Domain, Order, OrderComment, InsertOrderComment } from "@shared/schema";
+import type { User, InsertUser, Domain, InsertDomain, Order, OrderComment, InsertOrderComment } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import session from "express-session";
@@ -26,6 +26,7 @@ export interface IStorage {
   // Domain operations
   getDomains(): Promise<Domain[]>;
   getDomain(id: number): Promise<Domain | undefined>;
+  createDomain(domain: InsertDomain): Promise<Domain>;
 
   // Order operations
   getOrders(userId: number): Promise<Order[]>;
@@ -80,6 +81,11 @@ export class DatabaseStorage implements IStorage {
 
   async getDomain(id: number): Promise<Domain | undefined> {
     const [domain] = await db.select().from(domains).where(eq(domains.id, id));
+    return domain;
+  }
+
+  async createDomain(domainData: InsertDomain): Promise<Domain> {
+    const [domain] = await db.insert(domains).values(domainData).returning();
     return domain;
   }
 

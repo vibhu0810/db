@@ -5,6 +5,7 @@ import { uploadRouter } from "./uploadthing";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSEOJoke } from "./openai";
+import { insertDomainSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -47,6 +48,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add domain creation route
+  app.post("/api/domains", async (req, res) => {
+    try {
+      const domainData = insertDomainSchema.parse(req.body);
+      const domain = await storage.createDomain(domainData);
+      res.status(201).json(domain);
+    } catch (error) {
+      console.error("Error creating domain:", error);
+      res.status(500).json({ error: "Failed to create domain" });
+    }
+  });
+
   // Add single domain route
   app.get("/api/domains/:id", async (req, res) => {
     try {
@@ -76,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const comments = await storage.getOrderComments(parseInt(req.params.orderId));
-      console.log('Retrieved comments:', comments); // Add logging
+      console.log('Retrieved comments:', comments);
       res.json(comments);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -95,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: req.body.message,
       });
 
-      console.log('Created new comment:', comment); // Add logging
+      console.log('Created new comment:', comment);
       res.status(201).json(comment);
     } catch (error) {
       console.error("Error creating comment:", error);

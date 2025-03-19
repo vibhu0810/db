@@ -2,8 +2,18 @@ import { users } from "@shared/schema";
 import type { User, InsertUser } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
 
 const MemoryStore = createMemoryStore(session);
+const scryptAsync = promisify(scrypt);
+
+// Helper function to hash password for initial data
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 export interface IStorage {
   // User operations
@@ -24,11 +34,26 @@ export class MemStorage implements IStorage {
   constructor() {
     this.users = new Map();
     this.currentIds = {
-      users: 1,
+      users: 2, // Start from 2 since we have one initial user
     };
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // Clear expired entries every 24h
     });
+
+    // Initialize with a test user
+    this.initializeTestUser();
+  }
+
+  private async initializeTestUser() {
+    const hashedPassword = await hashPassword("test123");
+    const testUser: User = {
+      id: 1,
+      username: "testuser",
+      password: hashedPassword,
+      companyName: "Test Company",
+      companyLogo: null
+    };
+    this.users.set(testUser.id, testUser);
   }
 
   // User operations
@@ -44,7 +69,12 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentIds.users++;
-    const user = { ...insertUser, id };
+    const user = { 
+      ...insertUser, 
+      id,
+      companyName: insertUser.companyName || null,
+      companyLogo: insertUser.companyLogo || null
+    };
     this.users.set(id, user);
     return user;
   }

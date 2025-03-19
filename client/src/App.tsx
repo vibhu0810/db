@@ -19,16 +19,38 @@ function App() {
         <div className="min-h-screen bg-background">
           <Switch>
             <Route path="/auth" component={AuthPage} />
+            <Route path="/domains">
+              <ProtectedRoute>
+                <DashboardShell>
+                  <DomainsPage />
+                </DashboardShell>
+              </ProtectedRoute>
+            </Route>
+            <Route path="/orders/new">
+              <ProtectedRoute>
+                <DashboardShell>
+                  <NewOrderPage />
+                </DashboardShell>
+              </ProtectedRoute>
+            </Route>
+            <Route path="/orders">
+              <ProtectedRoute>
+                <DashboardShell>
+                  <OrdersPage />
+                </DashboardShell>
+              </ProtectedRoute>
+            </Route>
+            <Route path="/profile">
+              <ProtectedRoute>
+                <DashboardShell>
+                  <ProfilePage />
+                </DashboardShell>
+              </ProtectedRoute>
+            </Route>
             <Route path="/">
               <ProtectedRoute>
                 <DashboardShell>
-                  <Switch>
-                    <Route path="/domains" component={DomainsPage} />
-                    <Route path="/orders/new" component={NewOrderPage} />
-                    <Route path="/orders" component={OrdersPage} />
-                    <Route path="/profile" component={ProfilePage} />
-                    <Route path="/" component={Dashboard} />
-                  </Switch>
+                  <Dashboard />
                 </DashboardShell>
               </ProtectedRoute>
             </Route>

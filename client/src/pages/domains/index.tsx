@@ -101,8 +101,8 @@ export default function DomainsPage() {
       }
 
       if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortConfig.direction === 'asc' ? 
-          aValue.localeCompare(bValue) : 
+        return sortConfig.direction === 'asc' ?
+          aValue.localeCompare(bValue) :
           bValue.localeCompare(aValue);
       }
 
@@ -185,51 +185,51 @@ export default function DomainsPage() {
           </div>
         </div>
 
-        <div className="border rounded-lg">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>
+                <TableHead className="w-[200px]">
                   <Button variant="ghost" onClick={() => handleSort('websiteUrl')}>
                     Website
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>
+                <TableHead className="w-[100px]">
                   <Button variant="ghost" onClick={() => handleSort('domainRating')}>
                     DR
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>
+                <TableHead className="w-[120px]">
                   <Button variant="ghost" onClick={() => handleSort('websiteTraffic')}>
                     Traffic
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>
+                <TableHead className="w-[150px]">Type</TableHead>
+                <TableHead className="w-[150px]">
                   <Button variant="ghost" onClick={() => handleSort('guestPostPrice')}>
                     Guest Post Price
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>
+                <TableHead className="w-[150px]">
                   <Button variant="ghost" onClick={() => handleSort('nicheEditPrice')}>
                     Niche Edit Price
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>Guidelines</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="min-w-[200px] max-w-[400px] cursor-col-resize">Guidelines</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAndSortedDomains.map((domain) => (
                 <TableRow key={domain.id}>
-                  <TableCell>
-                    <a 
-                      href={`https://${domain.websiteUrl}`} 
+                  <TableCell className="max-w-[200px]">
+                    <a
+                      href={`https://${domain.websiteUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-primary hover:underline"
@@ -241,10 +241,10 @@ export default function DomainsPage() {
                   <TableCell>{domain.domainRating}</TableCell>
                   <TableCell>{domain.websiteTraffic?.toLocaleString()}</TableCell>
                   <TableCell>
-                    {domain.type === "both" 
-                      ? "Guest Post & Niche Edit" 
-                      : domain.type === "guest_post" 
-                        ? "Guest Post" 
+                    {domain.type === "both"
+                      ? "Guest Post & Niche Edit"
+                      : domain.type === "guest_post"
+                        ? "Guest Post"
                         : "Niche Edit"}
                   </TableCell>
                   <TableCell>
@@ -253,7 +253,9 @@ export default function DomainsPage() {
                   <TableCell>
                     {domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : '-'}
                   </TableCell>
-                  <TableCell>{domain.guidelines}</TableCell>
+                  <TableCell className="min-w-[200px] max-w-[400px] whitespace-normal">
+                    {domain.guidelines}
+                  </TableCell>
                   <TableCell>
                     <Link href={`/orders/new?domain=${domain.id}`}>
                       <Button size="sm" asChild>

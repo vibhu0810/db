@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import AuthPage from "./pages/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ProtectedRoute } from "@/lib/protected-route";
+import Dashboard from "./pages/dashboard";
 import DomainsPage from "./pages/domains";
 import OrdersPage from "./pages/orders";
 import NewOrderPage from "./pages/orders/new";
@@ -19,20 +20,28 @@ function App() {
           <Switch>
             <Route path="/auth" component={AuthPage} />
             <ProtectedRoute path="/domains">
-              <DomainsPage />
+              <DashboardShell>
+                <DomainsPage />
+              </DashboardShell>
             </ProtectedRoute>
             <ProtectedRoute path="/orders">
-              <OrdersPage />
+              <DashboardShell>
+                <OrdersPage />
+              </DashboardShell>
             </ProtectedRoute>
             <ProtectedRoute path="/orders/new">
-              <NewOrderPage />
+              <DashboardShell>
+                <NewOrderPage />
+              </DashboardShell>
             </ProtectedRoute>
             <ProtectedRoute path="/profile">
-              <ProfilePage />
+              <DashboardShell>
+                <ProfilePage />
+              </DashboardShell>
             </ProtectedRoute>
             <ProtectedRoute path="/">
               <DashboardShell>
-                <h1>Welcome to your dashboard</h1>
+                <Dashboard />
               </DashboardShell>
             </ProtectedRoute>
           </Switch>

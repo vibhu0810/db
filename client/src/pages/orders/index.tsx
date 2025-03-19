@@ -542,11 +542,13 @@ export default function Orders() {
                   <Sheet>
                     <SheetTrigger asChild>
                       <Button
-                        variant="outline"
-                        size="icon"
+                        variant="link"
+                        size="sm"
+                        className="flex items-center gap-2 text-muted-foreground hover:text-primary"
                         onClick={() => setSelectedOrderId(order.id)}
                       >
                         <MessageSquare className="h-4 w-4" />
+                        Comments
                       </Button>
                     </SheetTrigger>
                     <SheetContent>

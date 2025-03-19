@@ -73,6 +73,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import { User } from "@shared/schema";
 
 interface DateRange {
   from?: Date;
@@ -271,6 +272,7 @@ export default function Orders() {
   const [highlightedOrderId, setHighlightedOrderId] = useState<number | null>(null);
   const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
   const [orderToEdit, setOrderToEdit] = useState<any>(null);
+  const [userFilter, setUserFilter] = useState<number | "all">("all");
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -294,6 +296,12 @@ export default function Orders() {
       const endpoint = isAdmin ? '/api/orders/all' : '/api/orders';
       return apiRequest("GET", endpoint).then(res => res.json());
     },
+  });
+
+  const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+    queryFn: () => apiRequest("GET", "/api/users").then(res => res.json()),
+    enabled: isAdmin,
   });
 
   const { data: comments = [], isLoading: isLoadingComments } = useQuery({
@@ -415,7 +423,9 @@ export default function Orders() {
         new Date(order.dateOrdered) <= dateRange.to
       );
 
-      return matchesStatus && matchesSearch && matchesDateRange;
+      const matchesUser = !isAdmin || userFilter === "all" || order.userId === userFilter;
+
+      return matchesStatus && matchesSearch && matchesDateRange && matchesUser;
     })
     .sort((a, b) => {
       const aValue = (a as any)[sortField];
@@ -564,6 +574,24 @@ export default function Orders() {
             <SelectItem value="Revision">Revision</SelectItem>
           </SelectContent>
         </Select>
+        {isAdmin && (
+          <Select
+            value={String(userFilter)}
+            onValueChange={(value) => setUserFilter(value === "all" ? "all" : Number(value))}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Filter by user" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              {users.map((user) => (
+                <SelectItem key={user.id} value={String(user.id)}>
+                  {user.companyName || user.username}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <DatePickerWithRange
           date={dateRange}
           setDate={setDateRange}
@@ -953,7 +981,7 @@ export default function Orders() {
 
             <PaginationItem>
               <PaginationNext
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p+ 1))}
                 disabled={currentPage === totalPages}
               />
             </PaginationItem>

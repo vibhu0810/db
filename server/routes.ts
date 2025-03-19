@@ -13,12 +13,15 @@ import {
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
-  // Add users route for chat
+  // Add users route for admins
   app.get("/api/users", async (req, res) => {
     try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
       const users = await storage.getUsers();
-      res.json(users);
+      const filteredUsers = users.map(user => ({ id: user.id, username: user.username, companyName: user.companyName }));
+      res.json(filteredUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });

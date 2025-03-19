@@ -1,19 +1,26 @@
 import { Sidebar } from "./sidebar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
-import { Bell, Settings } from "lucide-react";
+import { Bell, Settings, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from "react";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { user, logoutMutation } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
+      <div className={`transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}>
+        <Sidebar />
+      </div>
       <div className="flex-1 flex flex-col">
         <header className="h-14 border-b flex items-center justify-between px-6">
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              <Menu className="h-5 w-5" />
+            </Button>
             <h1 className="text-lg font-semibold">Dashboard</h1>
           </div>
           <div className="flex items-center gap-4">

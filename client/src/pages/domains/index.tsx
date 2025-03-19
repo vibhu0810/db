@@ -123,9 +123,21 @@ export default function Domains() {
                   <TableCell>
                     {domain.type === "guest_post" ? "Guest Post" : "Niche Edit"}
                   </TableCell>
-                  <TableCell>{domain.domainAuthority?.toFixed(1) || "N/A"}</TableCell>
-                  <TableCell>{domain.domainRating?.toFixed(1) || "N/A"}</TableCell>
-                  <TableCell>{domain.websiteTraffic?.toLocaleString() || "N/A"}</TableCell>
+                  <TableCell>
+                    {typeof domain.domainAuthority === 'number' 
+                      ? domain.domainAuthority.toFixed(1) 
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    {typeof domain.domainRating === 'number'
+                      ? domain.domainRating.toFixed(1)
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    {typeof domain.websiteTraffic === 'number'
+                      ? domain.websiteTraffic.toLocaleString()
+                      : 'N/A'}
+                  </TableCell>
                   <TableCell>${Number(domain.price).toFixed(2)}</TableCell>
                   <TableCell>{domain.availableSlots}</TableCell>
                   <TableCell>

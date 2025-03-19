@@ -258,28 +258,28 @@ export default function Orders() {
         // Set the highlighted order
         setHighlightedOrderId(orderId);
 
-        // Find the order's page index and set the current page
+        // Find the order's page number and update current page
         const orderIndex = filteredOrders.findIndex(order => order.id === orderId);
         if (orderIndex !== -1) {
           const pageNumber = Math.floor(orderIndex / itemsPerPage) + 1;
           setCurrentPage(pageNumber);
-        }
 
-        // If it's a comment notification, open the comments sheet
-        if (type === 'comment') {
-          setSelectedOrderId(orderId);
-        }
-
-        // Clear the stored data
-        sessionStorage.removeItem('notificationData');
-
-        // Scroll to the highlighted order after a short delay
-        setTimeout(() => {
-          const element = document.getElementById(`order-${orderId}`);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // If it's a comment notification, open the comments sheet
+          if (type === 'comment') {
+            setSelectedOrderId(orderId);
           }
-        }, 100);
+
+          // Clear the stored notification data
+          sessionStorage.removeItem('notificationData');
+
+          // Scroll to the highlighted order after a short delay to ensure the page has rendered
+          setTimeout(() => {
+            const element = document.getElementById(`order-${orderId}`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 300);
+        }
       } catch (error) {
         console.error('Error processing notification data:', error);
       }

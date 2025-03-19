@@ -38,20 +38,20 @@ export function NotificationsDropdown() {
 
   const handleNotificationClick = async (notification: any) => {
     try {
-      // Mark as read
+      // Mark as read first
       if (!notification.read) {
         await markAsReadMutation.mutate(notification.id);
       }
 
-      // Store notification data for highlighting
+      // If we have an orderId, store the notification data and redirect
       if (notification.orderId) {
-        // Store both orderId and type to handle different actions
+        // Store both orderId and notification type
         sessionStorage.setItem('notificationData', JSON.stringify({
           orderId: notification.orderId,
           type: notification.type
         }));
 
-        // Close dropdown and navigate
+        // Close dropdown and navigate to orders page
         setIsOpen(false);
         setLocation('/orders');
       }

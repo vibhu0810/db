@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -30,20 +29,13 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { FileDown, Loader2, ArrowUpDown, MessageSquare, Copy } from "lucide-react";
+import { FileDown, Loader2, MessageSquare } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
-type SortField = "dateOrdered" | "price" | "status";
-
-interface SortConfig {
-  field: SortField;
-  direction: "asc" | "desc";
-}
-
-interface DateRange {
+type DateRange = {
   from?: Date;
   to?: Date;
-}
+};
 
 export default function Orders() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -98,11 +90,9 @@ export default function Orders() {
 
   if (isLoading) {
     return (
-      <DashboardShell>
-        <div className="flex items-center justify-center h-full">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
-        </div>
-      </DashboardShell>
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
     );
   }
 
@@ -151,135 +141,133 @@ export default function Orders() {
   };
 
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
-          <Button onClick={exportToCSV}>
-            <FileDown className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
-        </div>
-
-        <div className="flex flex-wrap gap-4">
-          <Input
-            placeholder="Search orders..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm"
-          />
-          <Select
-            value={statusFilter}
-            onValueChange={setStatusFilter}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="Sent">Sent</SelectItem>
-              <SelectItem value="Completed">Completed</SelectItem>
-              <SelectItem value="Rejected">Rejected</SelectItem>
-              <SelectItem value="Cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-          <DatePickerWithRange
-            date={dateRange}
-            setDate={setDateRange}
-          />
-        </div>
-
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Source URL</TableHead>
-                <TableHead>Target URL</TableHead>
-                <TableHead>Anchor Text</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date Ordered</TableHead>
-                <TableHead>Comments</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>{order.sourceUrl}</TableCell>
-                  <TableCell>{order.targetUrl}</TableCell>
-                  <TableCell>{order.anchorText}</TableCell>
-                  <TableCell>${Number(order.price).toFixed(2)}</TableCell>
-                  <TableCell>{order.status}</TableCell>
-                  <TableCell>
-                    {format(new Date(order.dateOrdered), "MMM d, yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    <Sheet>
-                      <SheetTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedOrderId(order.id)}
-                        >
-                          <MessageSquare className="h-4 w-4" />
-                        </Button>
-                      </SheetTrigger>
-                      <SheetContent>
-                        <SheetHeader>
-                          <SheetTitle>Order Comments</SheetTitle>
-                          <SheetDescription>
-                            View and add comments for this order
-                          </SheetDescription>
-                        </SheetHeader>
-                        <div className="mt-6 space-y-6">
-                          <div className="space-y-4">
-                            {isLoadingComments ? (
-                              <div className="flex justify-center">
-                                <Loader2 className="h-6 w-6 animate-spin" />
-                              </div>
-                            ) : comments.length === 0 ? (
-                              <p className="text-sm text-muted-foreground">No comments yet</p>
-                            ) : (
-                              comments.map((comment) => (
-                                <div
-                                  key={comment.id}
-                                  className="rounded-lg border p-4"
-                                >
-                                  <p className="text-sm text-muted-foreground">
-                                    {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
-                                  </p>
-                                  <p className="mt-1">{comment.message}</p>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                          <div className="space-y-4">
-                            <Textarea
-                              placeholder="Add a comment..."
-                              value={newComment}
-                              onChange={(e) => setNewComment(e.target.value)}
-                            />
-                            <Button
-                              onClick={() => addCommentMutation.mutate()}
-                              disabled={!newComment.trim() || addCommentMutation.isPending}
-                              className="w-full"
-                            >
-                              {addCommentMutation.isPending && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              )}
-                              Add Comment
-                            </Button>
-                          </div>
-                        </div>
-                      </SheetContent>
-                    </Sheet>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
+        <Button onClick={exportToCSV}>
+          <FileDown className="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
       </div>
-    </DashboardShell>
+
+      <div className="flex flex-wrap gap-4">
+        <Input
+          placeholder="Search orders..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-sm"
+        />
+        <Select
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="Sent">Sent</SelectItem>
+            <SelectItem value="Completed">Completed</SelectItem>
+            <SelectItem value="Rejected">Rejected</SelectItem>
+            <SelectItem value="Cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+        <DatePickerWithRange
+          date={dateRange}
+          setDate={setDateRange}
+        />
+      </div>
+
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Source URL</TableHead>
+              <TableHead>Target URL</TableHead>
+              <TableHead>Anchor Text</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Date Ordered</TableHead>
+              <TableHead>Comments</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredOrders.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell>{order.sourceUrl}</TableCell>
+                <TableCell>{order.targetUrl}</TableCell>
+                <TableCell>{order.anchorText}</TableCell>
+                <TableCell>${Number(order.price).toFixed(2)}</TableCell>
+                <TableCell>{order.status}</TableCell>
+                <TableCell>
+                  {format(new Date(order.dateOrdered), "MMM d, yyyy")}
+                </TableCell>
+                <TableCell>
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedOrderId(order.id)}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent>
+                      <SheetHeader>
+                        <SheetTitle>Order Comments</SheetTitle>
+                        <SheetDescription>
+                          View and add comments for this order
+                        </SheetDescription>
+                      </SheetHeader>
+                      <div className="mt-6 space-y-6">
+                        <div className="space-y-4">
+                          {isLoadingComments ? (
+                            <div className="flex justify-center">
+                              <Loader2 className="h-6 w-6 animate-spin" />
+                            </div>
+                          ) : comments.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No comments yet</p>
+                          ) : (
+                            comments.map((comment) => (
+                              <div
+                                key={comment.id}
+                                className="rounded-lg border p-4"
+                              >
+                                <p className="text-sm text-muted-foreground">
+                                  {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                                </p>
+                                <p className="mt-1">{comment.message}</p>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        <div className="space-y-4">
+                          <Textarea
+                            placeholder="Add a comment..."
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                          />
+                          <Button
+                            onClick={() => addCommentMutation.mutate()}
+                            disabled={!newComment.trim() || addCommentMutation.isPending}
+                            className="w-full"
+                          >
+                            {addCommentMutation.isPending && (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            Add Comment
+                          </Button>
+                        </div>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
 }

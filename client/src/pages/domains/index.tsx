@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Domain } from "@shared/schema";
 import {
   Table,
   TableBody,
@@ -37,11 +35,9 @@ export default function DomainsPage() {
 
   if (isLoading) {
     return (
-      <DashboardShell>
-        <div className="flex items-center justify-center h-full">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
-        </div>
-      </DashboardShell>
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
     );
   }
 
@@ -78,126 +74,124 @@ export default function DomainsPage() {
   });
 
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <h2 className="text-3xl font-bold tracking-tight">Domain Inventory</h2>
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold tracking-tight">Domain Inventory</h2>
 
-        <div className="space-y-4">
-          <div className="flex flex-wrap gap-4">
-            <Input
-              placeholder="Search domains..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-sm"
-            />
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="guest_post">Guest Post</SelectItem>
-                <SelectItem value="niche_edit">Niche Edit</SelectItem>
-                <SelectItem value="both">Both</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-4">
+          <Input
+            placeholder="Search domains..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm"
+          />
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="guest_post">Guest Post</SelectItem>
+              <SelectItem value="niche_edit">Niche Edit</SelectItem>
+              <SelectItem value="both">Both</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <Select value={drRange} onValueChange={setDrRange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Domain Rating" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All DR</SelectItem>
-                <SelectItem value="0-30">DR 0-30</SelectItem>
-                <SelectItem value="31-50">DR 31-50</SelectItem>
-                <SelectItem value="51-70">DR 51-70</SelectItem>
-                <SelectItem value="71+">DR 71+</SelectItem>
-              </SelectContent>
-            </Select>
+          <Select value={drRange} onValueChange={setDrRange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Domain Rating" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All DR</SelectItem>
+              <SelectItem value="0-30">DR 0-30</SelectItem>
+              <SelectItem value="31-50">DR 31-50</SelectItem>
+              <SelectItem value="51-70">DR 51-70</SelectItem>
+              <SelectItem value="71+">DR 71+</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <Select value={trafficRange} onValueChange={setTrafficRange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Traffic" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Traffic</SelectItem>
-                <SelectItem value="0-5k">0-5K</SelectItem>
-                <SelectItem value="5k-20k">5K-20K</SelectItem>
-                <SelectItem value="20k-50k">20K-50K</SelectItem>
-                <SelectItem value="50k+">50K+</SelectItem>
-              </SelectContent>
-            </Select>
+          <Select value={trafficRange} onValueChange={setTrafficRange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Traffic" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Traffic</SelectItem>
+              <SelectItem value="0-5k">0-5K</SelectItem>
+              <SelectItem value="5k-20k">5K-20K</SelectItem>
+              <SelectItem value="20k-50k">20K-50K</SelectItem>
+              <SelectItem value="50k+">50K+</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <Select value={priceRange} onValueChange={setPriceRange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Price Range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Prices</SelectItem>
-                <SelectItem value="0-100">$0-$100</SelectItem>
-                <SelectItem value="101-300">$101-$300</SelectItem>
-                <SelectItem value="301-500">$301-$500</SelectItem>
-                <SelectItem value="501+">$501+</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Website</TableHead>
-                <TableHead>DR</TableHead>
-                <TableHead>Traffic</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Guest Post Price</TableHead>
-                <TableHead>Niche Edit Price</TableHead>
-                <TableHead>Guidelines</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDomains.map((domain) => (
-                <TableRow key={domain.id}>
-                  <TableCell>
-                    <a
-                      href={`https://${domain.websiteUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-primary hover:underline"
-                    >
-                      {domain.websiteUrl}
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </TableCell>
-                  <TableCell>{domain.domainRating}</TableCell>
-                  <TableCell>{Number(domain.websiteTraffic).toLocaleString()}</TableCell>
-                  <TableCell>
-                    {domain.type === "both"
-                      ? "Guest Post & Niche Edit"
-                      : domain.type === "guest_post"
-                        ? "Guest Post"
-                        : "Niche Edit"}
-                  </TableCell>
-                  <TableCell>
-                    {domain.guestPostPrice ? `$${domain.guestPostPrice}` : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : '-'}
-                  </TableCell>
-                  <TableCell>{domain.guidelines}</TableCell>
-                  <TableCell>
-                    <Link href={`/orders/new?domain=${domain.websiteUrl}`}>
-                      <Button size="sm">Place Order</Button>
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <Select value={priceRange} onValueChange={setPriceRange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Price Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Prices</SelectItem>
+              <SelectItem value="0-100">$0-$100</SelectItem>
+              <SelectItem value="101-300">$101-$300</SelectItem>
+              <SelectItem value="301-500">$301-$500</SelectItem>
+              <SelectItem value="501+">$501+</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
-    </DashboardShell>
+
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Website</TableHead>
+              <TableHead>DR</TableHead>
+              <TableHead>Traffic</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Guest Post Price</TableHead>
+              <TableHead>Niche Edit Price</TableHead>
+              <TableHead>Guidelines</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredDomains.map((domain) => (
+              <TableRow key={domain.id}>
+                <TableCell>
+                  <a
+                    href={`https://${domain.websiteUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-primary hover:underline"
+                  >
+                    {domain.websiteUrl}
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </TableCell>
+                <TableCell>{domain.domainRating}</TableCell>
+                <TableCell>{Number(domain.websiteTraffic).toLocaleString()}</TableCell>
+                <TableCell>
+                  {domain.type === "both"
+                    ? "Guest Post & Niche Edit"
+                    : domain.type === "guest_post"
+                      ? "Guest Post"
+                      : "Niche Edit"}
+                </TableCell>
+                <TableCell>
+                  {domain.guestPostPrice ? `$${domain.guestPostPrice}` : '-'}
+                </TableCell>
+                <TableCell>
+                  {domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : '-'}
+                </TableCell>
+                <TableCell>{domain.guidelines}</TableCell>
+                <TableCell>
+                  <Link href={`/orders/new?domain=${domain.websiteUrl}`}>
+                    <Button size="sm">Place Order</Button>
+                  </Link>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
 }

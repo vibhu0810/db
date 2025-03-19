@@ -19,20 +19,22 @@ function App() {
         <div className="min-h-screen bg-background">
           <Switch>
             <Route path="/auth" component={AuthPage} />
-            <ProtectedRoute path="/">
-              <DashboardShell>
-                <Switch>
-                  <Route path="/domains" component={DomainsPage} />
-                  <Route path="/orders/new" component={NewOrderPage} />
-                  <Route path="/orders" component={OrdersPage} />
-                  <Route path="/profile" component={ProfilePage} />
-                  <Route path="/" component={Dashboard} />
-                </Switch>
-              </DashboardShell>
-            </ProtectedRoute>
+            <Route path="/">
+              <ProtectedRoute>
+                <DashboardShell>
+                  <Switch>
+                    <Route path="/domains" component={DomainsPage} />
+                    <Route path="/orders/new" component={NewOrderPage} />
+                    <Route path="/orders" component={OrdersPage} />
+                    <Route path="/profile" component={ProfilePage} />
+                    <Route path="/" component={Dashboard} />
+                  </Switch>
+                </DashboardShell>
+              </ProtectedRoute>
+            </Route>
           </Switch>
+          <Toaster />
         </div>
-        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );

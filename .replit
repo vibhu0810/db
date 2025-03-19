@@ -7,7 +7,7 @@ channel = "stable-24_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["sh", "-c", "NODE_ENV=production node dist/index.js"]
+run = ["sh", "-c", "UPLOADTHING_SECRET=$UPLOADTHING_SECRET NODE_ENV=production node dist/index.js"]
 build = ["sh", "-c", "npm run build && npx drizzle-kit push:pg"]
 
 [[ports]]

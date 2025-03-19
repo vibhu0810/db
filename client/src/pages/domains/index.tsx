@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Loader2, ExternalLink } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function DomainsPage() {
   console.log('Domains component mounting...'); // Debug log
@@ -40,6 +41,8 @@ export default function DomainsPage() {
       });
     },
   });
+
+  const { isAdmin } = useAuth();
 
   if (isLoading) {
     return (
@@ -157,7 +160,7 @@ export default function DomainsPage() {
               <TableHead>Guest Post Price</TableHead>
               <TableHead>Niche Edit Price</TableHead>
               <TableHead>Guidelines</TableHead>
-              <TableHead>Actions</TableHead>
+              {!isAdmin && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -190,11 +193,13 @@ export default function DomainsPage() {
                   {domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : '-'}
                 </TableCell>
                 <TableCell>{domain.guidelines}</TableCell>
-                <TableCell>
-                  <Link href={`/orders/new?domain=${domain.websiteUrl}`}>
-                    <Button size="sm">Place Order</Button>
-                  </Link>
-                </TableCell>
+                {!isAdmin && (
+                  <TableCell>
+                    <Link href={`/orders/new?domain=${domain.websiteUrl}`}>
+                      <Button size="sm">Place Order</Button>
+                    </Link>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

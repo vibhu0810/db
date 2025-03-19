@@ -15,6 +15,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  isAdmin: boolean;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -26,6 +27,7 @@ const defaultContext: AuthContextType = {
   loginMutation: {} as UseMutationResult<SelectUser, Error, LoginData>,
   logoutMutation: {} as UseMutationResult<void, Error, void>,
   registerMutation: {} as UseMutationResult<SelectUser, Error, InsertUser>,
+  isAdmin: false,
 };
 
 const AuthContext = createContext<AuthContextType>(defaultContext);
@@ -92,6 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const isAdmin = user?.is_admin ?? false;
+
   return (
     <AuthContext.Provider
       value={{
@@ -101,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        isAdmin,
       }}
     >
       {children}

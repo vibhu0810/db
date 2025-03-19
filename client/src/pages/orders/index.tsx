@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { FileDown, Loader2, MessageSquare } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { useAuth } from "@/hooks/use-auth";
 
 type DateRange = {
   from?: Date;
@@ -38,8 +39,7 @@ type DateRange = {
 };
 
 export default function Orders() {
-  console.log('Orders component mounting...'); // Debug log
-
+  const { isAdmin, user } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRange>({});
@@ -50,11 +50,8 @@ export default function Orders() {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['/api/orders'],
     queryFn: () => {
-      console.log('Fetching orders...'); // Debug log
-      return apiRequest("GET", "/api/orders").then(res => {
-        console.log('Orders response:', res); // Debug log
-        return res.json();
-      });
+      const endpoint = isAdmin ? '/api/orders/all' : '/api/orders';
+      return apiRequest("GET", endpoint).then(res => res.json());
     },
   });
 
@@ -85,6 +82,31 @@ export default function Orders() {
       toast({
         title: "Comment added",
         description: "Your comment has been added successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
+      const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update order status");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "Status updated",
+        description: "Order status has been updated successfully.",
       });
     },
     onError: (error: Error) => {
@@ -190,6 +212,7 @@ export default function Orders() {
         <Table>
           <TableHeader>
             <TableRow>
+              {isAdmin && <TableHead>User</TableHead>}
               <TableHead>Source URL</TableHead>
               <TableHead>Target URL</TableHead>
               <TableHead>Anchor Text</TableHead>
@@ -202,11 +225,40 @@ export default function Orders() {
           <TableBody>
             {filteredOrders.map((order) => (
               <TableRow key={order.id}>
+                {isAdmin && (
+                  <TableCell>
+                    {order.user?.companyName || order.user?.username}
+                  </TableCell>
+                )}
                 <TableCell>{order.sourceUrl}</TableCell>
                 <TableCell>{order.targetUrl}</TableCell>
                 <TableCell>{order.anchorText}</TableCell>
                 <TableCell>${Number(order.price).toFixed(2)}</TableCell>
-                <TableCell>{order.status}</TableCell>
+                <TableCell>
+                  {isAdmin ? (
+                    <Select
+                      value={order.status}
+                      onValueChange={(newStatus) =>
+                        updateOrderStatusMutation.mutate({
+                          orderId: order.id,
+                          status: newStatus,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sent">Sent</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                        <SelectItem value="Rejected">Rejected</SelectItem>
+                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    order.status
+                  )}
+                </TableCell>
                 <TableCell>
                   {format(new Date(order.dateOrdered), "MMM d, yyyy")}
                 </TableCell>
@@ -242,10 +294,16 @@ export default function Orders() {
                                 key={comment.id}
                                 className="rounded-lg border p-4"
                               >
-                                <p className="text-sm text-muted-foreground">
-                                  {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
-                                </p>
-                                <p className="mt-1">{comment.message}</p>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium">
+                                    {comment.user?.companyName || comment.user?.username}
+                                    {comment.user?.is_admin && " (Admin)"}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                                  </p>
+                                </div>
+                                <p className="mt-2">{comment.message}</p>
                               </div>
                             ))
                           )}

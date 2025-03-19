@@ -128,9 +128,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       console.log("Fetching orders for user:", req.user.id);
+
       const orders = await storage.getOrders(req.user.id);
-      console.log("Retrieved orders:", orders);
-      res.json(orders);
+
+      // Add unread comments count for each order
+      const ordersWithUnreadCounts = await Promise.all(orders.map(async (order) => {
+        const unreadComments = await storage.getUnreadCommentCount(order.id, req.user.id);
+        return {
+          ...order,
+          unreadComments
+        };
+      }));
+
+      console.log("Retrieved orders with unread counts:", ordersWithUnreadCounts);
+      res.json(ordersWithUnreadCounts);
     } catch (error) {
       console.error("Error fetching orders:", error);
       res.status(500).json({ error: "Failed to fetch orders" });
@@ -305,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add this route for admin to get all orders with user details
+  // Update the GET /api/orders/all route for admin similarly
   app.get("/api/orders/all", async (req, res) => {
     try {
       if (!req.user?.is_admin) {
@@ -315,18 +326,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orders = await storage.getAllOrders();
       const users = await storage.getUsers();
 
-      // Join orders with user data
-      const ordersWithUserDetails = orders.map(order => {
+      // Join orders with user data and add unread counts
+      const ordersWithUserDetails = await Promise.all(orders.map(async (order) => {
         const user = users.find(u => u.id === order.userId);
+        const unreadComments = await storage.getUnreadCommentCount(order.id, req.user!.id);
         return {
           ...order,
+          unreadComments,
           user: user ? {
             username: user.username,
             companyName: user.companyName,
             email: user.email
           } : null
         };
-      });
+      }));
 
       res.json(ordersWithUserDetails);
     } catch (error) {
@@ -356,6 +369,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error marking notification as read:", error);
       res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  // Add an endpoint to mark comments as read when opening the comments sheet
+  app.post("/api/orders/:orderId/comments/read", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const orderId = parseInt(req.params.orderId);
+      await storage.markCommentsAsRead(orderId, req.user.id);
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error marking comments as read:", error);
+      res.status(500).json({ error: "Failed to mark comments as read" });
     }
   });
 

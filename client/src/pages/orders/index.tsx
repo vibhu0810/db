@@ -549,6 +549,11 @@ export default function Orders() {
                       >
                         <MessageSquare className="h-4 w-4" />
                         Comments
+                        {order.unreadComments > 0 && (
+                          <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
+                            {order.unreadComments}
+                          </span>
+                        )}
                       </Button>
                     </SheetTrigger>
                     <SheetContent>

@@ -1,4 +1,4 @@
-import { users, orders, domains, orderComments, notifications } from "@shared/schema";
+import { users, orders, orderComments, notifications } from "@shared/schema";
 import type { User, InsertUser, Domain, InsertDomain, Order, OrderComment, InsertOrderComment, Notification, InsertNotification } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -33,6 +33,8 @@ export interface IStorage {
   // Comment operations
   getOrderComments(orderId: number): Promise<OrderComment[]>;
   createOrderComment(comment: InsertOrderComment): Promise<OrderComment>;
+  getUnreadCommentCount(orderId: number, userId: number): Promise<number>;
+  markCommentsAsRead(orderId: number, userId: number): Promise<void>;
 
   // Notification operations
   createNotification(notification: InsertNotification): Promise<Notification>;
@@ -169,6 +171,50 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating comment:', error);
       throw new Error('Failed to create comment');
+    }
+  }
+
+  async getUnreadCommentCount(orderId: number, userId: number): Promise<number> {
+    try {
+      const comments = await db
+        .select()
+        .from(orderComments)
+        .where(eq(orderComments.orderId, orderId));
+
+      // For admin, count unread comments from users
+      // For users, count unread comments from admin
+      const unreadComments = comments.filter(comment => {
+        const isAdminComment = comment.isFromAdmin;
+        const isUser = !comment.isFromAdmin;
+        return (isAdminComment && !comment.readByUser) || (isUser && !comment.readByAdmin);
+      });
+
+      return unreadComments.length;
+    } catch (error) {
+      console.error('Error getting unread comment count:', error);
+      return 0;
+    }
+  }
+
+  async markCommentsAsRead(orderId: number, userId: number): Promise<void> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user) return;
+
+      // Update read status based on user role
+      if (user.is_admin) {
+        await db
+          .update(orderComments)
+          .set({ readByAdmin: true })
+          .where(eq(orderComments.orderId, orderId));
+      } else {
+        await db
+          .update(orderComments)
+          .set({ readByUser: true })
+          .where(eq(orderComments.orderId, orderId));
+      }
+    } catch (error) {
+      console.error('Error marking comments as read:', error);
     }
   }
 

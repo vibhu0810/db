@@ -207,22 +207,24 @@ export default function DomainsPage() {
             {filteredDomains.map((domain: Domain) => (
               <TableRow key={domain.id}>
                 <TableCell className="max-w-[200px]">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center space-x-2">
                     <a
                       href={`https://${domain.websiteUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-primary hover:underline"
+                      className="flex items-center gap-1 text-primary hover:underline truncate"
                     >
                       {domain.websiteUrl}
-                      <ExternalLink className="h-4 w-4" />
+                      <ExternalLink className="h-4 w-4 shrink-0" />
                     </a>
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() => copyToClipboard(domain.websiteUrl)}
+                      className="shrink-0"
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
                     </Button>
                   </div>
                 </TableCell>

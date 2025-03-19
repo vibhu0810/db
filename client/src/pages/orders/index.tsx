@@ -311,39 +311,45 @@ export default function Orders() {
                     {order.user?.companyName || order.user?.username}
                   </TableCell>
                 )}
-                <TableCell className="max-w-[200px] truncate">
-                  <div className="flex items-center gap-2">
-                    <span>{order.sourceUrl}</span>
+                <TableCell className="max-w-[200px]">
+                  <div className="flex items-center space-x-2">
+                    <span className="truncate">{order.sourceUrl}</span>
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() => copyToClipboard(order.sourceUrl)}
+                      className="shrink-0"
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
                     </Button>
                   </div>
                 </TableCell>
-                <TableCell className="max-w-[200px] truncate">
-                  <div className="flex items-center gap-2">
-                    <span>{order.targetUrl}</span>
+                <TableCell className="max-w-[200px]">
+                  <div className="flex items-center space-x-2">
+                    <span className="truncate">{order.targetUrl}</span>
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() => copyToClipboard(order.targetUrl)}
+                      className="shrink-0"
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
                     </Button>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center space-x-2">
                     <span>{order.anchorText}</span>
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() => copyToClipboard(order.anchorText)}
+                      className="shrink-0"
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
                     </Button>
                   </div>
                 </TableCell>

@@ -5,6 +5,8 @@ import {
   ShoppingCart,
   Globe,
   BarChart3,
+  FileText,
+  MessageSquare,
   Settings,
 } from "lucide-react";
 
@@ -13,6 +15,9 @@ const navigation = [
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Invoice", href: "/invoice", icon: FileText },
+  { name: "Chat", href: "/chat", icon: MessageSquare },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {

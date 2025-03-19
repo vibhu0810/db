@@ -51,10 +51,18 @@ export const domains = pgTable("domains", {
   domainRating: decimal("domain_rating"),
   websiteTraffic: integer("website_traffic"),
   niche: text("niche").notNull(),
-  type: text("type").notNull(), // guest_post or niche_edit
-  price: decimal("price").notNull(),
-  availableSlots: integer("available_slots").notNull(),
+  type: text("type").notNull(), // guest_post, niche_edit, or both
+  guestPostPrice: decimal("guest_post_price"),
+  nicheEditPrice: decimal("niche_edit_price"),
+  guidelines: text("guidelines"),
 });
+
+// Create insert schema for domains
+export const insertDomainSchema = createInsertSchema(domains).omit({ id: true });
+
+// Types
+export type InsertDomain = z.infer<typeof insertDomainSchema>;
+export type Domain = typeof domains.$inferSelect;
 
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
@@ -84,7 +92,6 @@ export const insertOrderSchema = createInsertSchema(orders)
     linkUrl: z.string().optional(),
   });
 
-export const insertDomainSchema = createInsertSchema(domains).omit({ id: true });
 
 export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true });
 
@@ -92,11 +99,9 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 
 // Types
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
-export type InsertDomain = z.infer<typeof insertDomainSchema>;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type Order = typeof orders.$inferSelect;
-export type Domain = typeof domains.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;

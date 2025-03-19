@@ -43,7 +43,7 @@ export class MemStorage implements IStorage {
     this.domains = new Map();
     this.currentIds = {
       users: 2, 
-      domains: 2, 
+      domains: 3, // Updated to reflect the addition of a new domain
     };
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, 
@@ -76,10 +76,27 @@ export class MemStorage implements IStorage {
       websiteTraffic: 34200,
       niche: "Marketing",
       type: "niche_edit",
-      price: 300,
-      availableSlots: 5
+      nicheEditPrice: 300,
+      guestPostPrice: null,
+      guidelines: "Branded anchor text is not allowed."
     };
+
+    const powrBlog: Domain = {
+      id: 2,
+      websiteName: "POWR Blog",
+      websiteUrl: "blog.powr.io",
+      domainAuthority: 55,
+      domainRating: 89,
+      websiteTraffic: 18300,
+      niche: "Technology",
+      type: "both",
+      guestPostPrice: 500,
+      nicheEditPrice: 230,
+      guidelines: "Linking domain must be DR 50+"
+    };
+
     this.domains.set(engagebay.id, engagebay);
+    this.domains.set(powrBlog.id, powrBlog);
   }
 
   // User operations

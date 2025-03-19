@@ -31,7 +31,7 @@ export default function DomainsPage() {
   });
 
   const filteredDomains = domains.filter((domain) => {
-    const matchesType = typeFilter === "all" || domain.type === typeFilter;
+    const matchesType = typeFilter === "all" || domain.type === typeFilter || domain.type === "both";
     const matchesSearch = !searchQuery ||
       domain.websiteUrl.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesType && matchesSearch;
@@ -67,6 +67,7 @@ export default function DomainsPage() {
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="guest_post">Guest Post</SelectItem>
               <SelectItem value="niche_edit">Niche Edit</SelectItem>
+              <SelectItem value="both">Both</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -80,7 +81,9 @@ export default function DomainsPage() {
                 <TableHead>DR</TableHead>
                 <TableHead>Traffic</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Price</TableHead>
+                <TableHead>Guest Post Price</TableHead>
+                <TableHead>Niche Edit Price</TableHead>
+                <TableHead>Guidelines</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -91,8 +94,20 @@ export default function DomainsPage() {
                   <TableCell>{domain.domainAuthority}</TableCell>
                   <TableCell>{domain.domainRating}</TableCell>
                   <TableCell>{domain.websiteTraffic?.toLocaleString()}</TableCell>
-                  <TableCell>{domain.type === "guest_post" ? "Guest Post" : "Niche Edit"}</TableCell>
-                  <TableCell>${domain.price}</TableCell>
+                  <TableCell>
+                    {domain.type === "both" 
+                      ? "Guest Post & Niche Edit" 
+                      : domain.type === "guest_post" 
+                        ? "Guest Post" 
+                        : "Niche Edit"}
+                  </TableCell>
+                  <TableCell>
+                    {domain.guestPostPrice ? `$${domain.guestPostPrice}` : '-'}
+                  </TableCell>
+                  <TableCell>
+                    {domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : '-'}
+                  </TableCell>
+                  <TableCell>{domain.guidelines}</TableCell>
                   <TableCell>
                     <Link href={`/orders/new?domain=${domain.id}`}>
                       <Button size="sm" asChild>

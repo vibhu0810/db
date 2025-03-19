@@ -1,5 +1,5 @@
 import { db } from "../server/db";
-import { users, domains, orders } from "@shared/schema";
+import { users } from "@shared/schema";
 import { hashPassword } from "../server/auth";
 
 export const testUsers = [

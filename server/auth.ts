@@ -22,10 +22,31 @@ export async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  try {
+    console.log('Comparing passwords');
+    console.log('Stored password hash:', stored);
+
+    const [hashed, salt] = stored.split(".");
+    console.log('Split hash and salt:', { hashed: hashed?.length, salt: salt?.length });
+
+    if (!hashed || !salt) {
+      console.log('Invalid stored password format');
+      return false;
+    }
+
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+
+    console.log('Buffer lengths:', { 
+      hashedBuf: hashedBuf.length,
+      suppliedBuf: suppliedBuf.length 
+    });
+
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('Error in comparePasswords:', error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {
@@ -97,7 +118,10 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Username already exists" });
       }
 
+      console.log('Creating new user with username:', req.body.username);
       const hashedPassword = await hashPassword(req.body.password);
+      console.log('Generated password hash:', hashedPassword);
+
       const user = await storage.createUser({
         ...req.body,
         password: hashedPassword,
@@ -113,13 +137,22 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
+    console.log('Login attempt:', req.body.username);
     passport.authenticate("local", (err, user, info) => {
-      if (err) return next(err);
+      if (err) {
+        console.error('Authentication error:', err);
+        return next(err);
+      }
       if (!user) {
+        console.log('Authentication failed:', info?.message);
         return res.status(401).json({ error: info?.message || "Authentication failed" });
       }
       req.login(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error('Login error:', err);
+          return next(err);
+        }
+        console.log('Login successful for user:', user.username);
         res.json(user);
       });
     })(req, res, next);

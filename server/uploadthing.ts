@@ -25,7 +25,12 @@ if (!process.env.UPLOADTHING_SECRET) {
 console.log("Initializing UploadThing with configuration...");
 
 export const uploadRouter = {
-  profileImage: f({ image: { maxFileSize: "4MB" } })
+  messageAttachment: f({
+    image: { maxFileSize: "4MB" },
+    video: { maxFileSize: "32MB" },
+    pdf: { maxFileSize: "8MB" },
+    text: { maxFileSize: "1MB" },
+  })
     .middleware(async ({ req }) => {
       // Check if user is authenticated
       const user = req.user;

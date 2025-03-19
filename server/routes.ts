@@ -5,12 +5,12 @@ import { uploadRouter } from "./uploadthing";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSEOJoke } from "./openai";
-import { insertDomainSchema, insertOrderSchema } from "@shared/schema";
+import { insertDomainSchema, insertOrderSchema, insertMessageSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
-  // Add uploadthing route
+  // Add uploadthing route for file uploads
   console.log("Setting up UploadThing Express handler...");
   const { createUploadthingExpressHandler } = await import("uploadthing/express");
   app.use("/api/uploadthing", async (req, res, next) => {
@@ -23,6 +23,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in upload handler:", error);
       res.status(500).json({ error: "Upload failed" });
+    }
+  });
+
+  // Add users route for chat
+  app.get("/api/users", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const users = await storage.getUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Add messages routes
+  app.get("/api/messages/:userId", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const otherUserId = parseInt(req.params.userId);
+      const messages = await storage.getMessages(req.user.id, otherUserId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/messages", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const messageData = insertMessageSchema.parse({
+        ...req.body,
+        senderId: req.user.id,
+      });
+
+      const message = await storage.createMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error creating message:", error);
+      res.status(500).json({ error: "Failed to create message" });
     }
   });
 

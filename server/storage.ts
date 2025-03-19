@@ -1,7 +1,12 @@
-import { users, orders, orderComments, notifications } from "@shared/schema";
-import type { User, InsertUser, Domain, InsertDomain, Order, OrderComment, InsertOrderComment, Notification, InsertNotification } from "@shared/schema";
+import { users, orders, orderComments, notifications, messages } from "@shared/schema";
+import type {
+  User, InsertUser, Domain, InsertDomain,
+  Order, OrderComment, InsertOrderComment,
+  Notification, InsertNotification,
+  Message, InsertMessage
+} from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, or, and, desc } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
@@ -42,6 +47,10 @@ export interface IStorage {
   getNotifications(userId: number): Promise<Notification[]>;
   markNotificationAsRead(id: number): Promise<Notification>;
   markAllNotificationsAsRead(userId: number): Promise<void>;
+
+  // Message operations
+  getMessages(userId1: number, userId2: number): Promise<Message[]>;
+  createMessage(message: InsertMessage): Promise<Message>;
 
   // Session store
   sessionStore: session.Store;
@@ -272,6 +281,37 @@ export class DatabaseStorage implements IStorage {
       console.error('Error marking all notifications as read:', error);
       throw new Error('Failed to mark all notifications as read');
     }
+  }
+
+  // Message methods
+  async getMessages(userId1: number, userId2: number): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .where(
+        or(
+          and(
+            eq(messages.senderId, userId1),
+            eq(messages.receiverId, userId2)
+          ),
+          and(
+            eq(messages.senderId, userId2),
+            eq(messages.receiverId, userId1)
+          )
+        )
+      )
+      .orderBy(messages.createdAt);
+  }
+
+  async createMessage(messageData: InsertMessage): Promise<Message> {
+    const [message] = await db
+      .insert(messages)
+      .values({
+        ...messageData,
+        createdAt: new Date(),
+      })
+      .returning();
+    return message;
   }
 }
 

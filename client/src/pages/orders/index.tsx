@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Order, OrderComment } from "@shared/schema";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Table,
   TableBody,
@@ -30,10 +29,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { FileDown, Loader2, ArrowUpDown, MessageSquare, Copy } from "lucide-react";
-import { Resizable } from "react-resizable";
-import "react-resizable/css/styles.css";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 type SortField = "dateOrdered" | "price" | "status";
@@ -51,26 +48,17 @@ interface DateRange {
 export default function Orders() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: undefined,
-    to: undefined,
-  });
-  const [sortConfig, setSortConfig] = useState<SortConfig>({
-    field: "dateOrdered",
-    direction: "desc",
-  });
+  const [dateRange, setDateRange] = useState<DateRange>({});
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [newComment, setNewComment] = useState<string>("");
-  const [sourceUrlWidth, setSourceUrlWidth] = useState(300);
-  const [targetUrlWidth, setTargetUrlWidth] = useState(300);
-  const [anchorTextWidth, setAnchorTextWidth] = useState(200);
   const { toast } = useToast();
 
-  const { data: orders = [], isLoading } = useQuery<Order[]>({
-    queryKey: ['/api/orders']
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ['/api/orders'],
+    queryFn: () => apiRequest("GET", "/api/orders").then(res => res.json()),
   });
 
-  const { data: comments = [], isLoading: isLoadingComments } = useQuery<OrderComment[]>({
+  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
     queryKey: ['/api/orders', selectedOrderId, 'comments'],
     queryFn: () => apiRequest("GET", `/api/orders/${selectedOrderId}/comments`).then(res => res.json()),
     enabled: selectedOrderId !== null,
@@ -108,57 +96,30 @@ export default function Orders() {
     },
   });
 
-  const handleSort = (field: SortField) => {
-    setSortConfig(current => ({
-      field,
-      direction: current.field === field && current.direction === "asc" ? "desc" : "asc",
-    }));
-  };
+  if (isLoading) {
+    return (
+      <DashboardShell>
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin text-border" />
+        </div>
+      </DashboardShell>
+    );
+  }
 
-  const handleResize = (column: string, { size }: { size: { width: number } }) => {
-    const width = Math.max(200, Math.min(600, size.width));
-    switch (column) {
-      case 'sourceUrl':
-        setSourceUrlWidth(width);
-        break;
-      case 'targetUrl':
-        setTargetUrlWidth(width);
-        break;
-      case 'anchorText':
-        setAnchorTextWidth(width);
-        break;
-    }
-  };
+  const filteredOrders = orders.filter((order) => {
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    const matchesSearch =
+      !searchQuery ||
+      order.sourceUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.targetUrl.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const filteredAndSortedOrders = orders
-    .filter((order) => {
-      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-      const matchesSearch =
-        !searchQuery ||
-        order.sourceUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.targetUrl.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDateRange = !dateRange.from || !dateRange.to || (
+      new Date(order.dateOrdered) >= dateRange.from &&
+      new Date(order.dateOrdered) <= dateRange.to
+    );
 
-      const matchesDateRange = !dateRange.from || !dateRange.to || (
-        new Date(order.dateOrdered) >= dateRange.from &&
-        new Date(order.dateOrdered) <= dateRange.to
-      );
-
-      return matchesStatus && matchesSearch && matchesDateRange;
-    })
-    .sort((a, b) => {
-      const direction = sortConfig.direction === "asc" ? 1 : -1;
-
-      switch (sortConfig.field) {
-        case "dateOrdered":
-          return (new Date(a.dateOrdered).getTime() - new Date(b.dateOrdered).getTime()) * direction;
-        case "price":
-          return (Number(a.price) - Number(b.price)) * direction;
-        case "status":
-          return a.status.localeCompare(b.status) * direction;
-        default:
-          return 0;
-      }
-    });
+    return matchesStatus && matchesSearch && matchesDateRange;
+  });
 
   const exportToCSV = () => {
     const headers = [
@@ -170,7 +131,7 @@ export default function Orders() {
       "Date Ordered",
     ].join(",");
 
-    const rows = filteredAndSortedOrders.map((order) => [
+    const rows = filteredOrders.map((order) => [
       order.sourceUrl,
       order.targetUrl,
       order.anchorText,
@@ -188,25 +149,6 @@ export default function Orders() {
     a.click();
     window.URL.revokeObjectURL(url);
   };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      toast({
-        title: "Copied to clipboard",
-        description: "The content has been copied to your clipboard.",
-      });
-    });
-  };
-
-  if (isLoading) {
-    return (
-      <DashboardShell>
-        <div className="flex items-center justify-center h-full">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
-        </div>
-      </DashboardShell>
-    );
-  }
 
   return (
     <DashboardShell>
@@ -247,121 +189,25 @@ export default function Orders() {
           />
         </div>
 
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="relative">
-                  <Resizable
-                    width={sourceUrlWidth}
-                    height={40}
-                    onResize={(e, data) => handleResize('sourceUrl', data)}
-                    handle={<div className="react-resizable-handle" />}
-                  >
-                    <div style={{ width: sourceUrlWidth }} className="pr-4">Source URL</div>
-                  </Resizable>
-                </TableHead>
-                <TableHead className="relative">
-                  <Resizable
-                    width={targetUrlWidth}
-                    height={40}
-                    onResize={(e, data) => handleResize('targetUrl', data)}
-                    handle={<div className="react-resizable-handle" />}
-                  >
-                    <div style={{ width: targetUrlWidth }} className="pr-4">Target URL</div>
-                  </Resizable>
-                </TableHead>
-                <TableHead className="relative">
-                  <Resizable
-                    width={anchorTextWidth}
-                    height={40}
-                    onResize={(e, data) => handleResize('anchorText', data)}
-                    handle={<div className="react-resizable-handle" />}
-                  >
-                    <div style={{ width: anchorTextWidth }} className="pr-4">Anchor Text</div>
-                  </Resizable>
-                </TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Text Edit/Article</TableHead>
-                <TableHead>
-                  <Button variant="ghost" onClick={() => handleSort("price")}>
-                    Price
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button variant="ghost" onClick={() => handleSort("status")}>
-                    Status
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button variant="ghost" onClick={() => handleSort("dateOrdered")}>
-                    Date Ordered
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </TableHead>
+                <TableHead>Source URL</TableHead>
+                <TableHead>Target URL</TableHead>
+                <TableHead>Anchor Text</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date Ordered</TableHead>
                 <TableHead>Comments</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSortedOrders.map((order) => (
+              {filteredOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell style={{ width: sourceUrlWidth, maxWidth: sourceUrlWidth }} className="truncate">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate">{order.sourceUrl}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => copyToClipboard(order.sourceUrl)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell style={{ width: targetUrlWidth, maxWidth: targetUrlWidth }} className="truncate">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate">{order.targetUrl}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => copyToClipboard(order.targetUrl)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell style={{ width: anchorTextWidth, maxWidth: anchorTextWidth }} className="truncate">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate">{order.anchorText}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => copyToClipboard(order.anchorText)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>{order.type === "guest_post" ? "Guest Post" : "Niche Edit"}</TableCell>
-                  <TableCell className="truncate">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate">
-                        {order.contentUrl || (order.type === "guest_post" ? order.content : order.textEdit)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => copyToClipboard(order.contentUrl || (order.type === "guest_post" ? order.content : order.textEdit) || '')}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  <TableCell>{order.sourceUrl}</TableCell>
+                  <TableCell>{order.targetUrl}</TableCell>
+                  <TableCell>{order.anchorText}</TableCell>
                   <TableCell>${Number(order.price).toFixed(2)}</TableCell>
                   <TableCell>{order.status}</TableCell>
                   <TableCell>
@@ -400,16 +246,7 @@ export default function Orders() {
                                   className="rounded-lg border p-4"
                                 >
                                   <p className="text-sm text-muted-foreground">
-                                    {(() => {
-                                      try {
-                                        if (!comment.createdAt) return 'Just now';
-                                        const date = parseISO(comment.createdAt);
-                                        return format(date, "MMM d, yyyy h:mm a");
-                                      } catch (error) {
-                                        console.error('Date parsing error:', error);
-                                        return 'Just now';
-                                      }
-                                    })()}
+                                    {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
                                   </p>
                                   <p className="mt-1">{comment.message}</p>
                                 </div>

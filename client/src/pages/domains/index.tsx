@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Domain } from "@shared/schema";
 import {
   Table,
@@ -20,14 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Loader2, ExternalLink, ArrowUpDown } from "lucide-react";
-import { Resizable } from "react-resizable";
-import "react-resizable/css/styles.css";
-
-type SortConfig = {
-  column: keyof Domain | null;
-  direction: 'asc' | 'desc';
-};
+import { Loader2, ExternalLink } from "lucide-react";
 
 export default function DomainsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,83 +29,11 @@ export default function DomainsPage() {
   const [drRange, setDrRange] = useState("all");
   const [trafficRange, setTrafficRange] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
-  const [guidelinesWidth, setGuidelinesWidth] = useState(300);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({
-    column: null,
-    direction: 'asc'
+
+  const { data: domains = [], isLoading } = useQuery({
+    queryKey: ['/api/domains'],
+    queryFn: () => apiRequest("GET", "/api/domains").then(res => res.json()),
   });
-
-  const { data: domains = [], isLoading } = useQuery<Domain[]>({
-    queryKey: ['/api/domains']
-  });
-
-  const handleSort = (column: keyof Domain) => {
-    setSortConfig(current => ({
-      column,
-      direction: current.column === column && current.direction === 'asc' ? 'desc' : 'asc'
-    }));
-  };
-
-  const handleGuidelinesResize = (event: any, { size }: { size: { width: number } }) => {
-    const newWidth = Math.max(200, Math.min(600, size.width));
-    setGuidelinesWidth(newWidth);
-  };
-
-  const filteredAndSortedDomains = domains
-    .filter((domain) => {
-      const matchesType = typeFilter === "all" || domain.type === typeFilter || domain.type === "both";
-      const matchesSearch = !searchQuery ||
-        domain.websiteUrl.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesDR = drRange === "all" ||
-        (drRange === "0-30" && domain.domainRating <= 30) ||
-        (drRange === "31-50" && domain.domainRating > 30 && domain.domainRating <= 50) ||
-        (drRange === "51-70" && domain.domainRating > 50 && domain.domainRating <= 70) ||
-        (drRange === "71+" && domain.domainRating > 70);
-
-      const matchesTraffic = trafficRange === "all" ||
-        (trafficRange === "0-5k" && domain.websiteTraffic <= 5000) ||
-        (trafficRange === "5k-20k" && domain.websiteTraffic > 5000 && domain.websiteTraffic <= 20000) ||
-        (trafficRange === "20k-50k" && domain.websiteTraffic > 20000 && domain.websiteTraffic <= 50000) ||
-        (trafficRange === "50k+" && domain.websiteTraffic > 50000);
-
-      const lowestPrice = Math.min(
-        domain.guestPostPrice || Infinity,
-        domain.nicheEditPrice || Infinity
-      );
-      const matchesPrice = priceRange === "all" ||
-        (priceRange === "0-100" && lowestPrice <= 100) ||
-        (priceRange === "101-300" && lowestPrice > 100 && lowestPrice <= 300) ||
-        (priceRange === "301-500" && lowestPrice > 300 && lowestPrice <= 500) ||
-        (priceRange === "501+" && lowestPrice > 500);
-
-      return matchesType && matchesSearch && matchesDR && matchesTraffic && matchesPrice;
-    })
-    .sort((a, b) => {
-      if (!sortConfig.column) return 0;
-
-      let aValue, bValue;
-
-      if (sortConfig.column === 'guestPostPrice' || sortConfig.column === 'nicheEditPrice') {
-        aValue = Math.min(a.guestPostPrice || Infinity, a.nicheEditPrice || Infinity);
-        bValue = Math.min(b.guestPostPrice || Infinity, b.nicheEditPrice || Infinity);
-      } else {
-        aValue = a[sortConfig.column];
-        bValue = b[sortConfig.column];
-      }
-
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
-      }
-
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortConfig.direction === 'asc' ?
-          aValue.localeCompare(bValue) :
-          bValue.localeCompare(aValue);
-      }
-
-      return 0;
-    });
 
   if (isLoading) {
     return (
@@ -122,6 +44,38 @@ export default function DomainsPage() {
       </DashboardShell>
     );
   }
+
+  const filteredDomains = domains.filter((domain) => {
+    const matchesType = typeFilter === "all" || domain.type === typeFilter;
+    const matchesSearch = !searchQuery ||
+      domain.websiteUrl.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const domainRating = Number(domain.domainRating) || 0;
+    const matchesDR = drRange === "all" ||
+      (drRange === "0-30" && domainRating <= 30) ||
+      (drRange === "31-50" && domainRating > 30 && domainRating <= 50) ||
+      (drRange === "51-70" && domainRating > 50 && domainRating <= 70) ||
+      (drRange === "71+" && domainRating > 70);
+
+    const traffic = Number(domain.websiteTraffic) || 0;
+    const matchesTraffic = trafficRange === "all" ||
+      (trafficRange === "0-5k" && traffic <= 5000) ||
+      (trafficRange === "5k-20k" && traffic > 5000 && traffic <= 20000) ||
+      (trafficRange === "20k-50k" && traffic > 20000 && traffic <= 50000) ||
+      (trafficRange === "50k+" && traffic > 50000);
+
+    const lowestPrice = Math.min(
+      Number(domain.guestPostPrice) || Infinity,
+      Number(domain.nicheEditPrice) || Infinity
+    );
+    const matchesPrice = priceRange === "all" ||
+      (priceRange === "0-100" && lowestPrice <= 100) ||
+      (priceRange === "101-300" && lowestPrice > 100 && lowestPrice <= 300) ||
+      (priceRange === "301-500" && lowestPrice > 300 && lowestPrice <= 500) ||
+      (priceRange === "501+" && lowestPrice > 500);
+
+    return matchesType && matchesSearch && matchesDR && matchesTraffic && matchesPrice;
+  });
 
   return (
     <DashboardShell>
@@ -189,72 +143,36 @@ export default function DomainsPage() {
           </div>
         </div>
 
-        <div className="border rounded-lg overflow-x-auto">
+        <div className="border rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">
-                  <Button variant="ghost" onClick={() => handleSort('websiteUrl')}>
-                    Website
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[100px]">
-                  <Button variant="ghost" onClick={() => handleSort('domainRating')}>
-                    DR
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[120px]">
-                  <Button variant="ghost" onClick={() => handleSort('websiteTraffic')}>
-                    Traffic
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[150px]">Type</TableHead>
-                <TableHead className="w-[150px]">
-                  <Button variant="ghost" onClick={() => handleSort('guestPostPrice')}>
-                    Guest Post Price
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[150px]">
-                  <Button variant="ghost" onClick={() => handleSort('nicheEditPrice')}>
-                    Niche Edit Price
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead style={{ width: guidelinesWidth }}>
-                  <Resizable
-                    width={guidelinesWidth}
-                    height={20}
-                    onResize={handleGuidelinesResize}
-                    draggableOpts={{ enableUserSelectHack: false }}
-                    minConstraints={[200, 20]}
-                    maxConstraints={[600, 20]}
-                  >
-                    <div style={{ width: guidelinesWidth, paddingRight: 10 }}>Guidelines</div>
-                  </Resizable>
-                </TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+                <TableHead>Website</TableHead>
+                <TableHead>DR</TableHead>
+                <TableHead>Traffic</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Guest Post Price</TableHead>
+                <TableHead>Niche Edit Price</TableHead>
+                <TableHead>Guidelines</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSortedDomains.map((domain) => (
+              {filteredDomains.map((domain) => (
                 <TableRow key={domain.id}>
-                  <TableCell className="max-w-[200px]">
+                  <TableCell>
                     <a
                       href={`https://${domain.websiteUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-primary hover:underline"
                     >
-                      {domain.websiteUrl.replace(/^(https?:\/\/)?(www\.)?/, '')}
+                      {domain.websiteUrl}
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   </TableCell>
                   <TableCell>{domain.domainRating}</TableCell>
-                  <TableCell>{domain.websiteTraffic?.toLocaleString()}</TableCell>
+                  <TableCell>{Number(domain.websiteTraffic).toLocaleString()}</TableCell>
                   <TableCell>
                     {domain.type === "both"
                       ? "Guest Post & Niche Edit"
@@ -268,14 +186,10 @@ export default function DomainsPage() {
                   <TableCell>
                     {domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : '-'}
                   </TableCell>
-                  <TableCell style={{ width: guidelinesWidth, maxWidth: guidelinesWidth }}>
-                    <div className="whitespace-normal">{domain.guidelines}</div>
-                  </TableCell>
+                  <TableCell>{domain.guidelines}</TableCell>
                   <TableCell>
                     <Link href={`/orders/new?domain=${domain.websiteUrl}`}>
-                      <Button size="sm" asChild>
-                        <a>Place Order</a>
-                      </Button>
+                      <Button size="sm">Place Order</Button>
                     </Link>
                   </TableCell>
                 </TableRow>

@@ -5,7 +5,7 @@ import { uploadRouter } from "./uploadthing";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSEOJoke } from "./openai";
-import { insertDomainSchema } from "@shared/schema";
+import { insertDomainSchema, insertOrderSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -38,12 +38,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add domains routes
+  // Add domains routes with logging
   app.get("/api/domains", async (req, res) => {
     try {
+      console.log("Fetching domains...");
       const domains = await storage.getDomains();
+      console.log("Retrieved domains:", domains);
       res.json(domains);
     } catch (error) {
+      console.error("Error fetching domains:", error);
       res.status(500).json({ error: "Failed to fetch domains" });
     }
   });
@@ -51,8 +54,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add domain creation route
   app.post("/api/domains", async (req, res) => {
     try {
+      console.log("Creating domain with data:", req.body);
       const domainData = insertDomainSchema.parse(req.body);
       const domain = await storage.createDomain(domainData);
+      console.log("Created domain:", domain);
       res.status(201).json(domain);
     } catch (error) {
       console.error("Error creating domain:", error);
@@ -69,17 +74,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(domain);
     } catch (error) {
+      console.error("Error fetching domain:", error);
       res.status(500).json({ error: "Failed to fetch domain" });
     }
   });
 
-  // Add orders routes
+  // Add orders routes with logging
   app.get("/api/orders", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      console.log("Fetching orders for user:", req.user.id);
       const orders = await storage.getOrders(req.user.id);
+      console.log("Retrieved orders:", orders);
       res.json(orders);
     } catch (error) {
+      console.error("Error fetching orders:", error);
       res.status(500).json({ error: "Failed to fetch orders" });
     }
   });
@@ -97,36 +106,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update the comment creation route
-  app.post("/api/orders/:orderId/comments", async (req, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-
-      const comment = await storage.createOrderComment({
-        orderId: parseInt(req.params.orderId),
-        userId: req.user.id,
-        message: req.body.message,
-      });
-
-      console.log('Created new comment:', comment);
-      res.status(201).json(comment);
-    } catch (error) {
-      console.error("Error creating comment:", error);
-      res.status(500).json({ error: "Failed to create comment" });
-    }
-  });
-
-  // Create order with initial "Sent" status
+  // Create order with validation
   app.post("/api/orders", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      const order = await storage.createOrder({
+      console.log("Creating order with data:", { ...req.body, userId: req.user.id });
+      const orderData = {
         ...req.body,
         userId: req.user.id,
         status: "Sent",
-      });
+      };
+      const order = await storage.createOrder(orderData);
+      console.log("Created order:", order);
       res.status(201).json(order);
     } catch (error) {
+      console.error("Error creating order:", error);
       res.status(500).json({ error: "Failed to create order" });
     }
   });

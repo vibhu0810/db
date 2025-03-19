@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Globe2, BarChart2, LinkIcon } from "lucide-react";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -40,8 +40,12 @@ export default function AuthPage() {
     defaultValues: {
       username: "",
       password: "",
+      firstName: "",
+      lastName: "",
+      email: "",
       companyName: "",
-      companyLogo: "",
+      country: "",
+      bio: "",
     },
   });
 
@@ -123,6 +127,35 @@ export default function AuthPage() {
                     )}
                     className="space-y-4"
                   >
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={registerForm.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>First Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={registerForm.control}
                       name="username"
@@ -136,6 +169,21 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={registerForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     <FormField
                       control={registerForm.control}
                       name="password"
@@ -149,6 +197,7 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
+
                     <FormField
                       control={registerForm.control}
                       name="companyName"
@@ -162,12 +211,13 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
+
                     <FormField
                       control={registerForm.control}
-                      name="companyLogo"
+                      name="country"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Company Logo URL</FormLabel>
+                          <FormLabel>Country</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -175,6 +225,7 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
+
                     <Button
                       type="submit"
                       className="w-full"
@@ -193,15 +244,45 @@ export default function AuthPage() {
         </Card>
       </div>
       <div className="hidden lg:flex flex-1 bg-muted items-center justify-center p-8">
-        <div className="max-w-md">
+        <div className="max-w-md space-y-8">
           <h2 className="text-2xl font-bold mb-4">
             Transform Your Link Building Strategy
           </h2>
-          <p className="text-muted-foreground">
-            LinkManager helps you streamline your backlink management process with
-            powerful tools for tracking orders, analyzing performance, and growing
-            your online presence.
-          </p>
+          <div className="space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="mt-1">
+                <Globe2 className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Global Reach</h3>
+                <p className="text-muted-foreground">
+                  Access a curated network of high-authority domains across various niches
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="mt-1">
+                <BarChart2 className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Performance Analytics</h3>
+                <p className="text-muted-foreground">
+                  Track your link building success with comprehensive analytics and insights
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="mt-1">
+                <LinkIcon className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Smart Link Management</h3>
+                <p className="text-muted-foreground">
+                  Efficiently manage your backlinks with our intuitive dashboard and tools
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

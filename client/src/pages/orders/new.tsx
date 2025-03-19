@@ -48,12 +48,20 @@ const getTurnaroundTime = (domain: Domain, orderType: OrderType | null) => {
     return "7-14 business days"; // default fallback
   };
 
+const getContentWritingPrice = (domain: Domain) => {
+  if (domain.websiteUrl === "blog.powr.io") {
+    return 80; // $80 for 1000 words
+  }
+  return 0; // default case
+};
+
 export default function NewOrder() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const searchParams = new URLSearchParams(window.location.search);
   const domainId = searchParams.get("domain");
   const [selectedType, setSelectedType] = useState<OrderType | null>(null);
+  const [weWriteContent, setWeWriteContent] = useState(false);
 
   const { data: domain, isLoading: isDomainLoading } = useQuery<Domain>({
     queryKey: [`/api/domains/${domainId}`],
@@ -78,6 +86,9 @@ export default function NewOrder() {
           }
         ),
         targetUrl: urlSchema,
+        content: weWriteContent 
+          ? z.string().optional()
+          : urlSchema.optional(),
       })
     ),
     defaultValues: {
@@ -98,6 +109,7 @@ export default function NewOrder() {
         ...data,
         type: selectedType || domain?.type,
         domainId: domain?.id,
+        weWriteContent,
       };
       const res = await apiRequest("POST", "/api/orders", orderData);
       return res.json();
@@ -143,6 +155,7 @@ export default function NewOrder() {
   const isNicheEdit = selectedType === "niche_edit" || domain.type === "niche_edit";
   const isGuestPost = selectedType === "guest_post" || domain.type === "guest_post";
   const price = isGuestPost ? domain.guestPostPrice : domain.nicheEditPrice;
+  const contentWritingPrice = getContentWritingPrice(domain);
   const turnaroundTime = getTurnaroundTime(domain, selectedType);
 
   return (
@@ -157,7 +170,14 @@ export default function NewOrder() {
             <CardTitle>Order Details</CardTitle>
             <CardDescription>
               Create a new order for {domain.websiteName}
-              {price && <div className="mt-2 text-lg font-semibold">Price: ${price}</div>}
+              {price && (
+                <div className="mt-2 text-lg font-semibold">
+                  Price: ${price}
+                  {isGuestPost && weWriteContent && contentWritingPrice > 0 && (
+                    <span> + ${contentWritingPrice} (content writing)</span>
+                  )}
+                </div>
+              )}
             </CardDescription>
             <div className="mt-2 text-sm text-muted-foreground">
               * Estimated turnaround time: {turnaroundTime}. This is not a guaranteed timeframe for the {isNicheEdit ? "Niche Edit" : "Guest Post"} to go live. 
@@ -195,22 +215,72 @@ export default function NewOrder() {
                   className="space-y-4"
                 >
                   {isGuestPost && (
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Post Title</FormLabel>
-                          <FormControl>
-                            <Input {...field} required />
-                          </FormControl>
-                          <FormDescription>
-                            Enter the title for your guest post
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Post Title</FormLabel>
+                            <FormControl>
+                              <Input {...field} required />
+                            </FormControl>
+                            <FormDescription>
+                              Enter the title for your guest post
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {contentWritingPrice > 0 && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-medium">Content Source</h3>
+                          <RadioGroup
+                            value={weWriteContent ? "we_write" : "user_provides"}
+                            onValueChange={(value) => setWeWriteContent(value === "we_write")}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="user_provides" id="user_provides" />
+                              <label htmlFor="user_provides">
+                                I'll provide the content (URL)
+                              </label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="we_write" id="we_write" />
+                              <label htmlFor="we_write">
+                                Write the content for me (${contentWritingPrice} for 1000 words)
+                              </label>
+                            </div>
+                          </RadioGroup>
+                        </div>
                       )}
-                    />
+
+                      {!weWriteContent && (
+                        <FormField
+                          control={form.control}
+                          name="content"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Content URL</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  type="url"
+                                  placeholder="https://docs.google.com/document/d/..."
+                                  required 
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Provide a URL to your content (e.g., Google Docs, Dropbox)
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </>
                   )}
 
                   {isNicheEdit && (
@@ -283,25 +353,6 @@ export default function NewOrder() {
                           </FormControl>
                           <FormDescription>
                             Provide instructions for how you want the link to be added
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-                  {isGuestPost && (
-                    <FormField
-                      control={form.control}
-                      name="content"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Content</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} required />
-                          </FormControl>
-                          <FormDescription>
-                            Enter the content for your guest post
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

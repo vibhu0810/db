@@ -30,17 +30,8 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
   const { data: seoJokeData, refetch: fetchJoke } = useSEOJoke();
-  const [greeting, setGreeting] = useState("Welcome");
 
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      setGreeting("Good Morning");
-    } else if (hour < 18) {
-      setGreeting("Good Afternoon");
-    } else {
-      setGreeting("Good Evening");
-    }
     fetchJoke();
   }, []);
 
@@ -75,14 +66,18 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-2xl">{greeting}!</CardTitle>
-            <CardDescription className="mt-2">
-              Join our community of digital marketing professionals
-            </CardDescription>
+            <div className="space-y-2">
+              <CardTitle className="text-3xl font-bold tracking-tight">Ready to Scale?</CardTitle>
+              <CardDescription className="text-base">
+                Log in to your link-building command center
+              </CardDescription>
+            </div>
             {seoJokeData?.data?.joke && (
-              <p className="mt-4 text-sm text-muted-foreground italic">
-                "{seoJokeData.data.joke}"
-              </p>
+              <div className="mt-6 p-4 bg-muted rounded-lg border hover:bg-muted/80 transition-colors">
+                <p className="text-sm text-muted-foreground italic">
+                  "{seoJokeData.data.joke}"
+                </p>
+              </div>
             )}
           </CardHeader>
           <CardContent>
@@ -143,7 +138,7 @@ export default function AuthPage() {
                       {loginMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
-                      Login
+                      Sign in
                     </Button>
                   </form>
                 </Form>

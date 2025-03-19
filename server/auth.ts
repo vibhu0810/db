@@ -25,17 +25,25 @@ async function comparePasswords(supplied: string, stored: string) {
   try {
     console.log('Starting password comparison');
 
+    // Clean up the password string by removing any quotes
+    supplied = supplied.replace(/['"]/g, '');
+    console.log('Cleaned supplied password:', supplied, 'Length:', supplied.length);
+
     const [hashedHex, salt] = stored.split(".");
     if (!hashedHex || !salt) {
       console.log('Invalid stored password format - missing hash or salt');
       return false;
     }
 
+    console.log('Salt:', salt, 'Length:', salt.length);
     console.log('Computing hash for supplied password');
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
     const storedBuf = Buffer.from(hashedHex, 'hex');
 
     console.log('Comparing hashes');
+    console.log('Supplied hash length:', suppliedBuf.length);
+    console.log('Stored hash length:', storedBuf.length);
+
     const result = timingSafeEqual(storedBuf, suppliedBuf);
     console.log('Password comparison result:', result);
 

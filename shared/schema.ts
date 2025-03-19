@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   billingAddress: text("billing_address").notNull(),
   bio: text("bio"),
   profilePicture: text("profile_picture"),
+  is_admin: boolean("is_admin").notNull().default(false),
 });
 
 // Create insert schema for users
@@ -28,6 +29,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   billingAddress: true,
   bio: true,
   profilePicture: true,
+  is_admin: true,
 });
 
 // Update schema for profile

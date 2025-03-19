@@ -308,13 +308,43 @@ export default function Orders() {
               {filteredAndSortedOrders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell style={{ width: sourceUrlWidth, maxWidth: sourceUrlWidth }} className="truncate">
-                    {order.sourceUrl}
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">{order.sourceUrl}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => copyToClipboard(order.sourceUrl)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                   <TableCell style={{ width: targetUrlWidth, maxWidth: targetUrlWidth }} className="truncate">
-                    {order.targetUrl}
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">{order.targetUrl}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => copyToClipboard(order.targetUrl)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                   <TableCell style={{ width: anchorTextWidth, maxWidth: anchorTextWidth }} className="truncate">
-                    {order.anchorText}
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">{order.anchorText}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => copyToClipboard(order.anchorText)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                   <TableCell>{order.type === "guest_post" ? "Guest Post" : "Niche Edit"}</TableCell>
                   <TableCell className="truncate">

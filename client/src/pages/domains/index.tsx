@@ -272,7 +272,7 @@ export default function DomainsPage() {
                     <div className="whitespace-normal">{domain.guidelines}</div>
                   </TableCell>
                   <TableCell>
-                    <Link href={`/orders/new?domain=${domain.id}`}>
+                    <Link href={`/orders/new?domain=${domain.websiteUrl}`}>
                       <Button size="sm" asChild>
                         <a>Place Order</a>
                       </Button>

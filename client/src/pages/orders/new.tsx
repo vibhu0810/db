@@ -33,7 +33,7 @@ import { z } from "zod";
 
 type OrderType = "guest_post" | "niche_edit";
 
-// Helper functions remain the same...
+// Helper functions remain unchanged
 const getTurnaroundTime = (domain: Domain, orderType: OrderType | null) => {
   if (domain.websiteUrl === "engagebay.com") {
     return "3 working days";
@@ -58,26 +58,51 @@ export default function NewOrder() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const searchParams = new URLSearchParams(window.location.search);
-  const domainId = searchParams.get("domain");
+  const domainUrl = searchParams.get("domain"); // Changed from domainId to domainUrl
   const [selectedType, setSelectedType] = useState<OrderType | null>(null);
   const [weWriteContent, setWeWriteContent] = useState(false);
 
-  const { data: domain, isLoading: isDomainLoading } = useQuery<Domain>({
-    queryKey: [`/api/domains/${domainId}`],
-    enabled: !!domainId,
+  // Updated to query by domain URL instead of ID
+  const { data: domains = [] } = useQuery<Domain[]>({
+    queryKey: ['/api/domains']
+  });
+
+  const domain = domains.find(d => d.websiteUrl === domainUrl);
+
+  const formSchema = z.object({
+    sourceUrl: z.string().min(1, "Source URL is required"),
+    targetUrl: z.string().min(1, "Target URL is required").url("Please enter a valid URL"),
+    anchorText: z.string().min(1, "Anchor text is required"),
+    title: z.string().optional(),
+    textEdit: z.string().optional(),
+    content: weWriteContent ? z.string().optional() : z.string().url("Please enter a valid content URL"),
+    notes: z.string().optional(),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      sourceUrl: "",
+      targetUrl: "",
+      anchorText: "",
+      textEdit: "",
+      notes: "",
+      title: "",
+      content: "",
+    },
   });
 
   const createOrderMutation = useMutation({
-    mutationFn: async (formData: InsertOrder) => {
+    mutationFn: async (formData: z.infer<typeof formSchema>) => {
       if (!domain) throw new Error("Domain not found");
       console.log("Form data being submitted:", formData);
 
       const orderData = {
         ...formData,
         type: selectedType || domain.type,
-        domainId: domain.id,
+        domainId: domain?.id, // Added ? to handle potential undefined domain.id
         weWriteContent,
-        price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
+        price: selectedType === "guest_post" ? domain?.guestPostPrice : domain?.nicheEditPrice, // Added ? to handle potential undefined prices
         status: "Sent",
         dateOrdered: new Date().toISOString(),
       };
@@ -109,60 +134,10 @@ export default function NewOrder() {
     },
   });
 
-  const formValidationSchema = insertOrderSchema.extend({
-    sourceUrl: z.string().min(1, "Source URL is required").refine(
-      (url) => {
-        if (!domain || selectedType === "guest_post") return true;
-        try {
-          const urlObj = new URL(url);
-          return urlObj.hostname.includes(domain.websiteUrl);
-        } catch {
-          return false;
-        }
-      },
-      {
-        message: `Link URL must be from ${domain?.websiteUrl}`,
-      }
-    ),
-    targetUrl: z.string().min(1, "Target URL is required").url("Please enter a valid URL"),
-    anchorText: z.string().min(1, "Anchor text is required"),
-    title: z.string().optional(),
-    textEdit: z.string().optional(),
-    content: weWriteContent ? z.string().optional() : z.string().url("Please enter a valid content URL"),
-  });
-
-  const form = useForm<InsertOrder>({
-    resolver: zodResolver(formValidationSchema),
-    defaultValues: {
-      sourceUrl: "",
-      targetUrl: "",
-      anchorText: "",
-      textEdit: "",
-      notes: "",
-      title: "",
-      dateOrdered: new Date().toISOString(),
-      status: "Sent",
-    },
-  });
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    form.handleSubmit((data) => {
-      console.log("Form values:", data);
-      console.log("Form state:", form.formState);
-      createOrderMutation.mutate(data);
-    })(e);
+  const onSubmit = (data: z.infer<typeof formSchema>) => {
+    console.log("Form submitted with data:", data);
+    createOrderMutation.mutate(data);
   };
-
-  if (isDomainLoading) {
-    return (
-      <DashboardShell>
-        <div className="flex items-center justify-center h-full">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
-        </div>
-      </DashboardShell>
-    );
-  }
 
   if (!domain) {
     return (
@@ -181,6 +156,7 @@ export default function NewOrder() {
   const contentWritingPrice = getContentWritingPrice(domain);
   const turnaroundTime = getTurnaroundTime(domain, selectedType);
 
+  // Rest of the component remains the same, just update the form submission:
   return (
     <DashboardShell>
       <div className="space-y-6">
@@ -231,7 +207,7 @@ export default function NewOrder() {
               </div>
             ) : (
               <Form {...form}>
-                <form onSubmit={handleFormSubmit} className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   {isGuestPost && (
                     <>
                       <FormField
@@ -383,6 +359,24 @@ export default function NewOrder() {
                       )}
                     />
                   )}
+
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Add any additional notes
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
 
                   <div className="flex justify-end gap-4">
                     <Button

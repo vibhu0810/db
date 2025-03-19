@@ -1,10 +1,20 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { createUploadthing, type FileRouter } from "uploadthing/server";
+import { UTApi } from "uploadthing/server";
+import { uploadRouter } from "./uploadthing";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Add uploadthing route
+  const utapi = new UTApi();
+  app.use("/api/uploadthing", (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    return utapi.handleRequest(req, res, uploadRouter);
+  });
 
   // Add profile update route
   app.patch("/api/user/profile", async (req, res) => {

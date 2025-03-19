@@ -20,13 +20,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { updateProfileSchema } from "@shared/schema";
+import { useUploadThing } from "@/utils/uploadthing";
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
+  const { startUpload } = useUploadThing("profileImage");
 
   const form = useForm<UpdateProfile>({
     resolver: zodResolver(updateProfileSchema),
@@ -82,6 +84,31 @@ export default function ProfilePage() {
     },
   });
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const [res] = await startUpload([file]);
+      if (res) {
+        form.setValue("profilePicture", res.url);
+        toast({
+          title: "Image uploaded",
+          description: "Your profile picture has been uploaded successfully.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload profile picture. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const onSubmit = async (data: UpdateProfile) => {
     try {
       await updateProfileMutation.mutateAsync(data);
@@ -103,6 +130,40 @@ export default function ProfilePage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="space-y-4">
+                  {/* Profile Picture Upload */}
+                  <FormField
+                    control={form.control}
+                    name="profilePicture"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profile Picture</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center gap-4">
+                            {field.value && (
+                              <img
+                                src={field.value}
+                                alt="Profile"
+                                className="h-16 w-16 rounded-full object-cover"
+                              />
+                            )}
+                            <div className="flex-1">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileUpload}
+                                disabled={isUploading}
+                              />
+                            </div>
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Upload a profile picture (max 4MB)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="firstName"
@@ -198,23 +259,6 @@ export default function ProfilePage() {
                         </FormControl>
                         <FormDescription>
                           Tell us a bit about yourself or your company (optional)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="profilePicture"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Profile Picture URL</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Enter a URL for your profile picture
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

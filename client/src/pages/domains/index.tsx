@@ -23,7 +23,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface Domain {
   id: number;
@@ -45,6 +53,8 @@ export default function DomainsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const { data: domains = [], isLoading } = useQuery({
     queryKey: ['/api/domains'],
@@ -131,6 +141,12 @@ export default function DomainsPage() {
         : (bValue as number) - (aValue as number);
     });
 
+  // Calculate pagination
+  const totalItems = filteredDomains.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedDomains = filteredDomains.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold tracking-tight">Domain Inventory</h2>
@@ -183,6 +199,34 @@ export default function DomainsPage() {
         </div>
       </div>
 
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Show</span>
+          <Select
+            value={String(itemsPerPage)}
+            onValueChange={(value) => {
+              setItemsPerPage(Number(value));
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">per page</span>
+        </div>
+
+        <div className="text-sm text-muted-foreground">
+          Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems} entries
+        </div>
+      </div>
+
       <div className="rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
@@ -204,7 +248,7 @@ export default function DomainsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredDomains.map((domain: Domain) => (
+            {paginatedDomains.map((domain: Domain) => (
               <TableRow key={domain.id}>
                 <TableCell className="max-w-[200px]">
                   <div className="flex items-center space-x-2">
@@ -253,6 +297,56 @@ export default function DomainsPage() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex items-center justify-center mt-4">
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              />
+            </PaginationItem>
+
+            {[...Array(totalPages)].map((_, i) => {
+              const page = i + 1;
+              if (
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 2 && page <= currentPage + 2)
+              ) {
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(page)}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              } else if (
+                page === currentPage - 3 ||
+                page === currentPage + 3
+              ) {
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                );
+              }
+              return null;
+            })}
+
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
     </div>
   );

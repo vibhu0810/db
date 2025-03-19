@@ -35,6 +35,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { Resizable } from "react-resizable";
 import { cn } from "@/lib/utils";
 import 'react-resizable/css/styles.css';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 type DateRange = {
   from?: Date;
@@ -57,6 +66,8 @@ export default function Orders() {
     anchorText: 150,
     textEdit: 200,
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     setColumnWidths(prev => ({
@@ -183,6 +194,12 @@ export default function Orders() {
         : (bValue as number) - (aValue as number);
     });
 
+  // Calculate pagination
+  const totalItems = filteredOrders.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+
   const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
     <Button
       variant="ghost"
@@ -276,6 +293,35 @@ export default function Orders() {
         />
       </div>
 
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Show</span>
+          <Select
+            value={String(itemsPerPage)}
+            onValueChange={(value) => {
+              setItemsPerPage(Number(value));
+              setCurrentPage(1); // Reset to first page when changing items per page
+            }}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">per page</span>
+        </div>
+
+        <div className="text-sm text-muted-foreground">
+          Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems} entries
+        </div>
+      </div>
+
+
       <div className="rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
@@ -347,7 +393,7 @@ export default function Orders() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders.map((order) => (
+            {paginatedOrders.map((order) => (
               <TableRow key={order.id}>
                 {isAdmin && (
                   <TableCell className="max-w-[150px] truncate">
@@ -509,6 +555,57 @@ export default function Orders() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex items-center justify-center mt-4">
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              />
+            </PaginationItem>
+
+            {[...Array(totalPages)].map((_, i) => {
+              const page = i + 1;
+              // Show first page, last page, current page and pages around current
+              if (
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 2 && page <= currentPage + 2)
+              ) {
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(page)}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              } else if (
+                page === currentPage - 3 ||
+                page === currentPage + 3
+              ) {
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                );
+              }
+              return null;
+            })}
+
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
     </div>
   );

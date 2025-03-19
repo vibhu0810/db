@@ -17,17 +17,20 @@ function App() {
         <div className="min-h-screen bg-background">
           <Switch>
             <Route path="/auth" component={AuthPage} />
-            <ProtectedRoute path="/domains" component={DomainsPage} />
-            <ProtectedRoute path="/orders" component={OrdersPage} />
-            <ProtectedRoute path="/orders/new" component={NewOrderPage} />
-            <ProtectedRoute 
-              path="/" 
-              component={() => (
-                <DashboardShell>
-                  <h1>Welcome to your dashboard</h1>
-                </DashboardShell>
-              )} 
-            />
+            <ProtectedRoute path="/domains">
+              <DomainsPage />
+            </ProtectedRoute>
+            <ProtectedRoute path="/orders">
+              <OrdersPage />
+            </ProtectedRoute>
+            <ProtectedRoute path="/orders/new">
+              <NewOrderPage />
+            </ProtectedRoute>
+            <ProtectedRoute path="/">
+              <DashboardShell>
+                <h1>Welcome to your dashboard</h1>
+              </DashboardShell>
+            </ProtectedRoute>
           </Switch>
         </div>
         <Toaster />

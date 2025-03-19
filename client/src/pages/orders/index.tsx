@@ -219,6 +219,7 @@ export default function Orders() {
               <TableHead>Price</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Date Ordered</TableHead>
+              <TableHead>Notes</TableHead> {/* Added Notes column */}
               <TableHead>Comments</TableHead>
             </TableRow>
           </TableHeader>
@@ -262,6 +263,7 @@ export default function Orders() {
                 <TableCell>
                   {format(new Date(order.dateOrdered), "MMM d, yyyy")}
                 </TableCell>
+                <TableCell>{order.notes}</TableCell> {/* Added Notes cell */}
                 <TableCell>
                   <Sheet>
                     <SheetTrigger asChild>

@@ -17,29 +17,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
-import { Loader2, ExternalLink } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
-export default function DomainsPage() {
-  console.log('Domains component mounting...'); // Debug log
+interface Domain {
+  id: number;
+  websiteUrl: string;
+  domainRating: string;
+  websiteTraffic: number;
+  type: string;
+  guidelines: string;
+  guestPostPrice?: string;
+  nicheEditPrice?: string;
+}
 
+export default function DomainsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [drRange, setDrRange] = useState("all");
   const [trafficRange, setTrafficRange] = useState("all");
-  const [priceRange, setPriceRange] = useState("all");
 
   const { data: domains = [], isLoading } = useQuery({
     queryKey: ['/api/domains'],
-    queryFn: () => {
-      console.log('Fetching domains...'); // Debug log
-      return apiRequest("GET", "/api/domains").then(res => {
-        console.log('Domains response:', res); // Debug log
-        return res.json();
-      });
-    },
+    queryFn: () => apiRequest("GET", "/api/domains").then(res => res.json()),
   });
 
   const { isAdmin } = useAuth();
@@ -52,7 +52,7 @@ export default function DomainsPage() {
     );
   }
 
-  const filteredDomains = domains.filter((domain) => {
+  const filteredDomains = domains.filter((domain: Domain) => {
     const matchesType = typeFilter === "all" || domain.type === typeFilter;
     const matchesSearch = !searchQuery ||
       domain.websiteUrl.toLowerCase().includes(searchQuery.toLowerCase());
@@ -71,17 +71,7 @@ export default function DomainsPage() {
       (trafficRange === "20k-50k" && traffic > 20000 && traffic <= 50000) ||
       (trafficRange === "50k+" && traffic > 50000);
 
-    const lowestPrice = Math.min(
-      Number(domain.guestPostPrice) || Infinity,
-      Number(domain.nicheEditPrice) || Infinity
-    );
-    const matchesPrice = priceRange === "all" ||
-      (priceRange === "0-100" && lowestPrice <= 100) ||
-      (priceRange === "101-300" && lowestPrice > 100 && lowestPrice <= 300) ||
-      (priceRange === "301-500" && lowestPrice > 300 && lowestPrice <= 500) ||
-      (priceRange === "501+" && lowestPrice > 500);
-
-    return matchesType && matchesSearch && matchesDR && matchesTraffic && matchesPrice;
+    return matchesType && matchesSearch && matchesDR && matchesTraffic;
   });
 
   return (
@@ -133,19 +123,6 @@ export default function DomainsPage() {
               <SelectItem value="50k+">50K+</SelectItem>
             </SelectContent>
           </Select>
-
-          <Select value={priceRange} onValueChange={setPriceRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Price Range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Prices</SelectItem>
-              <SelectItem value="0-100">$0-$100</SelectItem>
-              <SelectItem value="101-300">$101-$300</SelectItem>
-              <SelectItem value="301-500">$301-$500</SelectItem>
-              <SelectItem value="501+">$501+</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -157,14 +134,11 @@ export default function DomainsPage() {
               <TableHead>DR</TableHead>
               <TableHead>Traffic</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>Guest Post Price</TableHead>
-              <TableHead>Niche Edit Price</TableHead>
               <TableHead>Guidelines</TableHead>
-              {!isAdmin && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredDomains.map((domain) => (
+            {filteredDomains.map((domain: Domain) => (
               <TableRow key={domain.id}>
                 <TableCell>
                   <a
@@ -186,20 +160,7 @@ export default function DomainsPage() {
                       ? "Guest Post"
                       : "Niche Edit"}
                 </TableCell>
-                <TableCell>
-                  {domain.guestPostPrice ? `$${domain.guestPostPrice}` : '-'}
-                </TableCell>
-                <TableCell>
-                  {domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : '-'}
-                </TableCell>
                 <TableCell>{domain.guidelines}</TableCell>
-                {!isAdmin && (
-                  <TableCell>
-                    <Link href={`/orders/new?domain=${domain.websiteUrl}`}>
-                      <Button size="sm">Place Order</Button>
-                    </Link>
-                  </TableCell>
-                )}
               </TableRow>
             ))}
           </TableBody>

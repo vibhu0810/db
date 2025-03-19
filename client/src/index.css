@@ -11,3 +11,36 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Resizable handle styles */
+.react-resizable {
+  position: relative;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+}
+
+.react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background-color: #e2e8f0;
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.react-resizable-handle:hover::after {
+  opacity: 1;
+}

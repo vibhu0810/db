@@ -21,6 +21,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Loader2, ExternalLink, ArrowUpDown } from "lucide-react";
+import { Resizable } from "react-resizable";
+import "react-resizable/css/styles.css";
 
 type SortConfig = {
   column: keyof Domain | null;
@@ -33,6 +35,7 @@ export default function DomainsPage() {
   const [drRange, setDrRange] = useState("all");
   const [trafficRange, setTrafficRange] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
+  const [guidelinesWidth, setGuidelinesWidth] = useState(300);
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     column: null,
     direction: 'asc'
@@ -49,27 +52,29 @@ export default function DomainsPage() {
     }));
   };
 
+  const handleGuidelinesResize = (event: any, { size }: { size: { width: number } }) => {
+    const newWidth = Math.max(200, Math.min(600, size.width));
+    setGuidelinesWidth(newWidth);
+  };
+
   const filteredAndSortedDomains = domains
     .filter((domain) => {
       const matchesType = typeFilter === "all" || domain.type === typeFilter || domain.type === "both";
       const matchesSearch = !searchQuery ||
         domain.websiteUrl.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // DR Range Filter
       const matchesDR = drRange === "all" ||
         (drRange === "0-30" && domain.domainRating <= 30) ||
         (drRange === "31-50" && domain.domainRating > 30 && domain.domainRating <= 50) ||
         (drRange === "51-70" && domain.domainRating > 50 && domain.domainRating <= 70) ||
         (drRange === "71+" && domain.domainRating > 70);
 
-      // Traffic Range Filter
       const matchesTraffic = trafficRange === "all" ||
         (trafficRange === "0-5k" && domain.websiteTraffic <= 5000) ||
         (trafficRange === "5k-20k" && domain.websiteTraffic > 5000 && domain.websiteTraffic <= 20000) ||
         (trafficRange === "20k-50k" && domain.websiteTraffic > 20000 && domain.websiteTraffic <= 50000) ||
         (trafficRange === "50k+" && domain.websiteTraffic > 50000);
 
-      // Price Range Filter (checking both guest post and niche edit prices)
       const lowestPrice = Math.min(
         domain.guestPostPrice || Infinity,
         domain.nicheEditPrice || Infinity
@@ -87,7 +92,6 @@ export default function DomainsPage() {
 
       let aValue, bValue;
 
-      // Special handling for price comparison
       if (sortConfig.column === 'guestPostPrice' || sortConfig.column === 'nicheEditPrice') {
         aValue = Math.min(a.guestPostPrice || Infinity, a.nicheEditPrice || Infinity);
         bValue = Math.min(b.guestPostPrice || Infinity, b.nicheEditPrice || Infinity);
@@ -220,7 +224,18 @@ export default function DomainsPage() {
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead className="min-w-[200px] max-w-[400px] cursor-col-resize">Guidelines</TableHead>
+                <TableHead style={{ width: guidelinesWidth }}>
+                  <Resizable
+                    width={guidelinesWidth}
+                    height={20}
+                    onResize={handleGuidelinesResize}
+                    draggableOpts={{ enableUserSelectHack: false }}
+                    minConstraints={[200, 20]}
+                    maxConstraints={[600, 20]}
+                  >
+                    <div style={{ width: guidelinesWidth, paddingRight: 10 }}>Guidelines</div>
+                  </Resizable>
+                </TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -253,8 +268,8 @@ export default function DomainsPage() {
                   <TableCell>
                     {domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : '-'}
                   </TableCell>
-                  <TableCell className="min-w-[200px] max-w-[400px] whitespace-normal">
-                    {domain.guidelines}
+                  <TableCell style={{ width: guidelinesWidth, maxWidth: guidelinesWidth }}>
+                    <div className="whitespace-normal">{domain.guidelines}</div>
                   </TableCell>
                   <TableCell>
                     <Link href={`/orders/new?domain=${domain.id}`}>

@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Loader2, ExternalLink, ArrowUpDown } from "lucide-react";
+import { ResizableTable, ResizableCell } from "@/components/ui/resizable-table";
 
 type SortConfig = {
   column: keyof Domain | null;
@@ -101,8 +102,8 @@ export default function DomainsPage() {
       }
 
       if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortConfig.direction === 'asc' ? 
-          aValue.localeCompare(bValue) : 
+        return sortConfig.direction === 'asc' ?
+          aValue.localeCompare(bValue) :
           bValue.localeCompare(aValue);
       }
 
@@ -186,7 +187,7 @@ export default function DomainsPage() {
         </div>
 
         <div className="border rounded-lg">
-          <Table>
+          <ResizableTable>
             <TableHeader>
               <TableRow>
                 <TableHead>
@@ -227,9 +228,9 @@ export default function DomainsPage() {
             <TableBody>
               {filteredAndSortedDomains.map((domain) => (
                 <TableRow key={domain.id}>
-                  <TableCell>
-                    <a 
-                      href={`https://${domain.websiteUrl}`} 
+                  <ResizableCell width={200}>
+                    <a
+                      href={`https://${domain.websiteUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-primary hover:underline"
@@ -237,34 +238,34 @@ export default function DomainsPage() {
                       {domain.websiteUrl.replace(/^(https?:\/\/)?(www\.)?/, '')}
                       <ExternalLink className="h-4 w-4" />
                     </a>
-                  </TableCell>
-                  <TableCell>{domain.domainRating}</TableCell>
-                  <TableCell>{domain.websiteTraffic?.toLocaleString()}</TableCell>
-                  <TableCell>
-                    {domain.type === "both" 
-                      ? "Guest Post & Niche Edit" 
-                      : domain.type === "guest_post" 
-                        ? "Guest Post" 
+                  </ResizableCell>
+                  <ResizableCell width={100}>{domain.domainRating}</ResizableCell>
+                  <ResizableCell width={120}>{domain.websiteTraffic?.toLocaleString()}</ResizableCell>
+                  <ResizableCell width={150}>
+                    {domain.type === "both"
+                      ? "Guest Post & Niche Edit"
+                      : domain.type === "guest_post"
+                        ? "Guest Post"
                         : "Niche Edit"}
-                  </TableCell>
-                  <TableCell>
+                  </ResizableCell>
+                  <ResizableCell width={150}>
                     {domain.guestPostPrice ? `$${domain.guestPostPrice}` : '-'}
-                  </TableCell>
-                  <TableCell>
+                  </ResizableCell>
+                  <ResizableCell width={150}>
                     {domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : '-'}
-                  </TableCell>
-                  <TableCell>{domain.guidelines}</TableCell>
-                  <TableCell>
+                  </ResizableCell>
+                  <ResizableCell width={200}>{domain.guidelines}</ResizableCell>
+                  <ResizableCell width={100}>
                     <Link href={`/orders/new?domain=${domain.id}`}>
                       <Button size="sm" asChild>
                         <a>Place Order</a>
                       </Button>
                     </Link>
-                  </TableCell>
+                  </ResizableCell>
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </ResizableTable>
         </div>
       </div>
     </DashboardShell>

@@ -2,11 +2,17 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Order, Domain } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
 import {
   CircleDollarSign,
   LineChart,
   ShoppingCart,
   TrendingUp,
+  PlusCircle,
+  Globe,
+  Loader2,
 } from "lucide-react";
 import {
   LineChart as RechartsLineChart,
@@ -19,13 +25,16 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
-  const { data: orders = [] } = useQuery<Order[]>({
+  const { user } = useAuth();
+  const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
   });
 
-  const { data: domains = [] } = useQuery<Domain[]>({
+  const { data: domains = [], isLoading: domainsLoading } = useQuery<Domain[]>({
     queryKey: ["/api/domains"],
   });
+
+  const isLoading = ordersLoading || domainsLoading;
 
   // Calculate metrics
   const totalOrders = orders.length;
@@ -60,12 +69,39 @@ export default function Dashboard() {
     return acc;
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user?.firstName || user?.username}!</h2>
+          <p className="text-muted-foreground mt-2">Here's what's happening with your orders</p>
+        </div>
+        <div className="flex gap-4">
+          <Link href="/orders/new">
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Order
+            </Button>
+          </Link>
+          <Link href="/domains">
+            <Button variant="outline">
+              <Globe className="mr-2 h-4 w-4" />
+              Browse Domains
+            </Button>
+          </Link>
+        </div>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
@@ -78,7 +114,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
             <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
@@ -91,7 +127,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Average DR</CardTitle>
             <LineChart className="h-4 w-4 text-muted-foreground" />
@@ -104,7 +140,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -120,7 +156,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <Card className="col-span-4">
+      <Card className="col-span-4 hover:shadow-lg transition-shadow">
         <CardHeader>
           <CardTitle>Orders Overview</CardTitle>
         </CardHeader>
@@ -129,13 +165,31 @@ export default function Dashboard() {
             <RechartsLineChart data={monthlyOrders}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
+              <YAxis yAxisId="left" name="Orders" />
+              <YAxis yAxisId="right" orientation="right" name="Spent" />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-background border rounded-lg p-2 shadow-lg">
+                        <p className="text-sm font-medium">{payload[0].payload.month}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Orders: {payload[0].value}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Spent: ${payload[1].value.toFixed(2)}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
               <Line
                 yAxisId="left"
                 type="monotone"
                 dataKey="orders"
+                name="Orders"
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
               />
@@ -143,6 +197,7 @@ export default function Dashboard() {
                 yAxisId="right"
                 type="monotone"
                 dataKey="spent"
+                name="Spent"
                 stroke="hsl(var(--secondary))"
                 strokeWidth={2}
               />

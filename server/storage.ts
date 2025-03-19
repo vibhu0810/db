@@ -190,3 +190,94 @@ storage.createUser({
   companyName: "Test Company",
   companyLogo: null,
 });
+
+// Add example domains
+[
+  {
+    websiteName: "TechCrunch",
+    websiteUrl: "https://techcrunch.com",
+    domainAuthority: "89.5",
+    domainRating: "91.2",
+    websiteTraffic: 8500000,
+    niche: "Technology",
+    type: "guest_post",
+    price: "450",
+    availableSlots: 5,
+  },
+  {
+    websiteName: "Health & Wellness Blog",
+    websiteUrl: "https://healthandwellness.com",
+    domainAuthority: "72.3",
+    domainRating: "68.9",
+    websiteTraffic: 350000,
+    niche: "Health",
+    type: "niche_edit",
+    price: "250",
+    availableSlots: 10,
+  },
+  {
+    websiteName: "Finance Daily",
+    websiteUrl: "https://financedaily.com",
+    domainAuthority: "81.7",
+    domainRating: "84.5",
+    websiteTraffic: 1200000,
+    niche: "Finance",
+    type: "guest_post",
+    price: "350",
+    availableSlots: 3,
+  },
+  {
+    websiteName: "Travel Enthusiast",
+    websiteUrl: "https://travelenthusiast.com",
+    domainAuthority: "65.4",
+    domainRating: "62.8",
+    websiteTraffic: 280000,
+    niche: "Travel",
+    type: "niche_edit",
+    price: "200",
+    availableSlots: 8,
+  },
+  {
+    websiteName: "Digital Marketing Pro",
+    websiteUrl: "https://digitalmarketingpro.com",
+    domainAuthority: "75.9",
+    domainRating: "73.4",
+    websiteTraffic: 420000,
+    niche: "Marketing",
+    type: "guest_post",
+    price: "300",
+    availableSlots: 6,
+  }
+].forEach(domain => storage.createDomain(domain));
+
+// Add some example orders for the test user
+[
+  {
+    userId: 1,
+    sourceUrl: "https://techcrunch.com/sponsored/new-tech-trends",
+    targetUrl: "https://example.com/product",
+    anchorText: "innovative tech solutions",
+    price: "450",
+    status: "Completed",
+    dateOrdered: new Date("2024-02-15"),
+    dateCompleted: new Date("2024-02-20"),
+  },
+  {
+    userId: 1,
+    sourceUrl: "https://healthandwellness.com/fitness-tips",
+    targetUrl: "https://example.com/fitness-app",
+    anchorText: "fitness tracking app",
+    price: "250",
+    status: "In Progress",
+    dateOrdered: new Date("2024-03-01"),
+  },
+  {
+    userId: 1,
+    sourceUrl: "https://financedaily.com/investment-strategies",
+    targetUrl: "https://example.com/finance",
+    anchorText: "investment platform",
+    price: "350",
+    status: "Pending",
+    dateOrdered: new Date("2024-03-18"),
+  }
+].forEach(order => storage.createOrder(order));

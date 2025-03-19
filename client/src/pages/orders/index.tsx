@@ -341,14 +341,7 @@ export default function Orders() {
                                   className="rounded-lg border p-4"
                                 >
                                   <p className="text-sm text-muted-foreground">
-                                    {(() => {
-                                      try {
-                                        return format(parseISO(comment.createdAt), "MMM d, yyyy h:mm a");
-                                      } catch (error) {
-                                        console.error('Date parsing error:', error);
-                                        return 'Invalid date';
-                                      }
-                                    })()}
+                                    {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
                                   </p>
                                   <p className="mt-1">{comment.message}</p>
                                 </div>

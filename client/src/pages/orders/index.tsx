@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -34,6 +34,7 @@ import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { useAuth } from "@/hooks/use-auth";
 import { Resizable } from "react-resizable";
 import { cn } from "@/lib/utils";
+import 'react-resizable/css/styles.css';
 
 type DateRange = {
   from?: Date;
@@ -50,6 +51,19 @@ export default function Orders() {
   const [sortField, setSortField] = useState<string>("dateOrdered");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const { toast } = useToast();
+  const [columnWidths, setColumnWidths] = useState({
+    sourceUrl: 200,
+    targetUrl: 200,
+    anchorText: 150,
+    textEdit: 200,
+  });
+
+  const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
+    setColumnWidths(prev => ({
+      ...prev,
+      [column]: size.width,
+    }));
+  };
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['/api/orders'],
@@ -185,16 +199,6 @@ export default function Orders() {
     </Button>
   );
 
-  const ResizableCell = ({ width, onResize, children }: any) => (
-    <Resizable
-      width={width}
-      height={0}
-      onResize={onResize}
-      draggableOpts={{ enableUserSelectHack: false }}
-    >
-      <div style={{ width, height: "100%" }}>{children}</div>
-    </Resizable>
-  );
 
   const exportToCSV = () => {
     const headers = [
@@ -272,87 +276,120 @@ export default function Orders() {
         />
       </div>
 
-      <div className="rounded-lg border">
+      <div className="rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
+              {isAdmin && (
+                <TableHead className="w-[150px]">
+                  <SortableHeader field="user.username">User</SortableHeader>
+                </TableHead>
+              )}
               <TableHead>
-                {isAdmin && (
-                  <TableHead>
-                    <SortableHeader field="user.username">User</SortableHeader>
-                  </TableHead>
-                )}
-                <TableHead>
-                  <SortableHeader field="sourceUrl">Source URL</SortableHeader>
-                </TableHead>
-                <TableHead>
-                  <SortableHeader field="targetUrl">Target URL</SortableHeader>
-                </TableHead>
-                <TableHead>
-                  <SortableHeader field="anchorText">Anchor Text</SortableHeader>
-                </TableHead>
-                <TableHead>
-                  <SortableHeader field="price">Price</SortableHeader>
-                </TableHead>
-                <TableHead>
-                  <SortableHeader field="status">Status</SortableHeader>
-                </TableHead>
-                <TableHead>
-                  <SortableHeader field="dateOrdered">Date Ordered</SortableHeader>
-                </TableHead>
-                <TableHead>Text Edit/Article</TableHead>
-                {isAdmin && <TableHead>Notes</TableHead>}
-                <TableHead>Comments</TableHead>
+                <Resizable
+                  width={columnWidths.sourceUrl}
+                  height={0}
+                  onResize={onResize("sourceUrl")}
+                  handle={<div className="react-resizable-handle" />}
+                >
+                  <div style={{ width: columnWidths.sourceUrl }}>
+                    <SortableHeader field="sourceUrl">Source URL</SortableHeader>
+                  </div>
+                </Resizable>
               </TableHead>
+              <TableHead>
+                <Resizable
+                  width={columnWidths.targetUrl}
+                  height={0}
+                  onResize={onResize("targetUrl")}
+                  handle={<div className="react-resizable-handle" />}
+                >
+                  <div style={{ width: columnWidths.targetUrl }}>
+                    <SortableHeader field="targetUrl">Target URL</SortableHeader>
+                  </div>
+                </Resizable>
+              </TableHead>
+              <TableHead>
+                <Resizable
+                  width={columnWidths.anchorText}
+                  height={0}
+                  onResize={onResize("anchorText")}
+                  handle={<div className="react-resizable-handle" />}
+                >
+                  <div style={{ width: columnWidths.anchorText }}>
+                    <SortableHeader field="anchorText">Anchor Text</SortableHeader>
+                  </div>
+                </Resizable>
+              </TableHead>
+              <TableHead className="w-[100px]">
+                <SortableHeader field="price">Price</SortableHeader>
+              </TableHead>
+              <TableHead className="w-[120px]">
+                <SortableHeader field="status">Status</SortableHeader>
+              </TableHead>
+              <TableHead className="w-[120px]">
+                <SortableHeader field="dateOrdered">Date Ordered</SortableHeader>
+              </TableHead>
+              <TableHead>
+                <Resizable
+                  width={columnWidths.textEdit}
+                  height={0}
+                  onResize={onResize("textEdit")}
+                  handle={<div className="react-resizable-handle" />}
+                >
+                  <div style={{ width: columnWidths.textEdit }}>
+                    Text Edit/Article
+                  </div>
+                </Resizable>
+              </TableHead>
+              {isAdmin && <TableHead className="w-[200px]">Notes</TableHead>}
+              <TableHead className="w-[80px]">Comments</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredOrders.map((order) => (
               <TableRow key={order.id}>
                 {isAdmin && (
-                  <TableCell>
+                  <TableCell className="max-w-[150px] truncate">
                     {order.user?.companyName || order.user?.username}
                   </TableCell>
                 )}
-                <TableCell className="max-w-[200px]">
+                <TableCell style={{ width: columnWidths.sourceUrl }}>
                   <div className="flex items-center space-x-2">
                     <span className="truncate">{order.sourceUrl}</span>
                     <Button
-                      variant="outline"
-                      size="sm"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => copyToClipboard(order.sourceUrl)}
-                      className="shrink-0"
+                      className="h-8 w-8 shrink-0"
                     >
-                      <Copy className="h-4 w-4 mr-1" />
-                      Copy
+                      <Copy className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
-                <TableCell className="max-w-[200px]">
+                <TableCell style={{ width: columnWidths.targetUrl }}>
                   <div className="flex items-center space-x-2">
                     <span className="truncate">{order.targetUrl}</span>
                     <Button
-                      variant="outline"
-                      size="sm"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => copyToClipboard(order.targetUrl)}
-                      className="shrink-0"
+                      className="h-8 w-8 shrink-0"
                     >
-                      <Copy className="h-4 w-4 mr-1" />
-                      Copy
+                      <Copy className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell style={{ width: columnWidths.anchorText }}>
                   <div className="flex items-center space-x-2">
-                    <span>{order.anchorText}</span>
+                    <span className="truncate">{order.anchorText}</span>
                     <Button
-                      variant="outline"
-                      size="sm"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => copyToClipboard(order.anchorText)}
-                      className="shrink-0"
+                      className="h-8 w-8 shrink-0"
                     >
-                      <Copy className="h-4 w-4 mr-1" />
-                      Copy
+                      <Copy className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
@@ -385,29 +422,28 @@ export default function Orders() {
                 <TableCell>
                   {format(new Date(order.dateOrdered), "MMM d, yyyy")}
                 </TableCell>
-                <TableCell className="max-w-[200px]">
+                <TableCell style={{ width: columnWidths.textEdit }}>
                   <div className="flex items-center space-x-2">
                     <span className="truncate">{order.textEdit}</span>
                     {order.textEdit && (
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => copyToClipboard(order.textEdit || '')}
-                        className="shrink-0"
+                        className="h-8 w-8 shrink-0"
                       >
-                        <Copy className="h-4 w-4 mr-1" />
-                        Copy
+                        <Copy className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
                 </TableCell>
-                {isAdmin && <TableCell>{order.notes}</TableCell>}
+                {isAdmin && <TableCell className="max-w-[200px] truncate">{order.notes}</TableCell>}
                 <TableCell>
                   <Sheet>
                     <SheetTrigger asChild>
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         onClick={() => setSelectedOrderId(order.id)}
                       >
                         <MessageSquare className="h-4 w-4" />

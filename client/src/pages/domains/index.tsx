@@ -183,24 +183,24 @@ export default function DomainsPage() {
         </div>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>
+              <TableHead className="min-w-[200px]">
                 <SortableHeader field="websiteUrl">Website</SortableHeader>
               </TableHead>
-              <TableHead>
+              <TableHead className="w-[80px]">
                 <SortableHeader field="domainRating">DR</SortableHeader>
               </TableHead>
-              <TableHead>
+              <TableHead className="w-[100px]">
                 <SortableHeader field="websiteTraffic">Traffic</SortableHeader>
               </TableHead>
-              <TableHead>
+              <TableHead className="w-[150px]">
                 <SortableHeader field="type">Type</SortableHeader>
               </TableHead>
-              <TableHead>Guidelines</TableHead>
-              {!isAdmin && <TableHead>Actions</TableHead>}
+              <TableHead className="min-w-[200px]">Guidelines</TableHead>
+              {!isAdmin && <TableHead className="w-[100px]">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -218,13 +218,12 @@ export default function DomainsPage() {
                       <ExternalLink className="h-4 w-4 shrink-0" />
                     </a>
                     <Button
-                      variant="outline"
-                      size="sm"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => copyToClipboard(domain.websiteUrl)}
-                      className="shrink-0"
+                      className="h-8 w-8 shrink-0"
                     >
-                      <Copy className="h-4 w-4 mr-1" />
-                      Copy
+                      <Copy className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
@@ -237,7 +236,9 @@ export default function DomainsPage() {
                       ? "Guest Post"
                       : "Niche Edit"}
                 </TableCell>
-                <TableCell>{domain.guidelines}</TableCell>
+                <TableCell className="max-w-[200px]">
+                  <span className="truncate block">{domain.guidelines}</span>
+                </TableCell>
                 {!isAdmin && (
                   <TableCell>
                     <Button

@@ -1,16 +1,24 @@
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { Redirect } from "wouter";
 
 export default function AuthPage() {
+  const { user, loginMutation } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  // If user is already logged in, redirect to home
+  if (user) {
+    return <Redirect to="/" />;
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Will add auth logic later
-    console.log("Login attempt", { username, password });
+    loginMutation.mutate({ username, password });
   };
 
   return (
@@ -48,7 +56,14 @@ export default function AuthPage() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full">
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={loginMutation.isPending}
+            >
+              {loginMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               Sign in
             </Button>
           </form>

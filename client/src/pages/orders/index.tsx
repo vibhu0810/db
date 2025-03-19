@@ -519,7 +519,6 @@ export default function Orders() {
                                 <div className="flex items-center justify-between">
                                   <p className="text-sm font-medium">
                                     {comment.user?.companyName || comment.user?.username}
-                                    {comment.user?.is_admin && " (Admin)"}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
                                     {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}

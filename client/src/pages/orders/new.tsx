@@ -2,10 +2,9 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { Domain, InsertOrder } from "@shared/schema";
+import { Domain } from "@shared/schema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertOrderSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -58,11 +57,10 @@ export default function NewOrder() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const searchParams = new URLSearchParams(window.location.search);
-  const domainUrl = searchParams.get("domain"); // Changed from domainId to domainUrl
+  const domainUrl = searchParams.get("domain");
   const [selectedType, setSelectedType] = useState<OrderType | null>(null);
   const [weWriteContent, setWeWriteContent] = useState(false);
 
-  // Updated to query by domain URL instead of ID
   const { data: domains = [] } = useQuery<Domain[]>({
     queryKey: ['/api/domains']
   });
@@ -71,15 +69,17 @@ export default function NewOrder() {
 
   const formSchema = z.object({
     sourceUrl: z.string().min(1, "Source URL is required"),
-    targetUrl: z.string().min(1, "Target URL is required").url("Please enter a valid URL"),
+    targetUrl: z.string().min(1, "Target URL is required"),
     anchorText: z.string().min(1, "Anchor text is required"),
     title: z.string().optional(),
     textEdit: z.string().optional(),
-    content: weWriteContent ? z.string().optional() : z.string().url("Please enter a valid content URL"),
+    content: weWriteContent ? z.string().optional() : z.string(),
     notes: z.string().optional(),
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  type FormValues = z.infer<typeof formSchema>;
+
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       sourceUrl: "",
@@ -93,16 +93,16 @@ export default function NewOrder() {
   });
 
   const createOrderMutation = useMutation({
-    mutationFn: async (formData: z.infer<typeof formSchema>) => {
+    mutationFn: async (formData: FormValues) => {
       if (!domain) throw new Error("Domain not found");
       console.log("Form data being submitted:", formData);
 
       const orderData = {
         ...formData,
         type: selectedType || domain.type,
-        domainId: domain?.id, // Added ? to handle potential undefined domain.id
+        domainId: domain.id,
         weWriteContent,
-        price: selectedType === "guest_post" ? domain?.guestPostPrice : domain?.nicheEditPrice, // Added ? to handle potential undefined prices
+        price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
         status: "Sent",
         dateOrdered: new Date().toISOString(),
       };
@@ -134,9 +134,13 @@ export default function NewOrder() {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: FormValues) => {
     console.log("Form submitted with data:", data);
-    createOrderMutation.mutate(data);
+    try {
+      await createOrderMutation.mutateAsync(data);
+    } catch (error) {
+      console.error("Form submission error:", error);
+    }
   };
 
   if (!domain) {
@@ -156,7 +160,6 @@ export default function NewOrder() {
   const contentWritingPrice = getContentWritingPrice(domain);
   const turnaroundTime = getTurnaroundTime(domain, selectedType);
 
-  // Rest of the component remains the same, just update the form submission:
   return (
     <DashboardShell>
       <div className="space-y-6">
@@ -238,10 +241,7 @@ export default function NewOrder() {
                             className="space-y-2"
                           >
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem
-                                value="user_provides"
-                                id="user_provides"
-                              />
+                              <RadioGroupItem value="user_provides" id="user_provides" />
                               <label htmlFor="user_provides">
                                 I'll provide the content (URL)
                               </label>
@@ -249,8 +249,7 @@ export default function NewOrder() {
                             <div className="flex items-center space-x-2">
                               <RadioGroupItem value="we_write" id="we_write" />
                               <label htmlFor="we_write">
-                                Write the content for me (${contentWritingPrice} for
-                                1000 words)
+                                Write the content for me (${contentWritingPrice} for 1000 words)
                               </label>
                             </div>
                           </RadioGroup>
@@ -272,8 +271,7 @@ export default function NewOrder() {
                                 />
                               </FormControl>
                               <FormDescription>
-                                Provide a URL to your content (e.g., Google Docs,
-                                Dropbox)
+                                Provide a URL to your content (e.g., Google Docs, Dropbox)
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -297,8 +295,8 @@ export default function NewOrder() {
                             />
                           </FormControl>
                           <FormDescription>
-                            Enter the URL of the existing article where you want to
-                            add your link (must be from {domain.websiteUrl})
+                            Enter the URL of the existing article where you want to add your link
+                            (must be from {domain.websiteUrl})
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -351,8 +349,7 @@ export default function NewOrder() {
                             <Textarea {...field} />
                           </FormControl>
                           <FormDescription>
-                            Provide instructions for how you want the link to be
-                            added
+                            Provide instructions for how you want the link to be added
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

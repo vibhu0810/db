@@ -47,97 +47,95 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalOrders}</div>
-              <p className="text-xs text-muted-foreground">
-                {completedOrders} completed
-              </p>
-            </CardContent>
-          </Card>
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-              <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${totalSpent.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                Avg ${(totalSpent / totalOrders || 0).toFixed(2)} per order
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average DA</CardTitle>
-              <LineChart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{averageDA.toFixed(1)}</div>
-              <p className="text-xs text-muted-foreground">
-                Across all domains
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {((completedOrders / totalOrders || 0) * 100).toFixed(1)}%
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Order completion rate
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Orders Overview</CardTitle>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartsLineChart data={monthlyOrders}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
-                <Tooltip />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="orders"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="spent"
-                  stroke="hsl(var(--secondary))"
-                  strokeWidth={2}
-                />
-              </RechartsLineChart>
-            </ResponsiveContainer>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalOrders}</div>
+            <p className="text-xs text-muted-foreground">
+              {completedOrders} completed
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+            <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalSpent.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Avg ${(totalSpent / totalOrders || 0).toFixed(2)} per order
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average DA</CardTitle>
+            <LineChart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{averageDA.toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all domains
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {((completedOrders / totalOrders || 0) * 100).toFixed(1)}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Order completion rate
+            </p>
           </CardContent>
         </Card>
       </div>
-    </DashboardShell>
+
+      <Card className="col-span-4">
+        <CardHeader>
+          <CardTitle>Orders Overview</CardTitle>
+        </CardHeader>
+        <CardContent className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsLineChart data={monthlyOrders}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis yAxisId="left" />
+              <YAxis yAxisId="right" orientation="right" />
+              <Tooltip />
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="orders"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+              />
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="spent"
+                stroke="hsl(var(--secondary))"
+                strokeWidth={2}
+              />
+            </RechartsLineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

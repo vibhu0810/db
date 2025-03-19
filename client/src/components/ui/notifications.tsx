@@ -45,6 +45,8 @@ export function NotificationsDropdown() {
     // Navigate to related order if it exists
     if (notification.orderId) {
       setIsOpen(false);
+      // Store the orderId in sessionStorage to highlight it after navigation
+      sessionStorage.setItem('highlightedOrderId', String(notification.orderId));
       setLocation(`/orders`);
     }
   };

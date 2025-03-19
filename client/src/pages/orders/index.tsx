@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -68,6 +68,7 @@ export default function Orders() {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [highlightedOrderId, setHighlightedOrderId] = useState<number | null>(null);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     setColumnWidths(prev => ({
@@ -246,6 +247,19 @@ export default function Orders() {
     window.URL.revokeObjectURL(url);
   };
 
+  useEffect(() => {
+    // Check if there's a highlighted order from notifications
+    const storedOrderId = sessionStorage.getItem('highlightedOrderId');
+    if (storedOrderId) {
+      const orderId = parseInt(storedOrderId);
+      setHighlightedOrderId(orderId);
+      // Clear the stored ID
+      sessionStorage.removeItem('highlightedOrderId');
+      // Open the comments sheet for this order
+      setSelectedOrderId(orderId);
+    }
+  }, []);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
@@ -394,7 +408,12 @@ export default function Orders() {
           </TableHeader>
           <TableBody>
             {paginatedOrders.map((order) => (
-              <TableRow key={order.id}>
+              <TableRow
+                key={order.id}
+                className={cn(
+                  highlightedOrderId === order.id && "bg-muted transition-colors duration-500"
+                )}
+              >
                 {isAdmin && (
                   <TableCell className="max-w-[150px] truncate">
                     {order.user?.companyName || order.user?.username}

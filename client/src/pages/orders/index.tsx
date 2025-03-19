@@ -272,6 +272,8 @@ export default function Orders() {
                     <div style={{ width: anchorTextWidth }} className="pr-4">Anchor Text</div>
                   </Resizable>
                 </TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Content URL</TableHead>
                 <TableHead>
                   <Button variant="ghost" onClick={() => handleSort("price")}>
                     Price
@@ -304,6 +306,10 @@ export default function Orders() {
                   </TableCell>
                   <TableCell style={{ width: anchorTextWidth, maxWidth: anchorTextWidth }} className="truncate">
                     {order.anchorText}
+                  </TableCell>
+                  <TableCell>{order.type === "guest_post" ? "Guest Post" : "Niche Edit"}</TableCell>
+                  <TableCell className="truncate">
+                    {order.contentUrl || (order.type === "guest_post" ? order.content : order.textEdit)}
                   </TableCell>
                   <TableCell>${Number(order.price).toFixed(2)}</TableCell>
                   <TableCell>{order.status}</TableCell>

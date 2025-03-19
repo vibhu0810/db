@@ -22,6 +22,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<User>): Promise<User>;
+  getUsers(): Promise<User[]>;  // Added this method
 
   // Domain operations
   getDomains(): Promise<Domain[]>;
@@ -30,6 +31,7 @@ export interface IStorage {
 
   // Order operations
   getOrders(userId: number): Promise<Order[]>;
+  getAllOrders(): Promise<Order[]>;  // Added this method
   createOrder(order: any): Promise<Order>;
 
   // Comment operations
@@ -74,6 +76,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  // Added new method to get all users
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
   // Domain operations
   async getDomains(): Promise<Domain[]> {
     return await db.select().from(domains);
@@ -92,6 +99,11 @@ export class DatabaseStorage implements IStorage {
   // Order operations
   async getOrders(userId: number): Promise<Order[]> {
     return await db.select().from(orders).where(eq(orders.userId, userId));
+  }
+
+  // Added new method to get all orders
+  async getAllOrders(): Promise<Order[]> {
+    return await db.select().from(orders);
   }
 
   async createOrder(orderData: any): Promise<Order> {

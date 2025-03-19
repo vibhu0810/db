@@ -67,10 +67,20 @@ export function NotificationsDropdown() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
-          <Bell className="h-4 w-4" />
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className={cn(
+            "relative",
+            unreadCount > 0 && "animate-[pulse_2s_ease-in-out_infinite]"
+          )}
+        >
+          <Bell className={cn(
+            "h-4 w-4",
+            unreadCount > 0 && "animate-[wiggle_1s_ease-in-out_infinite]"
+          )} />
           {unreadCount > 0 && (
-            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
+            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center animate-[bounce_1s_ease-in-out_infinite]">
               {unreadCount}
             </div>
           )}

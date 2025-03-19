@@ -52,3 +52,24 @@ export async function getBusinessInsight(companyName: string): Promise<string> {
     return "Focus on creating high-quality, valuable content to attract natural backlinks.";
   }
 }
+
+export async function generateSEOJoke(): Promise<string> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a witty SEO expert. Generate a short, funny one-liner joke about SEO, backlinks, or digital marketing. Keep it light and professional."
+        }
+      ],
+      max_tokens: 60,
+      temperature: 0.7,
+    });
+
+    return response.choices[0].message.content || "Why did the SEO expert go broke? Because he lost all his rankings!";
+  } catch (error) {
+    console.error("Error generating SEO joke:", error);
+    return "Why did the SEO expert go broke? Because he lost all his rankings!";
+  }
+}

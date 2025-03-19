@@ -4,6 +4,7 @@ import { createUploadthing } from "uploadthing/server";
 import { uploadRouter } from "./uploadthing";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
+import { generateSEOJoke } from "./openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -114,6 +115,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(order);
     } catch (error) {
       res.status(500).json({ error: "Failed to create order" });
+    }
+  });
+
+  app.get("/api/seo-joke", async (_req, res) => {
+    try {
+      const joke = await generateSEOJoke();
+      res.json({ joke });
+    } catch (error) {
+      console.error("Error getting SEO joke:", error);
+      res.status(500).json({ error: "Failed to generate joke" });
     }
   });
 

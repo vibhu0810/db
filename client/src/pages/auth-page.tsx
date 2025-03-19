@@ -1,9 +1,11 @@
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import { useSEOJoke } from "@/hooks/use-seo-joke";
 import {
   Card,
   CardContent,
@@ -27,6 +29,20 @@ import { Loader2, Globe2, BarChart2, LinkIcon } from "lucide-react";
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
+  const { data: seoJokeData, refetch: fetchJoke } = useSEOJoke();
+  const [greeting, setGreeting] = useState("Welcome");
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreeting("Good Morning");
+    } else if (hour < 18) {
+      setGreeting("Good Afternoon");
+    } else {
+      setGreeting("Good Evening");
+    }
+    fetchJoke();
+  }, []);
 
   const loginForm = useForm({
     defaultValues: {
@@ -59,10 +75,15 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Welcome to LinkManager</CardTitle>
-            <CardDescription>
-              Manage your backlinks efficiently and track performance
+            <CardTitle className="text-2xl">{greeting}!</CardTitle>
+            <CardDescription className="mt-2">
+              Join our community of digital marketing professionals
             </CardDescription>
+            {seoJokeData?.data?.joke && (
+              <p className="mt-4 text-sm text-muted-foreground italic">
+                "{seoJokeData.data.joke}"
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="animate-in fade-in-50 duration-500">
@@ -86,8 +107,8 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Username</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               className="transition-all duration-200 focus:scale-[1.02]"
                               autoComplete="username"
                             />
@@ -103,9 +124,9 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="password" 
-                              {...field} 
+                            <Input
+                              type="password"
+                              {...field}
                               className="transition-all duration-200 focus:scale-[1.02]"
                               autoComplete="current-password"
                             />
@@ -144,8 +165,8 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>First Name</FormLabel>
                             <FormControl>
-                              <Input 
-                                {...field} 
+                              <Input
+                                {...field}
                                 className="transition-all duration-200 focus:scale-[1.02]"
                               />
                             </FormControl>
@@ -160,8 +181,8 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Last Name</FormLabel>
                             <FormControl>
-                              <Input 
-                                {...field} 
+                              <Input
+                                {...field}
                                 className="transition-all duration-200 focus:scale-[1.02]"
                               />
                             </FormControl>
@@ -178,8 +199,8 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Username</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               className="transition-all duration-200 focus:scale-[1.02]"
                               autoComplete="username"
                             />
@@ -196,9 +217,9 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="email" 
-                              {...field} 
+                            <Input
+                              type="email"
+                              {...field}
                               className="transition-all duration-200 focus:scale-[1.02]"
                               autoComplete="email"
                             />
@@ -215,9 +236,9 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="password" 
-                              {...field} 
+                            <Input
+                              type="password"
+                              {...field}
                               className="transition-all duration-200 focus:scale-[1.02]"
                               autoComplete="new-password"
                             />
@@ -234,8 +255,8 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Company Name</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               className="transition-all duration-200 focus:scale-[1.02]"
                             />
                           </FormControl>
@@ -251,8 +272,8 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Country</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               className="transition-all duration-200 focus:scale-[1.02]"
                             />
                           </FormControl>

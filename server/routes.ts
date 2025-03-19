@@ -51,6 +51,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add notifications routes
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const userNotifications = await storage.getNotifications(req.user.id);
+      res.json(userNotifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const notification = await storage.markNotificationAsRead(parseInt(req.params.id));
+      res.json(notification);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  app.post("/api/notifications/mark-all-read", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      await storage.markAllNotificationsAsRead(req.user.id);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ error: "Failed to mark all notifications as read" });
+    }
+  });
+
   app.get("/api/seo-joke", async (_req, res) => {
     try {
       const joke = await generateSEOJoke();
@@ -60,7 +94,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to generate joke" });
     }
   });
-
 
   const httpServer = createServer(app);
   return httpServer;

@@ -1,7 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { createUploadthing, type FileRouter } from "uploadthing/server";
-import { UTApi } from "uploadthing/server";
+import { createUploadthing } from "uploadthing/server";
 import { uploadRouter } from "./uploadthing";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
@@ -10,10 +9,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   // Add uploadthing route
-  const utapi = new UTApi();
-  app.use("/api/uploadthing", (req, res, next) => {
-    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-    return utapi.handleRequest(req, res, uploadRouter);
+  console.log("Setting up UploadThing Express handler...");
+  const { createUploadthingExpressHandler } = await import("uploadthing/express");
+  app.use("/api/uploadthing", async (req, res, next) => {
+    console.log("Received upload request:", req.method, req.url);
+    try {
+      await createUploadthingExpressHandler({
+        router: uploadRouter,
+        config: { callbackUrl: "/api/uploadthing" }
+      })(req, res, next);
+    } catch (error) {
+      console.error("Error in upload handler:", error);
+      res.status(500).json({ error: "Upload failed" });
+    }
   });
 
   // Add profile update route

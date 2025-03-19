@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { format, parseISO } from "date-fns";
-import { FileDown, Loader2, ArrowUpDown, MessageSquare } from "lucide-react";
+import { FileDown, Loader2, ArrowUpDown, MessageSquare, Copy } from "lucide-react";
 import { Resizable } from "react-resizable";
 import "react-resizable/css/styles.css";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
@@ -189,6 +189,15 @@ export default function Orders() {
     window.URL.revokeObjectURL(url);
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Copied to clipboard",
+        description: "The content has been copied to your clipboard.",
+      });
+    });
+  };
+
   if (isLoading) {
     return (
       <DashboardShell>
@@ -273,7 +282,7 @@ export default function Orders() {
                   </Resizable>
                 </TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Content URL</TableHead>
+                <TableHead>Text Edit/Article</TableHead>
                 <TableHead>
                   <Button variant="ghost" onClick={() => handleSort("price")}>
                     Price
@@ -309,7 +318,19 @@ export default function Orders() {
                   </TableCell>
                   <TableCell>{order.type === "guest_post" ? "Guest Post" : "Niche Edit"}</TableCell>
                   <TableCell className="truncate">
-                    {order.contentUrl || (order.type === "guest_post" ? order.content : order.textEdit)}
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">
+                        {order.contentUrl || (order.type === "guest_post" ? order.content : order.textEdit)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => copyToClipboard(order.contentUrl || (order.type === "guest_post" ? order.content : order.textEdit) || '')}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                   <TableCell>${Number(order.price).toFixed(2)}</TableCell>
                   <TableCell>{order.status}</TableCell>

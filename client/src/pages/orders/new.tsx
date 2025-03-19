@@ -68,46 +68,6 @@ export default function NewOrder() {
     enabled: !!domainId,
   });
 
-  const createOrderMutation = useMutation({
-    mutationFn: async (formData: any) => {
-      if (!domain) throw new Error("Domain not found");
-      console.log("Submitting order:", formData); // Debug log
-
-      const orderData = {
-        ...formData,
-        type: selectedType || domain.type,
-        domainId: domain.id,
-        weWriteContent,
-        price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
-      };
-
-      console.log("Processed order data:", orderData); // Debug log
-      const res = await apiRequest("POST", "/api/orders", orderData);
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to create order");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-      toast({
-        title: "Order created",
-        description: "Your order has been successfully created.",
-      });
-      setLocation("/orders");
-    },
-    onError: (error: Error) => {
-      console.error("Order creation error:", error); // Debug log
-      toast({
-        title: "Error creating order",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
   const form = useForm({
     resolver: zodResolver(
       insertOrderSchema.extend({
@@ -143,12 +103,64 @@ export default function NewOrder() {
     },
   });
 
+  const createOrderMutation = useMutation({
+    mutationFn: async (formData: any) => {
+      if (!domain) throw new Error("Domain not found");
+      console.log("Form data being submitted:", formData);
+
+      const orderData = {
+        ...formData,
+        type: selectedType || domain.type,
+        domainId: domain.id,
+        weWriteContent,
+        price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
+      };
+
+      console.log("Processed order data:", orderData);
+      const res = await apiRequest("POST", "/api/orders", orderData);
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create order");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "Order created",
+        description: "Your order has been successfully created.",
+      });
+      setLocation("/orders");
+    },
+    onError: (error: Error) => {
+      console.error("Order creation error:", error);
+      toast({
+        title: "Error creating order",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = async (data: any) => {
-    console.log("Form submitted with data:", data); // Debug log
     try {
+      console.log("Form values before submission:", data);
+      console.log("Form validation state:", form.formState);
+
+      if (!form.formState.isValid) {
+        console.log("Form validation errors:", form.formState.errors);
+        toast({
+          title: "Validation Error",
+          description: "Please check all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await createOrderMutation.mutateAsync(data);
     } catch (error) {
-      console.error("Form submission error:", error); // Debug log
+      console.error("Form submission error:", error);
     }
   };
 

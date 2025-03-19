@@ -410,6 +410,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add PATCH route for updating orders
+  app.patch("/api/orders/:orderId", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+      const order = await storage.getOrder(orderId);
+
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      const updatedOrder = await storage.updateOrder(orderId, req.body);
+
+      // Create notification for the order owner about the update
+      await storage.createNotification({
+        userId: order.userId,
+        message: `Your order #${orderId} has been updated by admin`,
+        type: "update",
+        orderId,
+      });
+
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      res.status(500).json({ error: "Failed to update order" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

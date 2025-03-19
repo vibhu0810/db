@@ -64,11 +64,184 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useForm, Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@mantine/form";
 
-type DateRange = {
+
+interface DateRange {
   from?: Date;
   to?: Date;
-};
+}
+
+interface EditOrderFormData {
+  sourceUrl: string;
+  targetUrl: string;
+  anchorText: string;
+  textEdit: string;
+  notes: string;
+  price: number;
+}
+
+function EditOrderSheet({
+  order,
+  isOpen,
+  onOpenChange
+}: {
+  order: any;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { toast } = useToast();
+  const form = useForm<EditOrderFormData>({
+    defaultValues: {
+      sourceUrl: order.sourceUrl,
+      targetUrl: order.targetUrl,
+      anchorText: order.anchorText,
+      textEdit: order.textEdit || "",
+      notes: order.notes || "",
+      price: order.price,
+    },
+  });
+
+  const editOrderMutation = useMutation({
+    mutationFn: async (data: EditOrderFormData) => {
+      const res = await apiRequest("PATCH", `/api/orders/${order.id}`, data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update order");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "Order updated",
+        description: "Order has been updated successfully.",
+      });
+      onOpenChange(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: EditOrderFormData) => {
+    editOrderMutation.mutate(data);
+  };
+
+  return (
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent className="w-[400px] sm:w-[540px]">
+        <SheetHeader>
+          <SheetTitle>Edit Order #{order.id}</SheetTitle>
+          <SheetDescription>
+            Make changes to the order details below.
+          </SheetDescription>
+        </SheetHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+            <FormField
+              control={form.control}
+              name="sourceUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Source URL</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="targetUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target URL</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="anchorText"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Anchor Text</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="textEdit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Text Edit/Article</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={editOrderMutation.isPending}
+            >
+              {editOrderMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Save Changes
+            </Button>
+          </form>
+        </Form>
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 export default function Orders() {
   const { isAdmin, user } = useAuth();
@@ -90,6 +263,7 @@ export default function Orders() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [highlightedOrderId, setHighlightedOrderId] = useState<number | null>(null);
   const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
+  const [orderToEdit, setOrderToEdit] = useState<any>(null);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -306,20 +480,20 @@ export default function Orders() {
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
       const notificationDataStr = sessionStorage.getItem('notificationData');
-      console.log('Notification data from storage:', notificationDataStr); 
+      console.log('Notification data from storage:', notificationDataStr);
       if (notificationDataStr) {
         try {
           const notificationData = JSON.parse(notificationDataStr);
-          console.log('Parsed notification data:', notificationData); 
+          console.log('Parsed notification data:', notificationData);
           const { orderId, type } = notificationData;
 
           setHighlightedOrderId(orderId);
 
           const orderIndex = filteredOrders.findIndex(order => order.id === orderId);
-          console.log('Found order index:', orderIndex); 
+          console.log('Found order index:', orderIndex);
           if (orderIndex !== -1) {
             const pageNumber = Math.floor(orderIndex / itemsPerPage) + 1;
-            console.log('Setting page number to:', pageNumber); 
+            console.log('Setting page number to:', pageNumber);
             setCurrentPage(pageNumber);
 
             if (type === 'comment') {
@@ -330,7 +504,7 @@ export default function Orders() {
 
             setTimeout(() => {
               const element = document.getElementById(`order-${orderId}`);
-              console.log('Found element to scroll to:', !!element); 
+              console.log('Found element to scroll to:', !!element);
               if (element) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }
@@ -674,11 +848,7 @@ export default function Orders() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => {
-                            // Handle edit - you can implement this later
-                            toast({
-                              title: "Edit order",
-                              description: "Edit functionality coming soon.",
-                            });
+                            setOrderToEdit(order);
                           }}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
@@ -784,6 +954,13 @@ export default function Orders() {
           </PaginationContent>
         </Pagination>
       </div>
+      {orderToEdit && (
+        <EditOrderSheet
+          order={orderToEdit}
+          isOpen={!!orderToEdit}
+          onOpenChange={(open) => !open && setOrderToEdit(null)}
+        />
+      )}
     </div>
   );
 }

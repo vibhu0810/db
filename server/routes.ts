@@ -349,6 +349,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+  // Add DELETE order route
+  app.delete("/api/orders/:orderId", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+      const order = await storage.getOrder(orderId);
+
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      await storage.deleteOrder(orderId);
+
+      res.sendStatus(204);
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      res.status(500).json({ error: "Failed to delete order" });
+    }
+  });
+
   // Add notifications routes
   app.get("/api/notifications", async (req, res) => {
     try {

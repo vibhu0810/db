@@ -29,6 +29,7 @@ export interface IStorage {
   getAllOrders(): Promise<Order[]>;
   createOrder(order: any): Promise<Order>;
   updateOrder(id: number, updates: Partial<Order>): Promise<Order>;
+  deleteOrder(id: number): Promise<void>;
 
   // Comment operations
   getOrderComments(orderId: number): Promise<OrderComment[]>;
@@ -132,6 +133,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.id, id))
       .returning();
     return order;
+  }
+
+  async deleteOrder(id: number): Promise<void> {
+    try {
+      // First delete any associated comments to maintain referential integrity
+      await db.delete(orderComments).where(eq(orderComments.orderId, id));
+      // Then delete the order
+      await db.delete(orders).where(eq(orders.id, id));
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw new Error('Failed to delete order');
+    }
   }
 
   // Comment operations

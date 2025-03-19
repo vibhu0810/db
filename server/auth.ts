@@ -16,47 +16,15 @@ declare global {
 const scryptAsync = promisify(scrypt);
 
 export async function hashPassword(password: string) {
-  console.log("Generating password hash for:", password);
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  const hashedPassword = `${buf.toString("hex")}.${salt}`;
-  console.log("Generated hash:", { 
-    hashedPassword, 
-    salt, 
-    hashLength: buf.length,
-    totalLength: hashedPassword.length 
-  });
-  return hashedPassword;
+  return `${buf.toString("hex")}.${salt}`;
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  console.log("Password comparison:", { 
-    supplied,
-    stored,
-    storedLength: stored.length,
-  });
-
   const [hashed, salt] = stored.split(".");
-  console.log("Split parts:", { 
-    hashedPart: hashed,
-    hashedLength: hashed?.length,
-    saltPart: salt,
-    saltLength: salt?.length 
-  });
-
-  if (!hashed || !salt) {
-    console.error("Invalid stored password format - missing hash or salt");
-    return false;
-  }
-
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-
-  console.log("Buffer comparison:", {
-    hashedBufLength: hashedBuf.length,
-    suppliedBufLength: suppliedBuf.length
-  });
-
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
@@ -76,18 +44,12 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        console.log("Login attempt:", { username });
         const user = await storage.getUserByUsername(username);
-        console.log("Found user:", { userId: user?.id, hasPassword: !!user?.password });
-
         if (!user || !(await comparePasswords(password, user.password))) {
-          console.log("Login failed:", { reason: !user ? "user not found" : "password mismatch" });
           return done(null, false);
         }
-        console.log("Login successful for user:", { userId: user.id });
         return done(null, user);
       } catch (error) {
-        console.error("Login error:", error);
         return done(error);
       }
     }),
@@ -110,12 +72,9 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Username already exists");
       }
 
-      const hashedPassword = await hashPassword(req.body.password);
-      console.log("Registering new user with hash:", { username: req.body.username, hashedPassword });
-
       const user = await storage.createUser({
         ...req.body,
-        password: hashedPassword,
+        password: await hashPassword(req.body.password),
       });
 
       req.login(user, (err) => {

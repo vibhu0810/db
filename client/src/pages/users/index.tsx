@@ -56,8 +56,8 @@ export default function UsersPage() {
   });
 
   const toggleUserExpanded = (userId: number) => {
-    setExpandedUsers(prev => 
-      prev.includes(userId) 
+    setExpandedUsers(prev =>
+      prev.includes(userId)
         ? prev.filter(id => id !== userId)
         : [...prev, userId]
     );
@@ -251,7 +251,7 @@ export default function UsersPage() {
           </TableHeader>
           <TableBody>
             {filteredUsers.map((user) => (
-              <React.Fragment key={user.id}>
+              <div key={user.id}>
                 <TableRow className="hover:bg-muted/50 cursor-pointer">
                   <TableCell>
                     <Button
@@ -351,7 +351,7 @@ export default function UsersPage() {
                     </TableCell>
                   </TableRow>
                 )}
-              </React.Fragment>
+              </div>
             ))}
           </TableBody>
         </Table>

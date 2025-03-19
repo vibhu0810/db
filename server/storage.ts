@@ -1,4 +1,4 @@
-import { users, orders, orderComments, notifications, messages } from "@shared/schema";
+import { users, orders, orderComments, notifications, messages, domains } from "@shared/schema";
 import type {
   User, InsertUser, Domain, InsertDomain,
   Order, OrderComment, InsertOrderComment,

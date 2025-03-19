@@ -21,28 +21,29 @@ export async function hashPassword(password: string) {
   return `${buf.toString("hex")}.${salt}`;
 }
 
+// Add a helper function to generate hash for admin user
+export async function generateHashForAdmin() {
+  const password = "DG@121212";
+  console.log('Generating hash for admin password');
+  const hashedPassword = await hashPassword(password);
+  console.log('Generated hash:', hashedPassword);
+  return hashedPassword;
+}
+
 async function comparePasswords(supplied: string, stored: string) {
   try {
     console.log('Comparing passwords');
-    console.log('Stored password hash:', stored);
 
-    const [hashed, salt] = stored.split(".");
-    console.log('Split hash and salt:', { hashed: hashed?.length, salt: salt?.length });
-
-    if (!hashed || !salt) {
+    const [hashedHex, salt] = stored.split(".");
+    if (!hashedHex || !salt) {
       console.log('Invalid stored password format');
       return false;
     }
 
-    const hashedBuf = Buffer.from(hashed, "hex");
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    const storedBuf = Buffer.from(hashedHex, 'hex');
 
-    console.log('Buffer lengths:', { 
-      hashedBuf: hashedBuf.length,
-      suppliedBuf: suppliedBuf.length 
-    });
-
-    return timingSafeEqual(hashedBuf, suppliedBuf);
+    return timingSafeEqual(storedBuf, suppliedBuf);
   } catch (error) {
     console.error('Error in comparePasswords:', error);
     return false;

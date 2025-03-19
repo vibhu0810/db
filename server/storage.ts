@@ -180,7 +180,7 @@ export class DatabaseStorage implements IStorage {
       .insert(orderComments)
       .values({
         ...comment,
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(), // Store as ISO string
       })
       .returning();
     return newComment;

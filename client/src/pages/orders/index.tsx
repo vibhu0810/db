@@ -342,7 +342,17 @@ export default function Orders() {
                                   className="rounded-lg border p-4"
                                 >
                                   <p className="text-sm text-muted-foreground">
-                                    {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                                    {(() => {
+                                      try {
+                                        if (!comment.createdAt) return 'Just now';
+                                        const date = new Date(comment.createdAt);
+                                        if (isNaN(date.getTime())) return 'Just now';
+                                        return format(date, "MMM d, yyyy h:mm a");
+                                      } catch (error) {
+                                        console.error('Date parsing error:', error);
+                                        return 'Just now';
+                                      }
+                                    })()}
                                   </p>
                                   <p className="mt-1">{comment.message}</p>
                                 </div>

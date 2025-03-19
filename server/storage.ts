@@ -182,3 +182,11 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
+
+// Create a test user
+storage.createUser({
+  username: "test_user",
+  password: "2d45cab14c3442f2f6307f62fd8ef597d89bd7ec84f7792ca01f8cd3965cfcc1be1833c60a9f2c1c8a2a78b5fd107fced9c81d493ab4937889e2699bb2425c56.b4c11c4b4ffc1804cc41869a3ea4c77f",
+  companyName: "Test Company",
+  companyLogo: null,
+});

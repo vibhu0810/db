@@ -65,6 +65,8 @@ export class MemStorage implements IStorage {
     // Initialize with test data
     this.initializeTestUser();
     this.initializeTestDomains();
+    // Initialize test orders
+    this.initializeTestOrders();
   }
 
   private async initializeTestUser() {
@@ -110,6 +112,29 @@ export class MemStorage implements IStorage {
 
     this.domains.set(engagebay.id, engagebay);
     this.domains.set(powrBlog.id, powrBlog);
+  }
+
+  private initializeTestOrders() {
+    const testOrder: Order = {
+      id: 1,
+      userId: 1,
+      sourceUrl: "https://example.com/blog/post1",
+      targetUrl: "https://yourdomain.com",
+      anchorText: "Sample Link",
+      textEdit: "Please add the link here",
+      notes: "Test order",
+      domainAuthority: "50",
+      domainRating: "60",
+      websiteTraffic: 1000,
+      pageTraffic: 500,
+      price: "300",
+      status: "Sent",
+      dateOrdered: new Date().toISOString(),
+      dateCompleted: null,
+      title: null,
+      linkUrl: null,
+    };
+    this.orders.set(testOrder.id, testOrder);
   }
 
   // User operations
@@ -189,7 +214,11 @@ export class MemStorage implements IStorage {
   async getOrderComments(orderId: number): Promise<OrderComment[]> {
     return Array.from(this.comments.values())
       .filter(comment => comment.orderId === orderId)
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      .sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateA - dateB;
+      });
   }
 
   async createOrderComment(comment: InsertOrderComment): Promise<OrderComment> {

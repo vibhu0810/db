@@ -2,20 +2,18 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
-import { Loader2, Send, Image as ImageIcon, Video, FileText } from "lucide-react";
+import { Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
-import { useUploadThing } from "@/lib/uploadthing";
 import { cn } from "@/lib/utils";
 
 export default function ChatPage() {
   const { user, isAdmin } = useAuth();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
-  const [fileUploading, setFileUploading] = useState(false);
 
   // Get all users for admin, or just admin users for regular users
   const { data: users = [], isLoading: usersLoading } = useQuery({
@@ -38,34 +36,10 @@ export default function ChatPage() {
     enabled: !!selectedUserId,
   });
 
-  // Upload handlers using uploadthing
-  const { startUpload } = useUploadThing("messageAttachment");
-
-  const handleFileUpload = async (file: File) => {
-    try {
-      setFileUploading(true);
-      const [res] = await startUpload([file]);
-      if (res) {
-        // Send message with attachment
-        await sendMessageMutation.mutate({
-          receiverId: selectedUserId!,
-          attachmentUrl: res.url,
-          attachmentType: file.type.startsWith('image/') ? 'image' :
-                         file.type.startsWith('video/') ? 'video' : 'document',
-        });
-      }
-    } catch (error) {
-      console.error('Upload failed:', error);
-    } finally {
-      setFileUploading(false);
-    }
-  };
-
   const sendMessageMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (content: string) => {
       const res = await apiRequest("POST", "/api/messages", {
-        ...data,
-        content: data.content || null,
+        content,
         receiverId: selectedUserId,
       });
       return res.json();
@@ -77,8 +51,8 @@ export default function ChatPage() {
   });
 
   const handleSendMessage = () => {
-    if (!messageInput.trim() && !fileUploading) return;
-    sendMessageMutation.mutate({ content: messageInput });
+    if (!messageInput.trim()) return;
+    sendMessageMutation.mutate(messageInput);
   };
 
   if (usersLoading) {
@@ -154,38 +128,9 @@ export default function ChatPage() {
                             : "bg-muted"
                         )}
                       >
-                        {message.content && (
-                          <p className="whitespace-pre-wrap break-words">
-                            {message.content}
-                          </p>
-                        )}
-                        {message.attachmentUrl && (
-                          <div className="mt-2">
-                            {message.attachmentType === 'image' ? (
-                              <img
-                                src={message.attachmentUrl}
-                                alt="Attachment"
-                                className="max-w-full rounded"
-                              />
-                            ) : message.attachmentType === 'video' ? (
-                              <video
-                                src={message.attachmentUrl}
-                                controls
-                                className="max-w-full rounded"
-                              />
-                            ) : (
-                              <a
-                                href={message.attachmentUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-blue-500 hover:underline"
-                              >
-                                <FileText className="h-4 w-4" />
-                                Download attachment
-                              </a>
-                            )}
-                          </div>
-                        )}
+                        <p className="whitespace-pre-wrap break-words">
+                          {message.content}
+                        </p>
                         <div
                           className={cn(
                             "text-xs mt-1",
@@ -212,63 +157,16 @@ export default function ChatPage() {
                   placeholder="Type a message..."
                   onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                 />
-                <div className="flex gap-1">
-                  <input
-                    type="file"
-                    id="image-upload"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-                  />
-                  <input
-                    type="file"
-                    id="video-upload"
-                    accept="video/*"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-                  />
-                  <input
-                    type="file"
-                    id="document-upload"
-                    accept=".pdf,.doc,.docx,.txt"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    type="button"
-                    onClick={() => document.getElementById('image-upload')?.click()}
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    type="button"
-                    onClick={() => document.getElementById('video-upload')?.click()}
-                  >
-                    <Video className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    type="button"
-                    onClick={() => document.getElementById('document-upload')?.click()}
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={(!messageInput.trim() && !fileUploading) || sendMessageMutation.isPending}
-                  >
-                    {sendMessageMutation.isPending || fileUploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!messageInput.trim() || sendMessageMutation.isPending}
+                >
+                  {sendMessageMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
             </div>
           </>

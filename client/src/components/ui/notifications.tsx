@@ -38,6 +38,8 @@ export function NotificationsDropdown() {
 
   const handleNotificationClick = async (notification: any) => {
     try {
+      console.log('Handling notification click:', notification); // Debug log
+
       // Mark as read first
       if (!notification.read) {
         await markAsReadMutation.mutate(notification.id);
@@ -45,6 +47,7 @@ export function NotificationsDropdown() {
 
       // If we have an orderId, store the notification data and redirect
       if (notification.orderId) {
+        console.log('Setting notification data for order:', notification.orderId); // Debug log
         // Store both orderId and notification type
         sessionStorage.setItem('notificationData', JSON.stringify({
           orderId: notification.orderId,

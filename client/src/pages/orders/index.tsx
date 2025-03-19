@@ -251,9 +251,11 @@ export default function Orders() {
     // Only process notification data if we have orders loaded
     if (!isLoading && orders.length > 0) {
       const notificationDataStr = sessionStorage.getItem('notificationData');
+      console.log('Notification data from storage:', notificationDataStr); // Debug log
       if (notificationDataStr) {
         try {
           const notificationData = JSON.parse(notificationDataStr);
+          console.log('Parsed notification data:', notificationData); // Debug log
           const { orderId, type } = notificationData;
 
           // Set the highlighted order
@@ -261,9 +263,11 @@ export default function Orders() {
 
           // Find the order index in the filtered orders
           const orderIndex = filteredOrders.findIndex(order => order.id === orderId);
+          console.log('Found order index:', orderIndex); // Debug log
           if (orderIndex !== -1) {
             // Calculate and set the correct page number
             const pageNumber = Math.floor(orderIndex / itemsPerPage) + 1;
+            console.log('Setting page number to:', pageNumber); // Debug log
             setCurrentPage(pageNumber);
 
             // If it's a comment notification, open the comments sheet
@@ -277,6 +281,7 @@ export default function Orders() {
             // Wait for the page to update before scrolling
             setTimeout(() => {
               const element = document.getElementById(`order-${orderId}`);
+              console.log('Found element to scroll to:', !!element); // Debug log
               if (element) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }

@@ -168,11 +168,19 @@ export class DatabaseStorage implements IStorage {
 
   // Comment operations use database
   async getOrderComments(orderId: number): Promise<OrderComment[]> {
-    return await db
-      .select()
-      .from(orderComments)
-      .where(eq(orderComments.orderId, orderId))
-      .orderBy(orderComments.createdAt);
+    try {
+      const comments = await db
+        .select()
+        .from(orderComments)
+        .where(eq(orderComments.orderId, orderId))
+        .orderBy(orderComments.createdAt);
+
+      console.log('Retrieved comments:', comments); // Add logging
+      return comments;
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      throw new Error('Failed to fetch comments');
+    }
   }
 
   async createOrderComment(comment: InsertOrderComment): Promise<OrderComment> {
@@ -190,6 +198,7 @@ export class DatabaseStorage implements IStorage {
         throw new Error('Failed to create comment');
       }
 
+      console.log('Created new comment:', newComment); // Add logging
       return newComment;
     } catch (error) {
       console.error('Error creating comment:', error);

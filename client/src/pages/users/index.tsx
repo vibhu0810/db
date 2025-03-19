@@ -13,6 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DateRange } from "react-day-picker";
+import { addDays, format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface UserWithStats {
   id: number;
@@ -33,6 +43,12 @@ interface UserWithStats {
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedUsers, setExpandedUsers] = useState<number[]>([]);
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  });
+  const [sortField, setSortField] = useState<string>("orders.total");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const { data: users = [], isLoading } = useQuery<UserWithStats[]>({
     queryKey: ['/api/users/stats'],
@@ -47,11 +63,43 @@ export default function UsersPage() {
     );
   };
 
-  const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.companyName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const filteredUsers = users
+    .filter(user =>
+      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.companyName.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      const getValue = (user: UserWithStats, field: string) => {
+        if (field.startsWith("orders.")) {
+          const key = field.split(".")[1] as keyof typeof user.orders;
+          return user.orders[key];
+        }
+        return (user as any)[field];
+      };
+
+      const aValue = getValue(a, sortField);
+      const bValue = getValue(b, sortField);
+
+      if (typeof aValue === "string") {
+        return sortDirection === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortDirection === "asc"
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
 
   if (isLoading) {
     return (
@@ -61,10 +109,63 @@ export default function UsersPage() {
     );
   }
 
+  const SortButton = ({ field, children }: { field: string, children: React.ReactNode }) => (
+    <Button
+      variant="ghost"
+      onClick={() => handleSort(field)}
+      className="hover:bg-transparent"
+    >
+      {children}
+      {sortField === field && (
+        <ChevronDown
+          className={cn(
+            "ml-2 h-4 w-4 transition-transform",
+            sortDirection === "asc" && "rotate-180"
+          )}
+        />
+      )}
+    </Button>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Users</h2>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "justify-start text-left font-normal",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date?.from ? (
+                date.to ? (
+                  <>
+                    {format(date.from, "LLL dd, y")} -{" "}
+                    {format(date.to, "LLL dd, y")}
+                  </>
+                ) : (
+                  format(date.from, "LLL dd, y")
+                )
+              ) : (
+                <span>Pick a date range</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={date?.from}
+              selected={date}
+              onSelect={setDate}
+              numberOfMonths={2}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="flex gap-4">
@@ -125,19 +226,33 @@ export default function UsersPage() {
           <TableHeader>
             <TableRow>
               <TableHead></TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Company</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Country</TableHead>
-              <TableHead>Total Orders</TableHead>
-              <TableHead>Pending Orders</TableHead>
-              <TableHead>Total Spent</TableHead>
+              <TableHead>
+                <SortButton field="username">Name</SortButton>
+              </TableHead>
+              <TableHead>
+                <SortButton field="companyName">Company</SortButton>
+              </TableHead>
+              <TableHead>
+                <SortButton field="email">Email</SortButton>
+              </TableHead>
+              <TableHead>
+                <SortButton field="country">Country</SortButton>
+              </TableHead>
+              <TableHead>
+                <SortButton field="orders.total">Total Orders</SortButton>
+              </TableHead>
+              <TableHead>
+                <SortButton field="orders.pending">Pending Orders</SortButton>
+              </TableHead>
+              <TableHead>
+                <SortButton field="orders.totalSpent">Total Spent</SortButton>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredUsers.map((user) => (
-              <>
-                <TableRow key={user.id} className="hover:bg-muted/50 cursor-pointer">
+              <React.Fragment key={user.id}>
+                <TableRow className="hover:bg-muted/50 cursor-pointer">
                   <TableCell>
                     <Button
                       variant="ghost"
@@ -236,7 +351,7 @@ export default function UsersPage() {
                     </TableCell>
                   </TableRow>
                 )}
-              </>
+              </React.Fragment>
             ))}
           </TableBody>
         </Table>

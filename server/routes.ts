@@ -33,11 +33,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Unauthorized: Admin access required" });
       }
 
+      const fromDate = req.query.from ? new Date(req.query.from as string) : undefined;
+      const toDate = req.query.to ? new Date(req.query.to as string) : undefined;
+
       const users = await storage.getUsers();
       const orders = await storage.getAllOrders();
 
       const usersWithStats = users.map(user => {
-        const userOrders = orders.filter(order => order.userId === user.id);
+        const userOrders = orders
+          .filter(order => order.userId === user.id)
+          .filter(order => {
+            if (!fromDate || !toDate) return true;
+            const orderDate = new Date(order.dateOrdered);
+            return orderDate >= fromDate && orderDate <= toDate;
+          });
+
         const stats = {
           total: userOrders.length,
           completed: userOrders.filter(o => o.status === "Completed").length,

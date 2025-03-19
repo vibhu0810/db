@@ -503,7 +503,7 @@ export default function Orders() {
                         </SheetDescription>
                       </SheetHeader>
                       <div className="mt-6 space-y-6">
-                        <div className="space-y-4">
+                        <div className="h-[60vh] overflow-y-auto space-y-4 pr-4">
                           {isLoadingComments ? (
                             <div className="flex justify-center">
                               <Loader2 className="h-6 w-6 animate-spin" />
@@ -529,7 +529,7 @@ export default function Orders() {
                             ))
                           )}
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-4 pt-4 border-t">
                           <Textarea
                             placeholder="Add a comment..."
                             value={newComment}

@@ -10,12 +10,6 @@ import { promisify } from "util";
 const MemoryStore = createMemoryStore(session);
 const scryptAsync = promisify(scrypt);
 
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
-}
-
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -30,6 +24,7 @@ export interface IStorage {
   createDomain(domain: InsertDomain): Promise<Domain>;
 
   // Order operations
+  getOrder(id: number): Promise<Order | undefined>;
   getOrders(userId: number): Promise<Order[]>;
   getAllOrders(): Promise<Order[]>;
   createOrder(order: any): Promise<Order>;
@@ -103,6 +98,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Order operations
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
   async getOrders(userId: number): Promise<Order[]> {
     return await db.select().from(orders).where(eq(orders.userId, userId));
   }

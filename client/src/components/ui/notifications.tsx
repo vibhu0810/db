@@ -18,6 +18,7 @@ export function NotificationsDropdown() {
   const { data: notifications = [] } = useQuery({
     queryKey: ['/api/notifications'],
     queryFn: () => apiRequest("GET", "/api/notifications").then(res => res.json()),
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   const markAsReadMutation = useMutation({

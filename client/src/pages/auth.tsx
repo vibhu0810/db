@@ -1,9 +1,9 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
 import { Redirect } from "wouter";
 import { useSEOJoke } from "@/hooks/use-seo-joke";
 
@@ -61,7 +61,7 @@ export default function AuthPage() {
           <p className="text-sm text-muted-foreground animate-in fade-in-50 duration-700 delay-500">
             Sign in to {" "}
             <span className={showAltText ? "" : "line-through"}>
-              {showAltText ? "scale your competitors" : "scale your link building"}
+              {showAltText ? "slay your competitors" : "scale your link building"}
             </span>
           </p>
         </CardHeader>

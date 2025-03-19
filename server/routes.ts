@@ -4,6 +4,11 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSEOJoke } from "./openai";
 import { insertMessageSchema } from "@shared/schema";
+import { 
+  sendOrderNotificationEmail, 
+  sendCommentNotificationEmail, 
+  sendStatusUpdateEmail 
+} from "./email";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -170,6 +175,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/orders", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const orderData = {
+        ...req.body,
+        userId: req.user.id,
+        status: "Sent",
+      };
+
+      const order = await storage.createOrder(orderData);
+
+      // Send email notification to admin
+      try {
+        await sendOrderNotificationEmail(order, req.user);
+      } catch (error) {
+        console.error("Failed to send order notification email:", error);
+        // Continue even if email fails
+      }
+
+      // Notify all admins about new order
+      const admins = await storage.getUsers().then(users => users.filter(u => u.is_admin));
+      await Promise.all(admins.map(admin =>
+        storage.createNotification({
+          userId: admin.id,
+          message: `New order #${order.id} placed by ${req.user?.username}`,
+          type: "order",
+          orderId: order.id,
+        })
+      ));
+
+      res.status(201).json(order);
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(500).json({ error: "Failed to create order" });
+    }
+  });
+
   app.post("/api/orders/:orderId/comments", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
@@ -190,11 +233,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: new Date(),
       });
 
-      // Create notifications
+      // Get admins and order owner
       const admins = await storage.getUsers().then(users => users.filter(u => u.is_admin));
+      const orderOwner = await storage.getUser(order.userId);
 
       if (req.user.is_admin) {
         // Admin commented - notify the order owner
+        if (orderOwner) {
+          await sendCommentNotificationEmail(
+            order,
+            comment,
+            req.user,
+            orderOwner
+          );
+        }
+
         await storage.createNotification({
           userId: order.userId,
           message: `Admin commented on your order #${orderId}`,
@@ -203,14 +256,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } else {
         // User commented - notify all admins
-        await Promise.all(admins.map(admin =>
-          storage.createNotification({
+        await Promise.all(admins.map(async (admin) => {
+          await sendCommentNotificationEmail(
+            order,
+            comment,
+            req.user,
+            admin
+          );
+
+          await storage.createNotification({
             userId: admin.id,
             message: `${req.user?.username} commented on order #${orderId}`,
             type: "comment",
             orderId,
-          })
-        ));
+          });
+        }));
       }
 
       // Get user details for response
@@ -252,6 +312,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Get order owner and send email
+      const orderOwner = await storage.getUser(order.userId);
+      if (orderOwner) {
+        try {
+          await sendStatusUpdateEmail(order, orderOwner);
+        } catch (error) {
+          console.error("Failed to send status update email:", error);
+          // Continue even if email fails
+        }
       }
 
       // Create notification for the order owner

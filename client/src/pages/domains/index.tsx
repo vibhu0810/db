@@ -21,14 +21,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Loader2, ExternalLink } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
 
 export default function DomainsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [daRange, setDaRange] = useState<[number, number]>([0, 100]);
-  const [drRange, setDrRange] = useState<[number, number]>([0, 100]);
-  const [trafficRange, setTrafficRange] = useState<[number, number]>([0, 100000]);
+  const [daRange, setDaRange] = useState("all");
+  const [drRange, setDrRange] = useState("all");
+  const [trafficRange, setTrafficRange] = useState("all");
+  const [priceRange, setPriceRange] = useState("all");
 
   const { data: domains = [], isLoading } = useQuery<Domain[]>({
     queryKey: ['/api/domains']
@@ -38,11 +38,40 @@ export default function DomainsPage() {
     const matchesType = typeFilter === "all" || domain.type === typeFilter || domain.type === "both";
     const matchesSearch = !searchQuery ||
       domain.websiteUrl.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDA = domain.domainAuthority >= daRange[0] && domain.domainAuthority <= daRange[1];
-    const matchesDR = domain.domainRating >= drRange[0] && domain.domainRating <= drRange[1];
-    const matchesTraffic = domain.websiteTraffic >= trafficRange[0] && domain.websiteTraffic <= trafficRange[1];
 
-    return matchesType && matchesSearch && matchesDA && matchesDR && matchesTraffic;
+    // DA Range Filter
+    const matchesDA = daRange === "all" ||
+      (daRange === "0-30" && domain.domainAuthority <= 30) ||
+      (daRange === "31-50" && domain.domainAuthority > 30 && domain.domainAuthority <= 50) ||
+      (daRange === "51-70" && domain.domainAuthority > 50 && domain.domainAuthority <= 70) ||
+      (daRange === "71+" && domain.domainAuthority > 70);
+
+    // DR Range Filter
+    const matchesDR = drRange === "all" ||
+      (drRange === "0-30" && domain.domainRating <= 30) ||
+      (drRange === "31-50" && domain.domainRating > 30 && domain.domainRating <= 50) ||
+      (drRange === "51-70" && domain.domainRating > 50 && domain.domainRating <= 70) ||
+      (drRange === "71+" && domain.domainRating > 70);
+
+    // Traffic Range Filter
+    const matchesTraffic = trafficRange === "all" ||
+      (trafficRange === "0-5k" && domain.websiteTraffic <= 5000) ||
+      (trafficRange === "5k-20k" && domain.websiteTraffic > 5000 && domain.websiteTraffic <= 20000) ||
+      (trafficRange === "20k-50k" && domain.websiteTraffic > 20000 && domain.websiteTraffic <= 50000) ||
+      (trafficRange === "50k+" && domain.websiteTraffic > 50000);
+
+    // Price Range Filter (checking both guest post and niche edit prices)
+    const lowestPrice = Math.min(
+      domain.guestPostPrice || Infinity,
+      domain.nicheEditPrice || Infinity
+    );
+    const matchesPrice = priceRange === "all" ||
+      (priceRange === "0-100" && lowestPrice <= 100) ||
+      (priceRange === "101-300" && lowestPrice > 100 && lowestPrice <= 300) ||
+      (priceRange === "301-500" && lowestPrice > 300 && lowestPrice <= 500) ||
+      (priceRange === "501+" && lowestPrice > 500);
+
+    return matchesType && matchesSearch && matchesDA && matchesDR && matchesTraffic && matchesPrice;
   });
 
   if (isLoading) {
@@ -61,7 +90,7 @@ export default function DomainsPage() {
         <h2 className="text-3xl font-bold tracking-tight">Domain Inventory</h2>
 
         <div className="space-y-4">
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <Input
               placeholder="Search domains..."
               value={searchQuery}
@@ -70,7 +99,7 @@ export default function DomainsPage() {
             />
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by type" />
+                <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
@@ -79,53 +108,58 @@ export default function DomainsPage() {
                 <SelectItem value="both">Both</SelectItem>
               </SelectContent>
             </Select>
-          </div>
 
-          <div className="grid grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Domain Authority (DA)</label>
-              <Slider 
-                value={daRange}
-                onValueChange={setDaRange}
-                max={100}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>{daRange[0]}</span>
-                <span>{daRange[1]}</span>
-              </div>
-            </div>
+            <Select value={daRange} onValueChange={setDaRange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Domain Authority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All DA</SelectItem>
+                <SelectItem value="0-30">DA 0-30</SelectItem>
+                <SelectItem value="31-50">DA 31-50</SelectItem>
+                <SelectItem value="51-70">DA 51-70</SelectItem>
+                <SelectItem value="71+">DA 71+</SelectItem>
+              </SelectContent>
+            </Select>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Domain Rating (DR)</label>
-              <Slider 
-                value={drRange}
-                onValueChange={setDrRange}
-                max={100}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>{drRange[0]}</span>
-                <span>{drRange[1]}</span>
-              </div>
-            </div>
+            <Select value={drRange} onValueChange={setDrRange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Domain Rating" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All DR</SelectItem>
+                <SelectItem value="0-30">DR 0-30</SelectItem>
+                <SelectItem value="31-50">DR 31-50</SelectItem>
+                <SelectItem value="51-70">DR 51-70</SelectItem>
+                <SelectItem value="71+">DR 71+</SelectItem>
+              </SelectContent>
+            </Select>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Traffic</label>
-              <Slider 
-                value={trafficRange}
-                onValueChange={setTrafficRange}
-                max={100000}
-                step={1000}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>{trafficRange[0].toLocaleString()}</span>
-                <span>{trafficRange[1].toLocaleString()}</span>
-              </div>
-            </div>
+            <Select value={trafficRange} onValueChange={setTrafficRange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Traffic" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Traffic</SelectItem>
+                <SelectItem value="0-5k">0-5K</SelectItem>
+                <SelectItem value="5k-20k">5K-20K</SelectItem>
+                <SelectItem value="20k-50k">20K-50K</SelectItem>
+                <SelectItem value="50k+">50K+</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={priceRange} onValueChange={setPriceRange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Price Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Prices</SelectItem>
+                <SelectItem value="0-100">$0-$100</SelectItem>
+                <SelectItem value="101-300">$101-$300</SelectItem>
+                <SelectItem value="301-500">$301-$500</SelectItem>
+                <SelectItem value="501+">$501+</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

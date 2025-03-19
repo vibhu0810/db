@@ -86,7 +86,7 @@ export default function NewOrder() {
           }
         ),
         targetUrl: urlSchema,
-        content: weWriteContent 
+        content: weWriteContent
           ? z.string().optional()
           : urlSchema.optional(),
       })
@@ -98,7 +98,7 @@ export default function NewOrder() {
       textEdit: "",
       notes: "",
       title: "",
-      status: "Pending",
+      status: "Sent",
       dateOrdered: new Date().toISOString(),
     },
   });
@@ -110,6 +110,7 @@ export default function NewOrder() {
         type: selectedType || domain?.type,
         domainId: domain?.id,
         weWriteContent,
+        price: selectedType === "guest_post" ? domain?.guestPostPrice : domain?.nicheEditPrice,
       };
       const res = await apiRequest("POST", "/api/orders", orderData);
       return res.json();
@@ -265,11 +266,11 @@ export default function NewOrder() {
                             <FormItem>
                               <FormLabel>Content URL</FormLabel>
                               <FormControl>
-                                <Input 
-                                  {...field} 
+                                <Input
+                                  {...field}
                                   type="url"
                                   placeholder="https://docs.google.com/document/d/..."
-                                  required 
+                                  required
                                 />
                               </FormControl>
                               <FormDescription>
@@ -291,14 +292,14 @@ export default function NewOrder() {
                         <FormItem>
                           <FormLabel>Link from URL</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               placeholder={`https://${domain.websiteUrl}/blog/example`}
-                              required 
+                              required
                             />
                           </FormControl>
                           <FormDescription>
-                            Enter the URL of the existing article where you want to add your link 
+                            Enter the URL of the existing article where you want to add your link
                             (must be from {domain.websiteUrl})
                           </FormDescription>
                           <FormMessage />

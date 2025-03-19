@@ -43,8 +43,8 @@ export default function DomainsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      <div className="flex items-center justify-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -83,9 +83,6 @@ export default function DomainsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Debug marker */}
-      <div className="text-xs text-muted-foreground">Debug: Domains Page Content</div>
-
       <h2 className="text-3xl font-bold tracking-tight">Domain Inventory</h2>
 
       <div className="space-y-4">

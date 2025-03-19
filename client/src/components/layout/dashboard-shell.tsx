@@ -45,8 +45,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="flex-1 overflow-auto p-6">
-          {/* Debug marker */}
-          <div className="text-xs text-muted-foreground mb-2">Debug: Content Area</div>
           {children}
         </main>
       </div>

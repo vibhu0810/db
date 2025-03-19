@@ -150,9 +150,6 @@ export default function Orders() {
 
   return (
     <div className="space-y-6">
-      {/* Debug marker */}
-      <div className="text-xs text-muted-foreground">Debug: Orders Page Content</div>
-
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
         <Button onClick={exportToCSV}>

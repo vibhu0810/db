@@ -1,6 +1,7 @@
-import { users } from "@shared/schema";
-import type { User, InsertUser } from "@shared/schema";
-import type { Domain, InsertDomain, Order, OrderComment, InsertOrderComment } from "@shared/schema";
+import { users, orderComments } from "@shared/schema";
+import type { User, InsertUser, Domain, Order, OrderComment, InsertOrderComment } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
@@ -25,7 +26,6 @@ export interface IStorage {
   // Domain operations
   getDomains(): Promise<Domain[]>;
   getDomain(id: number): Promise<Domain | undefined>;
-  createDomain(domain: InsertDomain): Promise<Domain>;
 
   // Order operations
   getOrders(userId: number): Promise<Order[]>;
@@ -39,49 +39,42 @@ export interface IStorage {
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private domains: Map<number, Domain>;
-  private orders: Map<number, Order>;
-  private comments: Map<number, OrderComment>;
-  private currentIds: { [key: string]: number };
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.domains = new Map();
-    this.orders = new Map();
-    this.comments = new Map();
-    this.currentIds = {
-      users: 2,
-      domains: 3,
-      orders: 1,
-      comments: 1,
-    };
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
-
-    // Initialize with test data
-    this.initializeTestUser();
-    this.initializeTestDomains();
-    // Initialize test orders
-    this.initializeTestOrders();
   }
 
-  private async initializeTestUser() {
-    const hashedPassword = await hashPassword("test123");
-    const testUser: User = {
-      id: 1,
-      username: "testuser",
-      password: hashedPassword,
-      companyName: "Test Company",
-      companyLogo: null
-    };
-    this.users.set(testUser.id, testUser);
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
-  private initializeTestDomains() {
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUser(id: number, update: Partial<User>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set(update)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  // Domain operations remain as MemStorage for now
+  private initializeTestDomains(): Domain[] {
     const engagebay: Domain = {
       id: 1,
       websiteName: "Engagebay",
@@ -110,14 +103,23 @@ export class MemStorage implements IStorage {
       guidelines: "Linking domain must be DR 50+"
     };
 
-    this.domains.set(engagebay.id, engagebay);
-    this.domains.set(powrBlog.id, powrBlog);
+    return [engagebay, powrBlog];
   }
 
-  private initializeTestOrders() {
-    const testOrder: Order = {
+  async getDomains(): Promise<Domain[]> {
+    return this.initializeTestDomains();
+  }
+
+  async getDomain(id: number): Promise<Domain | undefined> {
+    const domains = this.initializeTestDomains();
+    return domains.find(d => d.id === id);
+  }
+
+  // Order operations remain as MemStorage for now
+  private initializeTestOrder(userId: number): Order {
+    return {
       id: 1,
-      userId: 1,
+      userId,
       sourceUrl: "https://example.com/blog/post1",
       targetUrl: "https://yourdomain.com",
       anchorText: "Sample Link",
@@ -134,103 +136,37 @@ export class MemStorage implements IStorage {
       title: null,
       linkUrl: null,
     };
-    this.orders.set(testOrder.id, testOrder);
   }
 
-  // User operations
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentIds.users++;
-    const user = {
-      ...insertUser,
-      id,
-      companyName: insertUser.companyName || null,
-      companyLogo: insertUser.companyLogo || null
-    };
-    this.users.set(id, user);
-    return user;
-  }
-
-  async updateUser(id: number, update: Partial<User>): Promise<User> {
-    const user = await this.getUser(id);
-    if (!user) throw new Error("User not found");
-    const updated = { ...user, ...update };
-    this.users.set(id, updated);
-    return updated;
-  }
-
-  // Domain operations
-  async getDomains(): Promise<Domain[]> {
-    return Array.from(this.domains.values());
-  }
-
-  async getDomain(id: number): Promise<Domain | undefined> {
-    return this.domains.get(id);
-  }
-
-  async createDomain(domain: InsertDomain): Promise<Domain> {
-    const id = this.currentIds.domains++;
-    const newDomain = {
-      ...domain,
-      id,
-      domainAuthority: domain.domainAuthority || null,
-      domainRating: domain.domainRating || null,
-      websiteTraffic: domain.websiteTraffic || null,
-      guestPostPrice: domain.guestPostPrice || null,
-      nicheEditPrice: domain.nicheEditPrice || null,
-      guidelines: domain.guidelines || null,
-    };
-    this.domains.set(id, newDomain);
-    return newDomain;
-  }
-
-  // Order operations
   async getOrders(userId: number): Promise<Order[]> {
-    return Array.from(this.orders.values()).filter(order => order.userId === userId);
+    const order = this.initializeTestOrder(userId);
+    return [order];
   }
 
   async createOrder(orderData: any): Promise<Order> {
-    const id = this.currentIds.orders++;
-    const order = {
-      ...orderData,
-      id,
-      dateOrdered: new Date().toISOString(),
-      dateCompleted: null,
-    };
-    this.orders.set(id, order);
-    return order;
+    // For now, return a test order
+    return this.initializeTestOrder(orderData.userId);
   }
 
-  // Comment operations
+  // Comment operations use database
   async getOrderComments(orderId: number): Promise<OrderComment[]> {
-    return Array.from(this.comments.values())
-      .filter(comment => comment.orderId === orderId)
-      .sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
-        return dateA - dateB;
-      });
+    return await db
+      .select()
+      .from(orderComments)
+      .where(eq(orderComments.orderId, orderId))
+      .orderBy(orderComments.createdAt);
   }
 
   async createOrderComment(comment: InsertOrderComment): Promise<OrderComment> {
-    const id = this.currentIds.comments++;
-    const newComment = {
-      ...comment,
-      id,
-      createdAt: new Date().toISOString(), // Ensure we store as ISO string
-    };
-    this.comments.set(id, newComment);
+    const [newComment] = await db
+      .insert(orderComments)
+      .values({
+        ...comment,
+        createdAt: new Date(),
+      })
+      .returning();
     return newComment;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

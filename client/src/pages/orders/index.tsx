@@ -81,6 +81,7 @@ export default function Orders() {
         throw new Error("Please enter a comment");
       }
       const res = await apiRequest("POST", `/api/orders/${selectedOrderId}/comments`, {
+        orderId: selectedOrderId,
         message: newComment.trim(),
       });
       if (!res.ok) {
@@ -341,15 +342,7 @@ export default function Orders() {
                                   className="rounded-lg border p-4"
                                 >
                                   <p className="text-sm text-muted-foreground">
-                                    {(() => {
-                                      try {
-                                        const date = new Date(comment.createdAt);
-                                        return format(date, "MMM d, yyyy h:mm a");
-                                      } catch (error) {
-                                        console.error('Date parsing error:', error);
-                                        return 'Just now';
-                                      }
-                                    })()}
+                                    {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
                                   </p>
                                   <p className="mt-1">{comment.message}</p>
                                 </div>

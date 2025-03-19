@@ -197,7 +197,7 @@ export class MemStorage implements IStorage {
     const newComment = {
       ...comment,
       id,
-      createdAt: new Date(), 
+      createdAt: new Date().toISOString(), // Store as ISO string
     };
     this.comments.set(id, newComment);
     return newComment;

@@ -58,8 +58,14 @@ export class DatabaseStorage implements IStorage {
         await this.createUser({
           username: "testuser",
           password: hashedPassword,
+          firstName: "Test",
+          lastName: "User",
+          email: "test@example.com",
           companyName: "Test Company",
-          companyLogo: null
+          country: "United States",
+          billingAddress: "123 Test St, Test City, 12345",
+          bio: null,
+          profilePicture: null
         });
       }
     } catch (error) {

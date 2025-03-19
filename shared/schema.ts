@@ -6,20 +6,45 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  companyName: text("company_name"),
-  companyLogo: text("company_logo"),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  companyName: text("company_name").notNull(),
+  country: text("country").notNull(),
+  billingAddress: text("billing_address").notNull(),
+  bio: text("bio"),
+  profilePicture: text("profile_picture"),
 });
 
 // Create insert schema for users
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  firstName: true,
+  lastName: true,
+  email: true,
   companyName: true,
-  companyLogo: true,
+  country: true,
+  billingAddress: true,
+  bio: true,
+  profilePicture: true,
 });
+
+// Update schema for profile
+export const updateProfileSchema = createInsertSchema(users)
+  .omit({ 
+    id: true, 
+    username: true, 
+    password: true 
+  })
+  .extend({
+    bio: z.string().optional(),
+    profilePicture: z.string().optional(),
+  });
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateProfile = z.infer<typeof updateProfileSchema>;
 export type User = typeof users.$inferSelect;
 
 export const orders = pgTable("orders", {

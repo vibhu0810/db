@@ -6,6 +6,18 @@ import { storage } from "./storage";
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
+  // Add profile update route
+  app.patch("/api/user/profile", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const updatedUser = await storage.updateUser(req.user.id, req.body);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
   // Add domains routes
   app.get("/api/domains", async (req, res) => {
     try {

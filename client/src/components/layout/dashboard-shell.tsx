@@ -1,10 +1,11 @@
 import { Sidebar } from "./sidebar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
-import { Bell, Settings, Menu } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
+import { Link } from "wouter";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { user, logoutMutation } = useAuth();
@@ -27,14 +28,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon">
-              <Settings className="h-5 w-5" />
-            </Button>
             <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">
-                {user?.companyName || user?.username}
-              </span>
+              <Link href="/profile">
+                <Button variant="ghost" className="text-sm">
+                  {user?.companyName || user?.username}
+                </Button>
+              </Link>
               <Button
                 variant="ghost"
                 onClick={() => logoutMutation.mutate()}

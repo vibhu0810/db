@@ -48,6 +48,7 @@ export default function ProfilePage() {
       billingAddress: "",
       bio: "",
       profilePicture: "",
+      companyLogo: "", // Add company logo field
     },
   });
 
@@ -62,6 +63,7 @@ export default function ProfilePage() {
         billingAddress: user.billingAddress,
         bio: user.bio || "",
         profilePicture: user.profilePicture || "",
+        companyLogo: user.companyLogo || "", // Set company logo from user data
       });
     }
   }, [user]);
@@ -91,7 +93,7 @@ export default function ProfilePage() {
     },
   });
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "profilePicture" | "companyLogo") => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -99,16 +101,16 @@ export default function ProfilePage() {
     try {
       const [res] = await startUpload([file]);
       if (res) {
-        form.setValue("profilePicture", res.url);
+        form.setValue(field, res.url);
         toast({
           title: "Image uploaded",
-          description: "Your profile picture has been uploaded successfully.",
+          description: `Your ${field === "profilePicture" ? "profile picture" : "company logo"} has been uploaded successfully.`,
         });
       }
     } catch (error) {
       toast({
         title: "Upload failed",
-        description: "Failed to upload profile picture. Please try again.",
+        description: `Failed to upload ${field === "profilePicture" ? "profile picture" : "company logo"}. Please try again.`,
         variant: "destructive",
       });
     } finally {
@@ -156,7 +158,7 @@ export default function ProfilePage() {
                             <Input
                               type="file"
                               accept="image/*"
-                              onChange={handleFileUpload}
+                              onChange={(e) => handleFileUpload(e, "profilePicture")}
                               disabled={isUploading}
                             />
                           </div>
@@ -164,6 +166,40 @@ export default function ProfilePage() {
                       </FormControl>
                       <FormDescription>
                         Upload a profile picture (max 4MB)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Company Logo Upload */}
+                <FormField
+                  control={form.control}
+                  name="companyLogo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company Logo</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center gap-4">
+                          {field.value && (
+                            <img
+                              src={field.value}
+                              alt="Company Logo"
+                              className="h-16 w-16 object-contain"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleFileUpload(e, "companyLogo")}
+                              disabled={isUploading}
+                            />
+                          </div>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Upload your company logo (max 4MB)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -226,7 +262,6 @@ export default function ProfilePage() {
                   )}
                 />
 
-                {/* Replace the country Input with Select */}
                 <FormField
                   control={form.control}
                   name="country"

@@ -27,7 +27,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <NotificationsDropdown />
             <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-2">
-              <Link href="/profile">
+              <Link href="/profile" className="flex items-center gap-2">
+                {user?.companyLogo && (
+                  <img
+                    src={user.companyLogo}
+                    alt={`${user.companyName || user.username} logo`}
+                    className="h-8 w-8 object-contain"
+                  />
+                )}
                 <Button variant="ghost" className="text-sm">
                   {user?.companyName || user?.username}
                 </Button>

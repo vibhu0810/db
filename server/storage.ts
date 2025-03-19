@@ -46,6 +46,25 @@ export class DatabaseStorage implements IStorage {
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
+    // Initialize test user
+    this.initializeTestUser();
+  }
+
+  private async initializeTestUser() {
+    try {
+      const existingUser = await this.getUserByUsername("testuser");
+      if (!existingUser) {
+        const hashedPassword = await hashPassword("test123");
+        await this.createUser({
+          username: "testuser",
+          password: hashedPassword,
+          companyName: "Test Company",
+          companyLogo: null
+        });
+      }
+    } catch (error) {
+      console.error("Error initializing test user:", error);
+    }
   }
 
   // User operations
@@ -73,7 +92,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  // Domain operations remain as MemStorage for now
+  // Domain operations remain as test data
   private initializeTestDomains(): Domain[] {
     const engagebay: Domain = {
       id: 1,
@@ -115,7 +134,7 @@ export class DatabaseStorage implements IStorage {
     return domains.find(d => d.id === id);
   }
 
-  // Order operations remain as MemStorage for now
+  // Order operations remain as test data
   private initializeTestOrder(userId: number): Order {
     return {
       id: 1,
@@ -144,7 +163,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrder(orderData: any): Promise<Order> {
-    // For now, return a test order
     return this.initializeTestOrder(orderData.userId);
   }
 

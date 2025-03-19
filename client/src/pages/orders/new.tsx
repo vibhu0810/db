@@ -29,8 +29,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { z } from "zod";
 
 type OrderType = "guest_post" | "niche_edit";
+
+const urlSchema = z.string().url("Please enter a valid URL");
 
 export default function NewOrder() {
   const [, setLocation] = useLocation();
@@ -47,16 +50,21 @@ export default function NewOrder() {
   const form = useForm({
     resolver: zodResolver(
       insertOrderSchema.extend({
-        sourceUrl: insertOrderSchema.shape.sourceUrl
-          .refine(
-            (url) => {
-              if (!domain || selectedType === "guest_post") return true;
-              return url.includes(domain.websiteUrl);
-            },
-            {
-              message: `Link URL must be from ${domain?.websiteUrl}`,
+        sourceUrl: urlSchema.refine(
+          (url) => {
+            if (!domain || selectedType === "guest_post") return true;
+            try {
+              const urlObj = new URL(url);
+              return urlObj.hostname.includes(domain.websiteUrl);
+            } catch {
+              return false;
             }
-          ),
+          },
+          {
+            message: `Link URL must be from ${domain?.websiteUrl}`,
+          }
+        ),
+        targetUrl: urlSchema,
       })
     ),
     defaultValues: {
@@ -121,6 +129,7 @@ export default function NewOrder() {
   const showTypeSelection = domain.type === "both" && !selectedType;
   const isNicheEdit = selectedType === "niche_edit" || domain.type === "niche_edit";
   const isGuestPost = selectedType === "guest_post" || domain.type === "guest_post";
+  const price = isGuestPost ? domain.guestPostPrice : domain.nicheEditPrice;
 
   return (
     <DashboardShell>
@@ -134,7 +143,12 @@ export default function NewOrder() {
             <CardTitle>Order Details</CardTitle>
             <CardDescription>
               Create a new order for {domain.websiteName}
+              {price && <div className="mt-2 text-lg font-semibold">Price: ${price}</div>}
             </CardDescription>
+            <div className="mt-2 text-sm text-muted-foreground">
+              * Estimated turnaround time: 7-14 business days. This is not a guaranteed timeframe for the {isNicheEdit ? "Niche Edit" : "Guest Post"} to go live. 
+              It is based on previous requests we made live on this domain.
+            </div>
           </CardHeader>
           <CardContent>
             {showTypeSelection ? (

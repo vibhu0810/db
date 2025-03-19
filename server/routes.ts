@@ -137,18 +137,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add order comments routes
+  // Add this route for order comments
+  app.post("/api/orders/:orderId/comments", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const orderId = parseInt(req.params.orderId);
+      const comment = await storage.createOrderComment({
+        orderId,
+        userId: req.user.id,
+        message: req.body.message,
+        createdAt: new Date(),
+      });
+
+      // Get the user details to include in response
+      const user = await storage.getUser(req.user.id);
+
+      res.status(201).json({
+        ...comment,
+        user: {
+          username: user?.username,
+          companyName: user?.companyName,
+          is_admin: user?.is_admin,
+        }
+      });
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  // Add this route for getting order comments
   app.get("/api/orders/:orderId/comments", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      const comments = await storage.getOrderComments(parseInt(req.params.orderId));
-      console.log('Retrieved comments:', comments);
-      res.json(comments);
+
+      const orderId = parseInt(req.params.orderId);
+      const comments = await storage.getOrderComments(orderId);
+      const users = await storage.getUsers();
+
+      // Join comments with user data
+      const commentsWithUserDetails = comments.map(comment => {
+        const user = users.find(u => u.id === comment.userId);
+        return {
+          ...comment,
+          user: user ? {
+            username: user.username,
+            companyName: user.companyName,
+            is_admin: user.is_admin
+          } : null
+        };
+      });
+
+      res.json(commentsWithUserDetails);
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      console.error("Error fetching comments:", error);
       res.status(500).json({ error: "Failed to fetch comments" });
     }
   });
+
 
   // Create order with validation
   app.post("/api/orders", async (req, res) => {

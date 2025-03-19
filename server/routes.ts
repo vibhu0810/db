@@ -71,6 +71,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(domain);
   });
 
+  app.get("/api/domains/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const domain = await storage.getDomain(parseInt(req.params.id));
+    if (!domain) return res.sendStatus(404);
+    res.json(domain);
+  });
+
   // Review routes
   app.get("/api/orders/:id/reviews", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

@@ -19,24 +19,38 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
-  const { data: orders = [] } = useQuery<Order[]>({ 
-    queryKey: ['/api/orders'] 
+  const { data: orders = [] } = useQuery<Order[]>({
+    queryKey: ["/api/orders"],
   });
 
   const { data: domains = [] } = useQuery<Domain[]>({
-    queryKey: ['/api/domains']
+    queryKey: ["/api/domains"],
   });
 
   // Calculate metrics
   const totalOrders = orders.length;
-  const completedOrders = orders.filter(o => o.status === 'Completed').length;
+  const completedOrders = orders.filter((o) => o.status === "Completed");
+  const completedOrdersCount = completedOrders.length;
   const totalSpent = orders.reduce((sum, order) => sum + Number(order.price), 0);
-  const averageDA = domains.reduce((sum, domain) => sum + Number(domain.domainAuthority), 0) / domains.length;
+
+  // Calculate average DR from completed orders only
+  const completedOrderDomains = completedOrders
+    .map((order) => domains.find((d) => d.id === order.domainId))
+    .filter(Boolean);
+  const averageDR =
+    completedOrderDomains.length > 0
+      ? completedOrderDomains.reduce(
+          (sum, domain) => sum + Number(domain?.domainRating || 0),
+          0
+        ) / completedOrderDomains.length
+      : 0;
 
   // Prepare chart data
   const monthlyOrders = orders.reduce((acc: any[], order) => {
-    const month = new Date(order.dateOrdered).toLocaleString('default', { month: 'short' });
-    const existing = acc.find(item => item.month === month);
+    const month = new Date(order.dateOrdered).toLocaleString("default", {
+      month: "short",
+    });
+    const existing = acc.find((item) => item.month === month);
     if (existing) {
       existing.orders += 1;
       existing.spent += Number(order.price);
@@ -59,7 +73,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalOrders}</div>
             <p className="text-xs text-muted-foreground">
-              {completedOrders} completed
+              {completedOrdersCount} completed
             </p>
           </CardContent>
         </Card>
@@ -79,13 +93,13 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average DA</CardTitle>
+            <CardTitle className="text-sm font-medium">Average DR</CardTitle>
             <LineChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{averageDA.toFixed(1)}</div>
+            <div className="text-2xl font-bold">{averageDR.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">
-              Across all domains
+              From completed orders
             </p>
           </CardContent>
         </Card>
@@ -97,7 +111,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {((completedOrders / totalOrders || 0) * 100).toFixed(1)}%
+              {((completedOrdersCount / totalOrders || 0) * 100).toFixed(1)}%
             </div>
             <p className="text-xs text-muted-foreground">
               Order completion rate

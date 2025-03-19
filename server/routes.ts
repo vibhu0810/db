@@ -39,27 +39,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const users = await storage.getUsers();
       const orders = await storage.getAllOrders();
 
-      const usersWithStats = users.map(user => {
-        const userOrders = orders
-          .filter(order => order.userId === user.id)
-          .filter(order => {
-            if (!fromDate || !toDate) return true;
-            const orderDate = new Date(order.dateOrdered);
-            return orderDate >= fromDate && orderDate <= toDate;
-          });
+      const usersWithStats = users
+        .filter(user => !user.is_admin) // Filter out admin users
+        .map(user => {
+          const userOrders = orders
+            .filter(order => order.userId === user.id)
+            .filter(order => {
+              if (!fromDate || !toDate) return true;
+              const orderDate = new Date(order.dateOrdered);
+              return orderDate >= fromDate && orderDate <= toDate;
+            });
 
-        const stats = {
-          total: userOrders.length,
-          completed: userOrders.filter(o => o.status === "Completed").length,
-          pending: userOrders.filter(o => o.status === "Sent").length,
-          totalSpent: userOrders.reduce((sum, order) => sum + Number(order.price), 0)
-        };
+          const stats = {
+            total: userOrders.length,
+            completed: userOrders.filter(o => o.status === "Completed").length,
+            pending: userOrders.filter(o => o.status === "Sent").length,
+            totalSpent: userOrders.reduce((sum, order) => sum + Number(order.price), 0)
+          };
 
-        return {
-          ...user,
-          orders: stats
-        };
-      });
+          return {
+            ...user,
+            orders: stats
+          };
+        });
 
       res.json(usersWithStats);
     } catch (error) {

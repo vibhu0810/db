@@ -12,7 +12,7 @@ const ADMIN_EMAIL = "info@digitalgratified.com";
 
 export async function sendOrderNotificationEmail(order: Order, user: any) {
   const isNicheEdit = !order.domain; // If no domain, it's a niche edit
-  
+
   let emailContent = '';
   if (isNicheEdit) {
     emailContent = `
@@ -42,6 +42,11 @@ Price: $${order.price}
       from: ADMIN_EMAIL, // Must be verified sender
       subject: `New Order #${order.id} from ${user.companyName || user.username}`,
       text: emailContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: false
+        }
+      }
     });
   } catch (error) {
     console.error('Error sending order notification email:', error);
@@ -67,6 +72,11 @@ ${sender.companyName || sender.username} has commented on Order #${orderDetails.
 
 You can view and reply to this comment in your dashboard.
 `,
+      trackingSettings: {
+        clickTracking: {
+          enable: false
+        }
+      }
     });
   } catch (error) {
     console.error('Error sending comment notification email:', error);
@@ -88,6 +98,11 @@ Your order #${orderDetails.id} has been updated to status: ${orderDetails.status
 
 You can view the details in your dashboard.
 `,
+      trackingSettings: {
+        clickTracking: {
+          enable: false
+        }
+      }
     });
   } catch (error) {
     console.error('Error sending status update email:', error);

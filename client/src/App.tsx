@@ -7,6 +7,8 @@ import AuthPage from "./pages/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ProtectedRoute } from "@/lib/protected-route";
 import DomainsPage from "./pages/domains";
+import OrdersPage from "./pages/orders";
+import NewOrderPage from "./pages/orders/new";
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Switch>
             <Route path="/auth" component={AuthPage} />
             <ProtectedRoute path="/domains" component={DomainsPage} />
+            <ProtectedRoute path="/orders" component={OrdersPage} />
+            <ProtectedRoute path="/orders/new" component={NewOrderPage} />
             <ProtectedRoute 
               path="/" 
               component={() => (

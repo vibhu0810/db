@@ -183,9 +183,13 @@ export class DatabaseStorage implements IStorage {
           orderId: comment.orderId,
           userId: comment.userId,
           message: comment.message,
-          createdAt: new Date().toISOString(),
         })
         .returning();
+
+      if (!newComment) {
+        throw new Error('Failed to create comment');
+      }
+
       return newComment;
     } catch (error) {
       console.error('Error creating comment:', error);

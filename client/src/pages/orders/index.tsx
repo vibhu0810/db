@@ -345,9 +345,7 @@ export default function Orders() {
                                     {(() => {
                                       try {
                                         if (!comment.createdAt) return 'Just now';
-                                        const date = new Date(comment.createdAt);
-                                        if (isNaN(date.getTime())) return 'Just now';
-                                        return format(date, "MMM d, yyyy h:mm a");
+                                        return format(parseISO(comment.createdAt), "MMM d, yyyy h:mm a");
                                       } catch (error) {
                                         console.error('Date parsing error:', error);
                                         return 'Just now';

@@ -82,6 +82,7 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").notNull(),
 });
 
+// Add timestamp type to order comments
 export const orderComments = pgTable("order_comments", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull(),
@@ -95,6 +96,10 @@ export const insertOrderCommentSchema = createInsertSchema(orderComments).omit({
   id: true,
   createdAt: true,
 });
+
+// Types
+export type InsertOrderComment = z.infer<typeof insertOrderCommentSchema>;
+export type OrderComment = typeof orderComments.$inferSelect;
 
 export const insertOrderSchema = createInsertSchema(orders)
   .omit({
@@ -120,5 +125,3 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Order = typeof orders.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
-export type InsertOrderComment = z.infer<typeof insertOrderCommentSchema>;
-export type OrderComment = typeof orderComments.$inferSelect;

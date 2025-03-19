@@ -16,8 +16,10 @@ declare module "express-serve-static-core" {
 }
 
 if (!process.env.UPLOADTHING_SECRET) {
-  console.error("UPLOADTHING_SECRET is not set");
-  throw new Error("UPLOADTHING_SECRET environment variable is required");
+  console.warn("UPLOADTHING_SECRET is not set - file upload functionality will be disabled");
+  if (process.env.NODE_ENV !== 'production') {
+    throw new Error("UPLOADTHING_SECRET environment variable is required for development");
+  }
 }
 
 console.log("Initializing UploadThing with configuration...");

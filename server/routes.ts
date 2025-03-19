@@ -137,20 +137,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add this route for order comments
+  // Add order comments routes
   app.post("/api/orders/:orderId/comments", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
       const orderId = parseInt(req.params.orderId);
+
+      // Verify order exists
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Create comment
       const comment = await storage.createOrderComment({
         orderId,
         userId: req.user.id,
         message: req.body.message,
+        createdAt: new Date(),
       });
 
-      // Get the order details
-      const order = await storage.getOrder(orderId);
+      // Create notifications
       const admins = await storage.getUsers().then(users => users.filter(u => u.is_admin));
 
       if (req.user.is_admin) {
@@ -159,19 +167,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: order.userId,
           message: `Admin commented on your order #${orderId}`,
           type: "comment",
+          orderId,
         });
       } else {
         // User commented - notify all admins
-        for (const admin of admins) {
-          await storage.createNotification({
+        await Promise.all(admins.map(admin =>
+          storage.createNotification({
             userId: admin.id,
-            message: `${req.user.username} commented on order #${orderId}`,
+            message: `${req.user?.username} commented on order #${orderId}`,
             type: "comment",
-          });
-        }
+            orderId,
+          })
+        ));
       }
 
-      // Get the user details to include in response
+      // Get user details for response
       const user = await storage.getUser(req.user.id);
       res.status(201).json({
         ...comment,
@@ -181,13 +191,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           is_admin: user?.is_admin,
         }
       });
+
     } catch (error) {
       console.error("Error creating comment:", error);
       res.status(500).json({ error: "Failed to create comment" });
     }
   });
 
-  // Add this route for getting order comments
   app.get("/api/orders/:orderId/comments", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
@@ -196,8 +206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const comments = await storage.getOrderComments(orderId);
       const users = await storage.getUsers();
 
-      // Join comments with user data
-      const commentsWithUserDetails = comments.map(comment => {
+      const commentsWithUserDetails = await Promise.all(comments.map(async comment => {
         const user = users.find(u => u.id === comment.userId);
         return {
           ...comment,
@@ -207,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             is_admin: user.is_admin
           } : null
         };
-      });
+      }));
 
       res.json(commentsWithUserDetails);
     } catch (error) {
@@ -216,30 +225,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update order status
+  app.patch("/api/orders/:orderId/status", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
 
-  // Create order with validation
+      const orderId = parseInt(req.params.orderId);
+      const { status } = req.body;
+
+      // Validate status
+      if (!["Sent", "Completed", "Rejected", "Revision"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+
+      const order = await storage.updateOrder(orderId, {
+        status,
+        dateCompleted: status === "Completed" ? new Date() : null
+      });
+
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Create notification for the order owner
+      await storage.createNotification({
+        userId: order.userId,
+        message: `Your order #${orderId} status has been updated to ${status}`,
+        type: "status",
+        orderId,
+      });
+
+      res.json(order);
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      res.status(500).json({ error: "Failed to update order status" });
+    }
+  });
+
+  // Create new order
   app.post("/api/orders", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      console.log("Creating order with data:", { ...req.body, userId: req.user.id });
+
       const orderData = {
         ...req.body,
         userId: req.user.id,
         status: "Sent",
       };
+
       const order = await storage.createOrder(orderData);
 
-      // Notify all admins about the new order
+      // Notify all admins about new order
       const admins = await storage.getUsers().then(users => users.filter(u => u.is_admin));
-      for (const admin of admins) {
-        await storage.createNotification({
+      await Promise.all(admins.map(admin =>
+        storage.createNotification({
           userId: admin.id,
-          message: `New order #${order.id} placed by ${req.user.username}`,
+          message: `New order #${order.id} placed by ${req.user?.username}`,
           type: "order",
-        });
-      }
+          orderId: order.id,
+        })
+      ));
 
-      console.log("Created order:", order);
       res.status(201).json(order);
     } catch (error) {
       console.error("Error creating order:", error);
@@ -308,40 +356,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error marking notification as read:", error);
       res.status(500).json({ error: "Failed to mark notification as read" });
-    }
-  });
-
-  // Add this route for updating order status
-  app.patch("/api/orders/:orderId/status", async (req, res) => {
-    try {
-      if (!req.user?.is_admin) {
-        return res.status(403).json({ error: "Unauthorized: Admin access required" });
-      }
-
-      const orderId = parseInt(req.params.orderId);
-      const { status } = req.body;
-
-      // Validate status
-      if (!["Sent", "Completed", "Rejected", "Revision"].includes(status)) {
-        return res.status(400).json({ error: "Invalid status" });
-      }
-
-      const order = await storage.updateOrder(orderId, { 
-        status,
-        dateCompleted: status === "Completed" ? new Date() : null
-      });
-
-      // Create notification for the order owner
-      await storage.createNotification({
-        userId: order.userId,
-        message: `Your order #${orderId} status has been updated to ${status}`,
-        type: "status",
-      });
-
-      res.json(order);
-    } catch (error) {
-      console.error("Error updating order status:", error);
-      res.status(500).json({ error: "Failed to update order status" });
     }
   });
 

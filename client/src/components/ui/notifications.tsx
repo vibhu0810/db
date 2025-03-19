@@ -11,19 +11,22 @@ import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useLocation } from "wouter";
 
 export function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [, setLocation] = useLocation();
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [], isError } = useQuery({
     queryKey: ['/api/notifications'],
     queryFn: () => apiRequest("GET", "/api/notifications").then(res => res.json()),
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: number) => {
       const res = await apiRequest("PATCH", `/api/notifications/${id}/read`);
+      if (!res.ok) throw new Error("Failed to mark notification as read");
       return res.json();
     },
     onSuccess: () => {
@@ -32,6 +35,23 @@ export function NotificationsDropdown() {
   });
 
   const unreadCount = notifications.filter((n: any) => !n.read).length;
+
+  const handleNotificationClick = async (notification: any) => {
+    // Mark as read
+    if (!notification.read) {
+      await markAsReadMutation.mutate(notification.id);
+    }
+
+    // Navigate to related order if it exists
+    if (notification.orderId) {
+      setIsOpen(false);
+      setLocation(`/orders`);
+    }
+  };
+
+  if (isError) {
+    return null;
+  }
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -58,11 +78,7 @@ export function NotificationsDropdown() {
                 "flex flex-col items-start p-4 cursor-pointer",
                 !notification.read && "bg-muted"
               )}
-              onClick={() => {
-                if (!notification.read) {
-                  markAsReadMutation.mutate(notification.id);
-                }
-              }}
+              onClick={() => handleNotificationClick(notification)}
             >
               <p className="text-sm">{notification.message}</p>
               <p className="text-xs text-muted-foreground mt-1">

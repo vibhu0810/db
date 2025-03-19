@@ -1,10 +1,11 @@
 import { Sidebar } from "./sidebar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
-import { Bell, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { useState } from "react";
+import { NotificationsDropdown } from "@/components/ui/notifications";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { user, logoutMutation } = useAuth();
@@ -23,9 +24,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
+            <NotificationsDropdown />
             <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-2">
               <Link href="/profile">

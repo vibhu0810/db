@@ -1,7 +1,7 @@
-import { users, orders, domains, orderComments } from "@shared/schema";
-import type { User, InsertUser, Domain, InsertDomain, Order, OrderComment, InsertOrderComment } from "@shared/schema";
+import { users, orders, domains, orderComments, notifications } from "@shared/schema";
+import type { User, InsertUser, Domain, InsertDomain, Order, OrderComment, InsertOrderComment, Notification, InsertNotification } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
@@ -22,7 +22,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<User>): Promise<User>;
-  getUsers(): Promise<User[]>;  // Added this method
+  getUsers(): Promise<User[]>;
 
   // Domain operations
   getDomains(): Promise<Domain[]>;
@@ -31,13 +31,18 @@ export interface IStorage {
 
   // Order operations
   getOrders(userId: number): Promise<Order[]>;
-  getAllOrders(): Promise<Order[]>;  // Added this method
+  getAllOrders(): Promise<Order[]>;
   createOrder(order: any): Promise<Order>;
-  updateOrder(id: number, updates: Partial<Order>): Promise<Order>; // Added this method
+  updateOrder(id: number, updates: Partial<Order>): Promise<Order>;
 
   // Comment operations
   getOrderComments(orderId: number): Promise<OrderComment[]>;
   createOrderComment(comment: InsertOrderComment): Promise<OrderComment>;
+
+  // Notification operations
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotifications(userId: number): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<Notification>;
 
   // Session store
   sessionStore: session.Store;
@@ -112,7 +117,7 @@ export class DatabaseStorage implements IStorage {
       .insert(orders)
       .values({
         ...orderData,
-        status: "Sent", // Set default status
+        status: "Sent",
         dateOrdered: new Date(),
       })
       .returning();
@@ -166,6 +171,36 @@ export class DatabaseStorage implements IStorage {
       console.error('Error creating comment:', error);
       throw new Error('Failed to create comment');
     }
+  }
+
+  // Notification methods
+  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+    const [notification] = await db
+      .insert(notifications)
+      .values({
+        ...notificationData,
+        createdAt: new Date(),
+        read: false,
+      })
+      .returning();
+    return notification;
+  }
+
+  async getNotifications(userId: number): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification> {
+    const [notification] = await db
+      .update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    return notification;
   }
 }
 

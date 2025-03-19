@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -8,13 +9,6 @@ import { insertOrderSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -28,13 +22,20 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { z } from "zod";
 
 type OrderType = "guest_post" | "niche_edit";
 
 const urlSchema = z.string().url("Please enter a valid URL");
 
+// Helper functions remain the same...
 const getTurnaroundTime = (domain: Domain, orderType: OrderType | null) => {
   if (domain.websiteUrl === "engagebay.com") {
     return "3 working days";
@@ -114,6 +115,8 @@ export default function NewOrder() {
         domainId: domain.id,
         weWriteContent,
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
+        status: "Sent",
+        dateOrdered: new Date().toISOString(),
       };
 
       console.log("Processed order data:", orderData);
@@ -143,25 +146,24 @@ export default function NewOrder() {
     },
   });
 
-  const onSubmit = async (data: InsertOrder) => {
-    try {
-      console.log("Form values before submission:", data);
-      console.log("Form validation state:", form.formState);
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Form submitted manually");
+    const formData = form.getValues();
+    console.log("Form values:", formData);
+    console.log("Form state:", form.formState);
 
-      if (!form.formState.isValid) {
-        console.log("Form validation errors:", form.formState.errors);
-        toast({
-          title: "Validation Error",
-          description: "Please check all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      await createOrderMutation.mutateAsync(data);
-    } catch (error) {
-      console.error("Form submission error:", error);
+    if (!form.formState.isValid) {
+      console.log("Form validation errors:", form.formState.errors);
+      toast({
+        title: "Validation Error",
+        description: "Please check all required fields",
+        variant: "destructive",
+      });
+      return;
     }
+
+    createOrderMutation.mutate(formData);
   };
 
   if (isDomainLoading) {
@@ -241,10 +243,7 @@ export default function NewOrder() {
               </div>
             ) : (
               <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-4"
-                >
+                <form onSubmit={handleFormSubmit} className="space-y-4">
                   {isGuestPost && (
                     <>
                       <FormField
@@ -269,11 +268,16 @@ export default function NewOrder() {
                           <h3 className="text-lg font-medium">Content Source</h3>
                           <RadioGroup
                             value={weWriteContent ? "we_write" : "user_provides"}
-                            onValueChange={(value) => setWeWriteContent(value === "we_write")}
+                            onValueChange={(value) =>
+                              setWeWriteContent(value === "we_write")
+                            }
                             className="space-y-2"
                           >
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="user_provides" id="user_provides" />
+                              <RadioGroupItem
+                                value="user_provides"
+                                id="user_provides"
+                              />
                               <label htmlFor="user_provides">
                                 I'll provide the content (URL)
                               </label>
@@ -281,7 +285,8 @@ export default function NewOrder() {
                             <div className="flex items-center space-x-2">
                               <RadioGroupItem value="we_write" id="we_write" />
                               <label htmlFor="we_write">
-                                Write the content for me (${contentWritingPrice} for 1000 words)
+                                Write the content for me (${contentWritingPrice} for
+                                1000 words)
                               </label>
                             </div>
                           </RadioGroup>
@@ -303,7 +308,8 @@ export default function NewOrder() {
                                 />
                               </FormControl>
                               <FormDescription>
-                                Provide a URL to your content (e.g., Google Docs, Dropbox)
+                                Provide a URL to your content (e.g., Google Docs,
+                                Dropbox)
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -327,8 +333,8 @@ export default function NewOrder() {
                             />
                           </FormControl>
                           <FormDescription>
-                            Enter the URL of the existing article where you want to add your link
-                            (must be from {domain.websiteUrl})
+                            Enter the URL of the existing article where you want to
+                            add your link (must be from {domain.websiteUrl})
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -381,7 +387,8 @@ export default function NewOrder() {
                             <Textarea {...field} />
                           </FormControl>
                           <FormDescription>
-                            Provide instructions for how you want the link to be added
+                            Provide instructions for how you want the link to be
+                            added
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSEOJoke } from "./openai";
-import { insertMessageSchema } from "@shared/schema";
+import { insertMessageSchema, insertDomainSchema } from "@shared/schema";
 import { 
   sendOrderNotificationEmail, 
   sendCommentNotificationEmail, 
@@ -349,6 +349,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to generate joke" });
     }
   });
+
+  // Add domains routes with logging
+  app.get("/api/domains", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      console.log("Fetching domains...");
+      const domains = await storage.getDomains();
+      console.log("Retrieved domains:", domains);
+      res.json(domains);
+    } catch (error) {
+      console.error("Error fetching domains:", error);
+      res.status(500).json({ error: "Failed to fetch domains" });
+    }
+  });
+
+  // Add domain creation route
+  app.post("/api/domains", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      console.log("Creating domain with data:", req.body);
+      const domainData = insertDomainSchema.parse(req.body);
+      const domain = await storage.createDomain(domainData);
+      console.log("Created domain:", domain);
+      res.status(201).json(domain);
+    } catch (error) {
+      console.error("Error creating domain:", error);
+      res.status(500).json({ error: "Failed to create domain" });
+    }
+  });
+
+  // Add single domain route
+  app.get("/api/domains/:id", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const domain = await storage.getDomain(parseInt(req.params.id));
+      if (!domain) {
+        return res.status(404).json({ error: "Domain not found" });
+      }
+      res.json(domain);
+    } catch (error) {
+      console.error("Error fetching domain:", error);
+      res.status(500).json({ error: "Failed to fetch domain" });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;

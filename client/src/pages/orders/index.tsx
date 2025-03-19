@@ -29,9 +29,11 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { FileDown, Loader2, MessageSquare } from "lucide-react";
+import { FileDown, Loader2, MessageSquare, Copy, ChevronDown } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { useAuth } from "@/hooks/use-auth";
+import { Resizable } from "react-resizable";
+import { cn } from "@/lib/utils";
 
 type DateRange = {
   from?: Date;
@@ -45,6 +47,8 @@ export default function Orders() {
   const [dateRange, setDateRange] = useState<DateRange>({});
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [newComment, setNewComment] = useState<string>("");
+  const [sortField, setSortField] = useState<string>("dateOrdered");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const { toast } = useToast();
 
   const { data: orders = [], isLoading } = useQuery({
@@ -118,20 +122,79 @@ export default function Orders() {
     },
   });
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    const matchesSearch =
-      !searchQuery ||
-      order.sourceUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.targetUrl.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
 
-    const matchesDateRange = !dateRange.from || !dateRange.to || (
-      new Date(order.dateOrdered) >= dateRange.from &&
-      new Date(order.dateOrdered) <= dateRange.to
-    );
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied to clipboard",
+      description: "Text has been copied to your clipboard.",
+    });
+  };
 
-    return matchesStatus && matchesSearch && matchesDateRange;
-  });
+  const filteredOrders = orders
+    .filter((order) => {
+      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+      const matchesSearch =
+        !searchQuery ||
+        order.sourceUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.targetUrl.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesDateRange = !dateRange.from || !dateRange.to || (
+        new Date(order.dateOrdered) >= dateRange.from &&
+        new Date(order.dateOrdered) <= dateRange.to
+      );
+
+      return matchesStatus && matchesSearch && matchesDateRange;
+    })
+    .sort((a, b) => {
+      const aValue = (a as any)[sortField];
+      const bValue = (b as any)[sortField];
+
+      if (typeof aValue === "string") {
+        return sortDirection === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortDirection === "asc"
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
+
+  const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
+    <Button
+      variant="ghost"
+      onClick={() => handleSort(field)}
+      className="h-8 flex items-center gap-1 hover:bg-transparent"
+    >
+      {children}
+      {sortField === field && (
+        <ChevronDown className={cn(
+          "h-4 w-4 transition-transform",
+          sortDirection === "asc" && "rotate-180"
+        )} />
+      )}
+    </Button>
+  );
+
+  const ResizableCell = ({ width, onResize, children }: any) => (
+    <Resizable
+      width={width}
+      height={0}
+      onResize={onResize}
+      draggableOpts={{ enableUserSelectHack: false }}
+    >
+      <div style={{ width, height: "100%" }}>{children}</div>
+    </Resizable>
+  );
 
   const exportToCSV = () => {
     const headers = [
@@ -200,6 +263,7 @@ export default function Orders() {
             <SelectItem value="Completed">Completed</SelectItem>
             <SelectItem value="Rejected">Rejected</SelectItem>
             <SelectItem value="Cancelled">Cancelled</SelectItem>
+            <SelectItem value="Revision">Revision</SelectItem> {/* Added Revision status */}
           </SelectContent>
         </Select>
         <DatePickerWithRange
@@ -212,14 +276,30 @@ export default function Orders() {
         <Table>
           <TableHeader>
             <TableRow>
-              {isAdmin && <TableHead>User</TableHead>}
-              <TableHead>Source URL</TableHead>
-              <TableHead>Target URL</TableHead>
-              <TableHead>Anchor Text</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Date Ordered</TableHead>
-              <TableHead>Notes</TableHead> {/* Added Notes column */}
+              {isAdmin && (
+                <TableHead>
+                  <SortableHeader field="user.username">User</SortableHeader>
+                </TableHead>
+              )}
+              <TableHead>
+                <SortableHeader field="sourceUrl">Source URL</SortableHeader>
+              </TableHead>
+              <TableHead>
+                <SortableHeader field="targetUrl">Target URL</SortableHeader>
+              </TableHead>
+              <TableHead>
+                <SortableHeader field="anchorText">Anchor Text</SortableHeader>
+              </TableHead>
+              <TableHead>
+                <SortableHeader field="price">Price</SortableHeader>
+              </TableHead>
+              <TableHead>
+                <SortableHeader field="status">Status</SortableHeader>
+              </TableHead>
+              <TableHead>
+                <SortableHeader field="dateOrdered">Date Ordered</SortableHeader>
+              </TableHead>
+              <TableHead>Notes</TableHead>
               <TableHead>Comments</TableHead>
             </TableRow>
           </TableHeader>
@@ -231,9 +311,42 @@ export default function Orders() {
                     {order.user?.companyName || order.user?.username}
                   </TableCell>
                 )}
-                <TableCell>{order.sourceUrl}</TableCell>
-                <TableCell>{order.targetUrl}</TableCell>
-                <TableCell>{order.anchorText}</TableCell>
+                <TableCell className="max-w-[200px] truncate">
+                  <div className="flex items-center gap-2">
+                    <span>{order.sourceUrl}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => copyToClipboard(order.sourceUrl)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+                <TableCell className="max-w-[200px] truncate">
+                  <div className="flex items-center gap-2">
+                    <span>{order.targetUrl}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => copyToClipboard(order.targetUrl)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <span>{order.anchorText}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => copyToClipboard(order.anchorText)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
                 <TableCell>${Number(order.price).toFixed(2)}</TableCell>
                 <TableCell>
                   {isAdmin ? (
@@ -253,7 +366,7 @@ export default function Orders() {
                         <SelectItem value="Sent">Sent</SelectItem>
                         <SelectItem value="Completed">Completed</SelectItem>
                         <SelectItem value="Rejected">Rejected</SelectItem>
-                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                        <SelectItem value="Revision">Revision</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
@@ -263,7 +376,7 @@ export default function Orders() {
                 <TableCell>
                   {format(new Date(order.dateOrdered), "MMM d, yyyy")}
                 </TableCell>
-                <TableCell>{order.notes}</TableCell> {/* Added Notes cell */}
+                <TableCell>{order.notes}</TableCell>
                 <TableCell>
                   <Sheet>
                     <SheetTrigger asChild>

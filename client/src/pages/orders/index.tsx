@@ -71,9 +71,18 @@ export default function Orders() {
   const [highlightedOrderId, setHighlightedOrderId] = useState<number | null>(null);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
+    const maxWidths = {
+      sourceUrl: 400,
+      targetUrl: 400,
+      anchorText: 300,
+      textEdit: 400,
+    };
+
+    const newWidth = Math.min(size.width, maxWidths[column as keyof typeof maxWidths]);
+
     setColumnWidths(prev => ({
       ...prev,
-      [column]: size.width,
+      [column]: newWidth,
     }));
   };
 
@@ -248,40 +257,33 @@ export default function Orders() {
   };
 
   useEffect(() => {
-    // Only process notification data if we have orders loaded
     if (!isLoading && orders.length > 0) {
       const notificationDataStr = sessionStorage.getItem('notificationData');
-      console.log('Notification data from storage:', notificationDataStr); // Debug log
+      console.log('Notification data from storage:', notificationDataStr); 
       if (notificationDataStr) {
         try {
           const notificationData = JSON.parse(notificationDataStr);
-          console.log('Parsed notification data:', notificationData); // Debug log
+          console.log('Parsed notification data:', notificationData); 
           const { orderId, type } = notificationData;
 
-          // Set the highlighted order
           setHighlightedOrderId(orderId);
 
-          // Find the order index in the filtered orders
           const orderIndex = filteredOrders.findIndex(order => order.id === orderId);
-          console.log('Found order index:', orderIndex); // Debug log
+          console.log('Found order index:', orderIndex); 
           if (orderIndex !== -1) {
-            // Calculate and set the correct page number
             const pageNumber = Math.floor(orderIndex / itemsPerPage) + 1;
-            console.log('Setting page number to:', pageNumber); // Debug log
+            console.log('Setting page number to:', pageNumber); 
             setCurrentPage(pageNumber);
 
-            // If it's a comment notification, open the comments sheet
             if (type === 'comment') {
               setSelectedOrderId(orderId);
             }
 
-            // Clear the stored notification data
             sessionStorage.removeItem('notificationData');
 
-            // Wait for the page to update before scrolling
             setTimeout(() => {
               const element = document.getElementById(`order-${orderId}`);
-              console.log('Found element to scroll to:', !!element); // Debug log
+              console.log('Found element to scroll to:', !!element); 
               if (element) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }
@@ -332,7 +334,7 @@ export default function Orders() {
             <SelectItem value="Completed">Completed</SelectItem>
             <SelectItem value="Rejected">Rejected</SelectItem>
             <SelectItem value="Cancelled">Cancelled</SelectItem>
-            <SelectItem value="Revision">Revision</SelectItem> {/* Added Revision status */}
+            <SelectItem value="Revision">Revision</SelectItem>
           </SelectContent>
         </Select>
         <DatePickerWithRange
@@ -348,7 +350,7 @@ export default function Orders() {
             value={String(itemsPerPage)}
             onValueChange={(value) => {
               setItemsPerPage(Number(value));
-              setCurrentPage(1); // Reset to first page when changing items per page
+              setCurrentPage(1);
             }}
           >
             <SelectTrigger className="w-[100px]">
@@ -454,7 +456,7 @@ export default function Orders() {
                     {order.user?.companyName || order.user?.username}
                   </TableCell>
                 )}
-                <TableCell style={{ width: columnWidths.sourceUrl }}>
+                <TableCell style={{ width: columnWidths.sourceUrl, maxWidth: '400px' }}>
                   <div className="flex items-center space-x-2">
                     <span className="truncate">{order.sourceUrl}</span>
                     <Button
@@ -467,7 +469,7 @@ export default function Orders() {
                     </Button>
                   </div>
                 </TableCell>
-                <TableCell style={{ width: columnWidths.targetUrl }}>
+                <TableCell style={{ width: columnWidths.targetUrl, maxWidth: '400px' }}>
                   <div className="flex items-center space-x-2">
                     <span className="truncate">{order.targetUrl}</span>
                     <Button
@@ -480,7 +482,7 @@ export default function Orders() {
                     </Button>
                   </div>
                 </TableCell>
-                <TableCell style={{ width: columnWidths.anchorText }}>
+                <TableCell style={{ width: columnWidths.anchorText, maxWidth: '300px' }}>
                   <div className="flex items-center space-x-2">
                     <span className="truncate">{order.anchorText}</span>
                     <Button
@@ -522,7 +524,7 @@ export default function Orders() {
                 <TableCell>
                   {format(new Date(order.dateOrdered), "MMM d, yyyy")}
                 </TableCell>
-                <TableCell style={{ width: columnWidths.textEdit }}>
+                <TableCell style={{ width: columnWidths.textEdit, maxWidth: '400px' }}>
                   <div className="flex items-center space-x-2">
                     <span className="truncate">{order.textEdit}</span>
                     {order.textEdit && (
@@ -629,7 +631,6 @@ export default function Orders() {
 
             {[...Array(totalPages)].map((_, i) => {
               const page = i + 1;
-              // Show first page, last page, current page and pages around current
               if (
                 page === 1 ||
                 page === totalPages ||

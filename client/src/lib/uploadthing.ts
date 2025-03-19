@@ -1,6 +1,4 @@
-import { createUploadthing, type FileRouter } from "@uploadthing/react";
-
-const { useUploadThing } = createUploadthing<OurFileRouter>();
+import { useUploadThing } from "@uploadthing/react";
 
 export { useUploadThing };
 

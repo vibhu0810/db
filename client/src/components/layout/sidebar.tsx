@@ -25,6 +25,7 @@ const adminNavigation = [
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Users", href: "/users", icon: Users },
+  { name: "Chat", href: "/chat", icon: MessageSquare },
 ];
 
 export function Sidebar() {

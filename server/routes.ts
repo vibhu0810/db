@@ -12,19 +12,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add uploadthing route for file uploads
   console.log("Setting up UploadThing Express handler...");
-  const { createUploadthingExpressHandler } = await import("uploadthing/express");
-  app.use("/api/uploadthing", async (req, res, next) => {
-    console.log("Received upload request:", req.method, req.url);
-    try {
-      await createUploadthingExpressHandler({
-        router: uploadRouter,
-        config: { callbackUrl: "/api/uploadthing" }
-      })(req, res, next);
-    } catch (error) {
-      console.error("Error in upload handler:", error);
-      res.status(500).json({ error: "Upload failed" });
-    }
+  const f = createUploadthing({
+    errorFormatter: (err) => {
+      console.error("Upload error:", err);
+      return { message: err.message };
+    },
   });
+
+  app.use("/api/uploadthing", f.createUploadthingExpressHandler({
+    router: uploadRouter,
+  }));
 
   // Add users route for chat
   app.get("/api/users", async (req, res) => {

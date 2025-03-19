@@ -176,14 +176,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrderComment(comment: InsertOrderComment): Promise<OrderComment> {
-    const [newComment] = await db
-      .insert(orderComments)
-      .values({
-        ...comment,
-        createdAt: new Date().toISOString(), // Store as ISO string
-      })
-      .returning();
-    return newComment;
+    try {
+      const [newComment] = await db
+        .insert(orderComments)
+        .values({
+          orderId: comment.orderId,
+          userId: comment.userId,
+          message: comment.message,
+          createdAt: new Date().toISOString(),
+        })
+        .returning();
+      return newComment;
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      throw new Error('Failed to create comment');
+    }
   }
 }
 

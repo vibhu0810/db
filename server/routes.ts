@@ -51,16 +51,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update the comment creation route
   app.post("/api/orders/:orderId/comments", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
       const comment = await storage.createOrderComment({
         orderId: parseInt(req.params.orderId),
         userId: req.user.id,
         message: req.body.message,
       });
+
       res.status(201).json(comment);
     } catch (error) {
+      console.error("Error creating comment:", error);
       res.status(500).json({ error: "Failed to create comment" });
     }
   });

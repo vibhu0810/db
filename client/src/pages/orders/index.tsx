@@ -248,43 +248,46 @@ export default function Orders() {
   };
 
   useEffect(() => {
-    // Check if there's a notification data from redirect
-    const notificationDataStr = sessionStorage.getItem('notificationData');
-    if (notificationDataStr) {
-      try {
-        const notificationData = JSON.parse(notificationDataStr);
-        const { orderId, type } = notificationData;
+    // Only process notification data if we have orders loaded
+    if (!isLoading && orders.length > 0) {
+      const notificationDataStr = sessionStorage.getItem('notificationData');
+      if (notificationDataStr) {
+        try {
+          const notificationData = JSON.parse(notificationDataStr);
+          const { orderId, type } = notificationData;
 
-        // Set the highlighted order
-        setHighlightedOrderId(orderId);
+          // Set the highlighted order
+          setHighlightedOrderId(orderId);
 
-        // Find the order's page number and update current page
-        const orderIndex = filteredOrders.findIndex(order => order.id === orderId);
-        if (orderIndex !== -1) {
-          const pageNumber = Math.floor(orderIndex / itemsPerPage) + 1;
-          setCurrentPage(pageNumber);
+          // Find the order index in the filtered orders
+          const orderIndex = filteredOrders.findIndex(order => order.id === orderId);
+          if (orderIndex !== -1) {
+            // Calculate and set the correct page number
+            const pageNumber = Math.floor(orderIndex / itemsPerPage) + 1;
+            setCurrentPage(pageNumber);
 
-          // If it's a comment notification, open the comments sheet
-          if (type === 'comment') {
-            setSelectedOrderId(orderId);
-          }
-
-          // Clear the stored notification data
-          sessionStorage.removeItem('notificationData');
-
-          // Scroll to the highlighted order after a short delay to ensure the page has rendered
-          setTimeout(() => {
-            const element = document.getElementById(`order-${orderId}`);
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // If it's a comment notification, open the comments sheet
+            if (type === 'comment') {
+              setSelectedOrderId(orderId);
             }
-          }, 300);
+
+            // Clear the stored notification data
+            sessionStorage.removeItem('notificationData');
+
+            // Wait for the page to update before scrolling
+            setTimeout(() => {
+              const element = document.getElementById(`order-${orderId}`);
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 500);
+          }
+        } catch (error) {
+          console.error('Error processing notification data:', error);
         }
-      } catch (error) {
-        console.error('Error processing notification data:', error);
       }
     }
-  }, [filteredOrders, itemsPerPage]);
+  }, [isLoading, orders, filteredOrders, itemsPerPage]);
 
   if (isLoading) {
     return (

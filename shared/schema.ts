@@ -82,6 +82,20 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").notNull(),
 });
 
+export const orderComments = pgTable("order_comments", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  userId: integer("user_id").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Create insert schema for comments
+export const insertOrderCommentSchema = createInsertSchema(orderComments).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertOrderSchema = createInsertSchema(orders)
   .omit({
     id: true,
@@ -90,8 +104,9 @@ export const insertOrderSchema = createInsertSchema(orders)
   .extend({
     title: z.string().optional(),
     linkUrl: z.string().optional(),
+    content: z.string().optional(),
+    weWriteContent: z.boolean().optional(),
   });
-
 
 export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true });
 
@@ -105,3 +120,5 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Order = typeof orders.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type InsertOrderComment = z.infer<typeof insertOrderCommentSchema>;
+export type OrderComment = typeof orderComments.$inferSelect;

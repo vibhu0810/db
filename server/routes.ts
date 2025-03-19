@@ -29,6 +29,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add orders routes
+  app.get("/api/orders", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const orders = await storage.getOrders(req.user.id);
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+  // Add order comments routes
+  app.get("/api/orders/:orderId/comments", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const comments = await storage.getOrderComments(parseInt(req.params.orderId));
+      res.json(comments);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/orders/:orderId/comments", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const comment = await storage.createOrderComment({
+        orderId: parseInt(req.params.orderId),
+        userId: req.user.id,
+        message: req.body.message,
+      });
+      res.status(201).json(comment);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  // Create order with initial "Sent" status
+  app.post("/api/orders", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const order = await storage.createOrder({
+        ...req.body,
+        userId: req.user.id,
+        status: "Sent",
+      });
+      res.status(201).json(order);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create order" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

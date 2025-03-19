@@ -85,6 +85,190 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add orders routes
+  app.get("/api/orders", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      console.log("Fetching orders for user:", req.user.id);
+
+      const orders = await storage.getOrders(req.user.id);
+
+      // Add unread comments count for each order
+      const ordersWithUnreadCounts = await Promise.all(orders.map(async (order) => {
+        const unreadComments = await storage.getUnreadCommentCount(order.id, req.user.id);
+        return {
+          ...order,
+          unreadComments
+        };
+      }));
+
+      console.log("Retrieved orders with unread counts:", ordersWithUnreadCounts);
+      res.json(ordersWithUnreadCounts);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+  // Admin route to get all orders
+  app.get("/api/orders/all", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+
+      const orders = await storage.getAllOrders();
+      const users = await storage.getUsers();
+
+      // Join orders with user data and add unread counts
+      const ordersWithUserDetails = await Promise.all(orders.map(async (order) => {
+        const user = users.find(u => u.id === order.userId);
+        const unreadComments = await storage.getUnreadCommentCount(order.id, req.user!.id);
+        return {
+          ...order,
+          unreadComments,
+          user: user ? {
+            username: user.username,
+            companyName: user.companyName,
+            email: user.email
+          } : null
+        };
+      }));
+
+      res.json(ordersWithUserDetails);
+    } catch (error) {
+      console.error("Error fetching all orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+  // Add order comments routes
+  app.get("/api/orders/:orderId/comments", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const orderId = parseInt(req.params.orderId);
+      const comments = await storage.getOrderComments(orderId);
+      const users = await storage.getUsers();
+
+      const commentsWithUserDetails = await Promise.all(comments.map(async comment => {
+        const user = users.find(u => u.id === comment.userId);
+        return {
+          ...comment,
+          user: user ? {
+            username: user.username,
+            companyName: user.companyName,
+            is_admin: user.is_admin
+          } : null
+        };
+      }));
+
+      res.json(commentsWithUserDetails);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/orders/:orderId/comments", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const orderId = parseInt(req.params.orderId);
+
+      // Verify order exists
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Create comment
+      const comment = await storage.createOrderComment({
+        orderId,
+        userId: req.user.id,
+        message: req.body.message,
+        createdAt: new Date(),
+      });
+
+      // Create notifications
+      const admins = await storage.getUsers().then(users => users.filter(u => u.is_admin));
+
+      if (req.user.is_admin) {
+        // Admin commented - notify the order owner
+        await storage.createNotification({
+          userId: order.userId,
+          message: `Admin commented on your order #${orderId}`,
+          type: "comment",
+          orderId,
+        });
+      } else {
+        // User commented - notify all admins
+        await Promise.all(admins.map(admin =>
+          storage.createNotification({
+            userId: admin.id,
+            message: `${req.user?.username} commented on order #${orderId}`,
+            type: "comment",
+            orderId,
+          })
+        ));
+      }
+
+      // Get user details for response
+      const user = await storage.getUser(req.user.id);
+      res.status(201).json({
+        ...comment,
+        user: {
+          username: user?.username,
+          companyName: user?.companyName,
+          is_admin: user?.is_admin,
+        }
+      });
+
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  // Update order status
+  app.patch("/api/orders/:orderId/status", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+      const { status } = req.body;
+
+      // Validate status
+      if (!["Sent", "Completed", "Rejected", "Revision"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+
+      const order = await storage.updateOrder(orderId, {
+        status,
+        dateCompleted: status === "Completed" ? new Date() : null
+      });
+
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Create notification for the order owner
+      await storage.createNotification({
+        userId: order.userId,
+        message: `Your order #${orderId} status has been updated to ${status}`,
+        type: "status",
+        orderId,
+      });
+
+      res.json(order);
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      res.status(500).json({ error: "Failed to update order status" });
+    }
+  });
+
   app.get("/api/seo-joke", async (_req, res) => {
     try {
       const joke = await generateSEOJoke();

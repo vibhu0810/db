@@ -6,16 +6,19 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Bell } from "lucide-react";
+import { Bell, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const { data: notifications = [], isError } = useQuery({
     queryKey: ['/api/notifications'],
@@ -34,12 +37,35 @@ export function NotificationsDropdown() {
     },
   });
 
-  const unreadCount = notifications.filter((n: any) => !n.read).length;
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const unreadNotifications = notifications.filter((n: any) => !n.read);
+      await Promise.all(
+        unreadNotifications.map((notification: any) =>
+          apiRequest("PATCH", `/api/notifications/${notification.id}/read`)
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      toast({
+        title: "Notifications marked as read",
+        description: "All notifications have been marked as read.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as read",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleNotificationClick = async (notification: any) => {
     try {
-      console.log('Handling notification click:', notification); // Debug log
-      
+      console.log('Handling notification click:', notification);
+
       // Mark as read first
       if (!notification.read) {
         await markAsReadMutation.mutate(notification.id);
@@ -47,14 +73,14 @@ export function NotificationsDropdown() {
 
       // If we have an orderId, store notification data and redirect
       if (notification.orderId) {
-        console.log('Setting notification data for order:', notification.orderId); // Debug log
-        
+        console.log('Setting notification data for order:', notification.orderId);
+
         // Store both orderId and notification type
         sessionStorage.setItem('notificationData', JSON.stringify({
           orderId: notification.orderId,
           type: notification.type
         }));
-        
+
         // Close dropdown and navigate to orders page
         setIsOpen(false);
         setLocation('/orders');
@@ -63,6 +89,8 @@ export function NotificationsDropdown() {
       console.error('Error handling notification click:', error);
     }
   };
+
+  const unreadCount = notifications.filter((n: any) => !n.read).length;
 
   if (isError) {
     return null;
@@ -91,6 +119,22 @@ export function NotificationsDropdown() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
+        <div className="flex items-center justify-between p-2">
+          <span className="text-sm font-medium">Notifications</span>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-1 text-xs"
+              onClick={() => markAllAsReadMutation.mutate()}
+              disabled={markAllAsReadMutation.isPending}
+            >
+              <Check className="h-3 w-3" />
+              Mark all as read
+            </Button>
+          )}
+        </div>
+        <DropdownMenuSeparator />
         {notifications.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground">
             No notifications

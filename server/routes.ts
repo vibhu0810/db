@@ -395,18 +395,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add an endpoint to mark comments as read when opening the comments sheet
-  app.post("/api/orders/:orderId/comments/read", async (req, res) => {
+  // Add an endpoint to mark all notifications as read
+  app.post("/api/notifications/mark-all-read", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-
-      const orderId = parseInt(req.params.orderId);
-      await storage.markCommentsAsRead(orderId, req.user.id);
-
+      await storage.markAllNotificationsAsRead(req.user.id);
       res.sendStatus(200);
     } catch (error) {
-      console.error("Error marking comments as read:", error);
-      res.status(500).json({ error: "Failed to mark comments as read" });
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ error: "Failed to mark all notifications as read" });
     }
   });
 
@@ -438,6 +435,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating order:", error);
       res.status(500).json({ error: "Failed to update order" });
+    }
+  });
+
+  // Add an endpoint to mark comments as read when opening the comments sheet
+  app.post("/api/orders/:orderId/comments/read", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const orderId = parseInt(req.params.orderId);
+      await storage.markCommentsAsRead(orderId, req.user.id);
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error marking comments as read:", error);
+      res.status(500).json({ error: "Failed to mark comments as read" });
     }
   });
 

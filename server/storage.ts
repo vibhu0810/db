@@ -41,6 +41,7 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   getNotifications(userId: number): Promise<Notification[]>;
   markNotificationAsRead(id: number): Promise<Notification>;
+  markAllNotificationsAsRead(userId: number): Promise<void>;
 
   // Session store
   sessionStore: session.Store;
@@ -259,6 +260,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(notifications.id, id))
       .returning();
     return notification;
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    try {
+      await db
+        .update(notifications)
+        .set({ read: true })
+        .where(eq(notifications.userId, userId));
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      throw new Error('Failed to mark all notifications as read');
+    }
   }
 }
 

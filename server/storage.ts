@@ -33,6 +33,7 @@ export interface IStorage {
   getOrders(userId: number): Promise<Order[]>;
   getAllOrders(): Promise<Order[]>;  // Added this method
   createOrder(order: any): Promise<Order>;
+  updateOrder(id: number, updates: Partial<Order>): Promise<Order>; // Added this method
 
   // Comment operations
   getOrderComments(orderId: number): Promise<OrderComment[]>;
@@ -107,7 +108,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrder(orderData: any): Promise<Order> {
-    const [order] = await db.insert(orders).values(orderData).returning();
+    const [order] = await db
+      .insert(orders)
+      .values({
+        ...orderData,
+        status: "Sent", // Set default status
+        dateOrdered: new Date(),
+      })
+      .returning();
+    return order;
+  }
+
+  async updateOrder(id: number, updates: Partial<Order>): Promise<Order> {
+    const [order] = await db
+      .update(orders)
+      .set(updates)
+      .where(eq(orders.id, id))
+      .returning();
     return order;
   }
 

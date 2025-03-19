@@ -29,10 +29,10 @@ import {
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
 
+  // Use different endpoints based on user role
   const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
-    queryKey: ["/api/orders/all"],
-    queryFn: () => apiRequest("GET", "/api/orders/all").then(res => res.json()),
-    enabled: isAdmin,
+    queryKey: [isAdmin ? "/api/orders/all" : "/api/orders"],
+    queryFn: () => apiRequest("GET", isAdmin ? "/api/orders/all" : "/api/orders").then(res => res.json()),
   });
 
   const { data: domains = [], isLoading: domainsLoading } = useQuery<Domain[]>({
@@ -54,15 +54,20 @@ export default function Dashboard() {
   const pendingOrders = recentOrders.filter(o => o.status === "Sent").length;
   const completedOrders = recentOrders.filter(o => o.status === "Completed").length;
   const rejectedOrders = recentOrders.filter(o => o.status === "Rejected").length;
+  const revisionOrders = recentOrders.filter(o => o.status === "Revision").length;
 
   // Calculate completion rate
   const completionRate = totalOrders > 0
     ? ((completedOrders / totalOrders) * 100).toFixed(1)
     : "0.0";
 
+  // Calculate total spent (for user dashboard)
+  const totalSpent = recentOrders.reduce((sum, order) => sum + Number(order.price), 0);
+  const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
+
   // Get orders that need attention (recently submitted or pending)
   const ordersNeedingAttention = orders
-    .filter(o => o.status === "Sent")
+    .filter(o => o.status === "Sent" || o.status === "Revision")
     .sort((a, b) => new Date(b.dateOrdered).getTime() - new Date(a.dateOrdered).getTime())
     .slice(0, 5);
 
@@ -74,12 +79,17 @@ export default function Dashboard() {
     const existing = acc.find((item) => item.month === month);
     if (existing) {
       existing[order.status] = (existing[order.status] || 0) + 1;
+      if (!isAdmin) {
+        existing.spent = (existing.spent || 0) + Number(order.price);
+      }
     } else {
       acc.push({
         month,
         Completed: order.status === "Completed" ? 1 : 0,
         Sent: order.status === "Sent" ? 1 : 0,
+        Revision: order.status === "Revision" ? 1 : 0,
         Rejected: order.status === "Rejected" ? 1 : 0,
+        ...((!isAdmin) && { spent: Number(order.price) }),
       });
     }
     return acc;
@@ -97,63 +107,128 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user?.firstName || user?.username}!</h2>
-        <p className="text-muted-foreground mt-2">Here's an overview of order fulfillment in the last 30 days</p>
+        <p className="text-muted-foreground mt-2">
+          {isAdmin 
+            ? "Here's an overview of order fulfillment in the last 30 days"
+            : "Here's what's happening with your orders in the last 30 days"
+          }
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orders Pending</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingOrders}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting fulfillment
-            </p>
-          </CardContent>
-        </Card>
+        {isAdmin ? (
+          <>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Orders Pending</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{pendingOrders}</div>
+                <p className="text-xs text-muted-foreground">
+                  Awaiting fulfillment
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedOrders}</div>
-            <p className="text-xs text-muted-foreground">
-              Successfully fulfilled
-            </p>
-          </CardContent>
-        </Card>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{completedOrders}</div>
+                <p className="text-xs text-muted-foreground">
+                  Successfully fulfilled
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rejected Orders</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{rejectedOrders}</div>
-            <p className="text-xs text-muted-foreground">
-              Not fulfilled
-            </p>
-          </CardContent>
-        </Card>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Orders in Revision</CardTitle>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{revisionOrders}</div>
+                <p className="text-xs text-muted-foreground">
+                  Under revision
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {completionRate}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Order success rate
-            </p>
-          </CardContent>
-        </Card>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {completionRate}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Order success rate
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalOrders}</div>
+                <p className="text-xs text-muted-foreground">
+                  {completedOrders} completed
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+                <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${totalSpent.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground">
+                  Avg ${averageOrderValue.toFixed(2)} per order
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{pendingOrders + revisionOrders}</div>
+                <p className="text-xs text-muted-foreground">
+                  In progress
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {completionRate}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Order completion rate
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -184,24 +259,44 @@ export default function Dashboard() {
                     return null;
                   }}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="Completed"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="Sent"
-                  stroke="hsl(var(--warning))"
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="Rejected"
-                  stroke="hsl(var(--destructive))"
-                  strokeWidth={2}
-                />
+                {isAdmin ? (
+                  <>
+                    <Line
+                      type="monotone"
+                      dataKey="Completed"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="Sent"
+                      stroke="hsl(var(--warning))"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="Revision"
+                      stroke="hsl(var(--secondary))"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="Rejected"
+                      stroke="hsl(var(--destructive))"
+                      strokeWidth={2}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Line
+                      type="monotone"
+                      dataKey="spent"
+                      name="Amount Spent"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                    />
+                  </>
+                )}
               </RechartsLineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -209,7 +304,7 @@ export default function Dashboard() {
 
         <Card className="hover:shadow-lg transition-shadow md:col-span-2">
           <CardHeader>
-            <CardTitle>Orders Needing Attention</CardTitle>
+            <CardTitle>{isAdmin ? "Orders Needing Attention" : "Recent Orders"}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -217,8 +312,13 @@ export default function Dashboard() {
                 <div key={order.id} className="flex items-center justify-between border-b pb-4 last:border-0">
                   <div>
                     <p className="font-medium">{order.sourceUrl}</p>
+                    {isAdmin && (
+                      <p className="text-sm text-muted-foreground">
+                        Ordered by: {order.user?.companyName || order.user?.username}
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground">
-                      Ordered by: {order.user?.companyName || order.user?.username}
+                      Status: {order.status}
                     </p>
                   </div>
                   <Link href="/orders">

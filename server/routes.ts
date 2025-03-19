@@ -210,6 +210,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+  // Add this route for updating order status
+  app.patch("/api/orders/:orderId/status", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+      const { status } = req.body;
+
+      // Validate status
+      if (!["Sent", "Completed", "Rejected", "Revision"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+
+      const order = await storage.updateOrder(orderId, { 
+        status,
+        dateCompleted: status === "Completed" ? new Date() : null
+      });
+
+      res.json(order);
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      res.status(500).json({ error: "Failed to update order status" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

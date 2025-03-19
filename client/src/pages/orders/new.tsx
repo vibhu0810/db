@@ -26,13 +26,18 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
+
+type OrderType = "guest_post" | "niche_edit";
 
 export default function NewOrder() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const searchParams = new URLSearchParams(window.location.search);
   const domainId = searchParams.get("domain");
+  const [selectedType, setSelectedType] = useState<OrderType | null>(null);
 
   const { data: domain, isLoading: isDomainLoading } = useQuery<Domain>({
     queryKey: [`/api/domains/${domainId}`],
@@ -42,45 +47,36 @@ export default function NewOrder() {
   const form = useForm({
     resolver: zodResolver(
       insertOrderSchema.extend({
-        title: domain?.type === "guest_post" 
-          ? insertOrderSchema.shape.title
-          : insertOrderSchema.shape.title.optional(),
-        linkUrl: domain?.type === "niche_edit"
-          ? insertOrderSchema.shape.sourceUrl
-          : insertOrderSchema.shape.sourceUrl.optional(),
+        sourceUrl: insertOrderSchema.shape.sourceUrl
+          .refine(
+            (url) => {
+              if (!domain || selectedType === "guest_post") return true;
+              return url.includes(domain.websiteUrl);
+            },
+            {
+              message: `Link URL must be from ${domain?.websiteUrl}`,
+            }
+          ),
       })
     ),
     defaultValues: {
-      sourceUrl: domain?.websiteUrl || "",
+      sourceUrl: "",
       targetUrl: "",
       anchorText: "",
       textEdit: "",
       notes: "",
-      domainAuthority: domain?.domainAuthority || null,
-      domainRating: domain?.domainRating || null,
-      websiteTraffic: domain?.websiteTraffic || null,
-      pageTraffic: null,
-      price: domain?.price || 0,
+      title: "",
       status: "Pending",
       dateOrdered: new Date().toISOString(),
-      title: "", // For guest posts
-      linkUrl: "", // For niche edits
     },
   });
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Process form data based on domain type
       const orderData = {
         ...data,
-        // For guest posts, use the domain's website URL as source
-        // For niche edits, use the provided link URL as source
-        sourceUrl: domain?.type === "guest_post" ? domain.websiteUrl : data.linkUrl,
-        // Carry over domain metadata
-        domainAuthority: domain?.domainAuthority,
-        domainRating: domain?.domainRating,
-        websiteTraffic: domain?.websiteTraffic,
-        price: domain?.price,
+        type: selectedType || domain?.type,
+        domainId: domain?.id,
       };
       const res = await apiRequest("POST", "/api/orders", orderData);
       return res.json();
@@ -122,6 +118,10 @@ export default function NewOrder() {
     );
   }
 
+  const showTypeSelection = domain.type === "both" && !selectedType;
+  const isNicheEdit = selectedType === "niche_edit" || domain.type === "niche_edit";
+  const isGuestPost = selectedType === "guest_post" || domain.type === "guest_post";
+
   return (
     <DashboardShell>
       <div className="space-y-6">
@@ -133,141 +133,175 @@ export default function NewOrder() {
           <CardHeader>
             <CardTitle>Order Details</CardTitle>
             <CardDescription>
-              Create a new {domain.type === "guest_post" ? "guest post" : "niche edit"} order for {domain.websiteName}
+              Create a new order for {domain.websiteName}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit((data) =>
-                  createOrderMutation.mutate(data)
-                )}
-                className="space-y-4"
-              >
-                {domain.type === "guest_post" ? (
+            {showTypeSelection ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Select Order Type</h3>
+                <RadioGroup
+                  onValueChange={(value) => setSelectedType(value as OrderType)}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="guest_post" id="guest_post" />
+                    <label htmlFor="guest_post">
+                      Guest Post (${domain.guestPostPrice})
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="niche_edit" id="niche_edit" />
+                    <label htmlFor="niche_edit">
+                      Niche Edit (${domain.nicheEditPrice})
+                    </label>
+                  </div>
+                </RadioGroup>
+              </div>
+            ) : (
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit((data) =>
+                    createOrderMutation.mutate(data)
+                  )}
+                  className="space-y-4"
+                >
+                  {isGuestPost && (
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Post Title</FormLabel>
+                          <FormControl>
+                            <Input {...field} required />
+                          </FormControl>
+                          <FormDescription>
+                            Enter the title for your guest post
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {isNicheEdit && (
+                    <FormField
+                      control={form.control}
+                      name="sourceUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Link from URL</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              placeholder={`https://${domain.websiteUrl}/blog/example`}
+                              required 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Enter the URL of the existing article where you want to add your link 
+                            (must be from {domain.websiteUrl})
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
                   <FormField
                     control={form.control}
-                    name="title"
+                    name="targetUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Post Title</FormLabel>
+                        <FormLabel>Link to URL</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Enter your guest post title" />
+                          <Input {...field} required />
                         </FormControl>
                         <FormDescription>
-                          The title of your guest post article
+                          The URL you want to link to
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                ) : (
+
                   <FormField
                     control={form.control}
-                    name="linkUrl"
+                    name="anchorText"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Existing Article URL</FormLabel>
+                        <FormLabel>Anchor Text</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="https://example.com/article" />
+                          <Input {...field} required />
                         </FormControl>
                         <FormDescription>
-                          The URL of the existing article where you want to add your link
+                          The text that will be linked
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                )}
 
-                <FormField
-                  control={form.control}
-                  name="targetUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Target URL</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        The URL you want to link to
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                  {isNicheEdit && (
+                    <FormField
+                      control={form.control}
+                      name="textEdit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Text Edit Instructions</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Provide instructions for how you want the link to be added
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name="anchorText"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Anchor Text</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        The text that will be linked
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                  {isGuestPost && (
+                    <FormField
+                      control={form.control}
+                      name="content"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Content</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} required />
+                          </FormControl>
+                          <FormDescription>
+                            Enter the content for your guest post
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name="textEdit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Text Edit Instructions</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Any specific instructions for text placement
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Additional Notes</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Any additional requirements or notes
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-end gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setLocation("/domains")}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={createOrderMutation.isPending}
-                  >
-                    {createOrderMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Create Order
-                  </Button>
-                </div>
-              </form>
-            </Form>
+                  <div className="flex justify-end gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setLocation("/domains")}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={createOrderMutation.isPending}
+                    >
+                      {createOrderMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Create Order
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            )}
           </CardContent>
         </Card>
       </div>

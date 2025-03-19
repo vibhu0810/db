@@ -12,7 +12,8 @@ export default function AuthPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [displayText, setDisplayText] = useState("");
-  const fullText = "Welcome to LinkManager!";
+  const [showAltText, setShowAltText] = useState(false);
+  const fullText = "Welcome to DG Land! 🥷";
   const { data: seoJokeData, refetch: fetchJoke } = useSEOJoke();
 
   useEffect(() => {
@@ -29,6 +30,14 @@ export default function AuthPage() {
     fetchJoke();
 
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const textTimer = setInterval(() => {
+      setShowAltText(prev => !prev);
+    }, 3000);
+
+    return () => clearInterval(textTimer);
   }, []);
 
   // If user is already logged in, redirect to home
@@ -50,7 +59,10 @@ export default function AuthPage() {
             <span className="animate-pulse">|</span>
           </h1>
           <p className="text-sm text-muted-foreground animate-in fade-in-50 duration-700 delay-500">
-            Sign in to scale your link building
+            Sign in to {" "}
+            <span className={showAltText ? "" : "line-through"}>
+              {showAltText ? "scale your competitors" : "scale your link building"}
+            </span>
           </p>
         </CardHeader>
         <CardContent>
@@ -93,10 +105,10 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          {seoJokeData?.data?.joke && (
+          {seoJokeData && (
             <div className="mt-6 p-4 bg-muted rounded-lg border animate-in fade-in-50 duration-700 delay-1000">
               <p className="text-sm text-muted-foreground italic">
-                "{seoJokeData.data.joke}"
+                "{seoJokeData.joke}"
               </p>
             </div>
           )}

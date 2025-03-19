@@ -21,7 +21,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu className="h-5 w-5" />
             </Button>
-            <h1 className="text-lg font-semibold">Dashboard</h1>
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon">

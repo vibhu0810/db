@@ -72,6 +72,7 @@ export default function Orders() {
 
   const { data: comments = [], isLoading: isLoadingComments } = useQuery<OrderComment[]>({
     queryKey: ['/api/orders', selectedOrderId, 'comments'],
+    queryFn: () => apiRequest("GET", `/api/orders/${selectedOrderId}/comments`).then(res => res.json()),
     enabled: selectedOrderId !== null,
   });
 

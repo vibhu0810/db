@@ -45,8 +45,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const comments = await storage.getOrderComments(parseInt(req.params.orderId));
+      console.log('Retrieved comments:', comments); // Add logging
       res.json(comments);
     } catch (error) {
+      console.error('Error fetching comments:', error);
       res.status(500).json({ error: "Failed to fetch comments" });
     }
   });
@@ -62,6 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: req.body.message,
       });
 
+      console.log('Created new comment:', comment); // Add logging
       res.status(201).json(comment);
     } catch (error) {
       console.error("Error creating comment:", error);

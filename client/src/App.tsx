@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import AuthPage from "./pages/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ProtectedRoute } from "@/lib/protected-route";
+import DomainsPage from "./pages/domains";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <div className="min-h-screen bg-background">
           <Switch>
             <Route path="/auth" component={AuthPage} />
+            <ProtectedRoute path="/domains" component={DomainsPage} />
             <ProtectedRoute 
               path="/" 
               component={() => (

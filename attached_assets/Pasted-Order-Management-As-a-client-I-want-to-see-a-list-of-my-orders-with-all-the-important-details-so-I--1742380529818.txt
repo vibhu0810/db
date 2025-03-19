@@ -1,0 +1,233 @@
+Order Management
+As a client, I want to see a list of my orders with all the important details so I can keep track of my projects.
+
+Acceptance Criteria:
+
+The list shows all my orders, including both current and past orders.
+Each order has columns for:
+Source URL
+Target URL
+Anchor Text
+Text Edit
+Notes
+Metrics (Domain Authority, Domain Rating, Website Traffic as per Ahrefs, Page Traffic)
+Price (in USD)
+Order Status (Pending, In Progress, Completed, etc.)
+Date Ordered
+Date Completed
+I can filter the list by:
+Date Range
+Order Status
+Domain
+Other relevant criteria
+I can sort the list by any column in ascending or descending order.
+The list loads quickly, even with many orders.
+I can export the list to a CSV or Excel file.
+I can view detailed information for each order by clicking on the order row.
+I can cancel pending orders.
+I cannot edit past/paid orders.
+Link History
+As a client, I want to see a record of past orders so I can look back at what was done.
+
+Acceptance Criteria:
+The Order Management section includes past orders along with current orders.
+I can filter the order list to show only past orders.
+I can select a month or year to view orders from that time period.
+The details shown for past orders are the same as in the current orders list.
+Past orders are clearly marked as "Completed" or "Paid."
+I cannot edit or cancel past/paid orders.
+Domain Inventory
+As a client, I want to see a list of websites where I can place orders, with information about each site and its cost.
+
+Acceptance Criteria:
+
+The list shows available websites for guest posts and niche edits.
+Each website listing includes:
+Website Name
+Website URL
+Domain Authority
+Domain Rating
+Website Traffic (as per Ahrefs)
+Niche/Category
+Guest Post or Niche Edit
+Price
+Available Order Slots
+I can filter the list by:
+Niche/Category
+Domain Authority Range
+Domain Rating Range
+Price Range
+Guest Post or Niche Edit
+Other relevant criteria
+I can sort the list by any column in ascending or descending order.
+There is a button or link to "Place Order" for each website.
+Clicking "Place Order" takes me to an order form pre-filled with the website details.
+The list is updated regularly by the agency.
+I can request updates to the list if needed.
+Reporting System
+As a client, I want to see a summary of my orders for a specific time period, including how many were completed and the average cost.
+
+Acceptance Criteria:
+
+I can select a custom date, month, and year range filter for the report.
+The report shows:
+Number of orders completed within the date range
+Total cost of orders within the date range
+Average cost per order within the date range
+Number of orders by status (Pending, In Progress, Rejected, Cancelled, Completed)
+Other relevant metrics and KPIs
+The data is presented in tables and charts, such as:
+Bar chart showing orders by status
+Line graph showing order volume over time
+Pie chart showing order distribution by niche/category
+I can filter the report data by various criteria.
+I should get report of my ratings for every order.
+I can download the report as a PDF, CSV, or Excel file.
+The report can be scheduled to run automatically and emailed to me.
+Invoicing System
+As a client, I want to ask for an invoice for my orders and, once it’s ready, receive it automatically.
+
+Acceptance Criteria:
+
+I receive a PDF invoice via email.
+The invoice includes all relevant details, such as:
+Order details
+Prices
+Taxes (if applicable)
+Total amount due
+Payment instructions
+I can download and print invoices from the dashboard.
+
+As the agency, I want to generate invoices in a single click and select which orders to keep in the invoice.
+Real-Time Notifications
+As a client, I want to get notifications when something important happens, like an order is completed.
+
+Acceptance Criteria:
+
+I receive notifications for events like:
+Order status changes (Pending, In Progress, Rejected, Canceled, Completed)
+New messages from support
+Upcoming payment reminders
+Other important account activity
+I can choose to receive notifications via:
+Email
+Dashboard notifications
+Mobile push notifications (if applicable)
+Notifications are sent quickly after the event occurs.
+I can see a history of notifications in the dashboard.
+I can mark notifications as read or unread.
+Interactive Data Visualization
+As a client, I want to see my data in visual formats like maps and charts to make it easier to understand.
+
+Acceptance Criteria:
+
+The dashboard includes interactive data visualizations, such as:
+Map showing the location of my backlinks
+Charts showing trends in Domain Authority, Domain Rating, and website traffic over time
+Graphs showing order volume and spending over time
+Other relevant visualizations based on my order history and website data
+I can interact with the visuals by:
+Clicking on data points to view more details
+Zooming in and out on maps and charts
+Filtering the data displayed in the visualizations
+The visuals load quickly and are responsive on different screen sizes.
+I can download or export the visualizations as images or reports.
+Feedback Mechanisms
+As a client, I want to give feedback on my orders or the service through the dashboard.
+
+Acceptance Criteria:
+
+There is a feedback form or comment box in the dashboard.
+I have to rate my overall satisfaction with the service.
+I have to rate individual orders.
+I can provide detailed comments and suggestions.
+My feedback is saved and timestamped.
+I receive a confirmation message after submitting feedback.
+The agency reviews and responds to my feedback in a timely manner.
+Progress Tracking
+As a client, I want to see how close I am to reaching my goals with visual aids.
+
+Acceptance Criteria:
+
+I can set custom goals in the dashboard, such as:
+Target Domain Authority
+Target website traffic
+Number of backlinks acquired
+Other relevant metrics
+The dashboard shows my progress towards these goals using visual aids, such as:
+Progress bars
+Charts
+Gauges
+The progress updates regularly as new data becomes available.
+The visuals are prominently displayed on the main dashboard page.
+Educational Resources
+As a client, I want to learn more about the services through guides and tips.
+
+Acceptance Criteria:
+
+The dashboard includes a section with educational resources, such as:
+Articles
+Videos
+FAQs
+Case studies
+The content is organized by topic and searchable.
+Add a button to request a podcast with the agency.
+It is easily accessible from the main dashboard or a dedicated "Resources" section.
+The content is updated regularly with new information and insights.
+I can provide feedback on the educational resources and suggest new topics.
+Client Profile Management
+As a client, I want to manage my account details and settings.
+
+Acceptance Criteria:
+
+There is a profile page where I can:
+Edit my contact information
+Update my billing details
+Change my password
+Manage my notification preferences
+View my order history
+The changes I make are saved immediately.
+I receive a confirmation message after updating my profile.
+I can contact support for assistance with my profile.
+Multi-Project View
+As a client, I want to manage multiple projects from a single dashboard so I can easily switch between them and compare performance.
+
+Acceptance Criteria:
+
+Project Selector: Implement a user-friendly project selector, such as a dropdown menu or tabbed interface, that allows for seamless switching between different projects.
+Homepage Overview: Display a comprehensive homepage that showcases key metrics and performance indicators aggregated across all projects. This could include metrics like:
+Total backlinks
+Average Domain Rating (DR)
+Organic traffic
+Conversion rates
+Keyword rankings
+Cross-Project Reporting: Provide the capability to generate detailed cross-project reports that enable comparison of performance across various campaigns, timeframes, or specific dimensions. This feature should offer customizable parameters and visualization options to facilitate in-depth analysis.
+Data Separation and Security: Ensure strict data separation and robust security measures are in place to safeguard the confidentiality and integrity of data between different projects. Implement access controls and user permissions to restrict data visibility based on roles and responsibilities.
+Mobile Responsiveness
+As a client, I want the dashboard to be fully functional on mobile devices so I can access it anytime, anywhere.
+
+Acceptance Criteria:
+
+Responsive Design: Implement a responsive design framework that ensures the dashboard interface dynamically adapts to all screen sizes and resolutions, providing an optimal viewing and interaction experience across a wide range of devices.
+Touch-Friendly Controls: Optimize the dashboard for touch-based interactions by incorporating touch-friendly controls and gestures, such as tap, swipe, and pinch-to-zoom, to facilitate intuitive navigation and operation on mobile devices.
+Prioritized Features: Identify and prioritize core features that are essential for mobile users, such as order status tracking, chat functionality, and notifications. Ensure these features are prominently displayed and easily accessible on smaller screens.
+Push Notifications: Implement push notification functionality to deliver timely updates and alerts directly to mobile devices. This could include notifications for new links going live, changes in order status, or critical system messages.
+Device Testing and Performance: Conduct thorough testing on a variety of mobile devices and operating systems to ensure consistent usability, functionality, and fast load times (under 3 seconds) across different platforms.
+Spotify Integration
+As a client, I want to listen to music while using the dashboard so I can enjoy my work more.
+
+Acceptance Criteria:
+
+There is a music player on the dashboard.
+I can play, pause, and skip tracks.
+I can choose from a list of playlists or search for songs.
+The player does not interfere with other dashboard functions.
+Dual Logo Theming for Personalization
+As a client, I want the dashboard to display both my logo and the agency’s logo, with customizable theme colors, so it feels personalized.
+
+Acceptance Criteria:
+
+Display both logos in the header or footer.
+Allow clients to upload their logo and select theme colors via a color picker or presets.
+Offer a preview before applying changes, with instant updates dashboard-wide.
+Default to a neutral theme with both logos if unconfigured.

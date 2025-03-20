@@ -2,6 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { useState } from "react";
 export default function OrderDetailsPage() {
   const { id } = useParams();
   const { toast } = useToast();
+  const { user, isAdmin } = useAuth();
   const [newComment, setNewComment] = useState("");
 
   const { data: order, isLoading } = useQuery({
@@ -95,7 +97,7 @@ export default function OrderDetailsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/orders">
             <Button variant="outline" size="sm" className="flex items-center gap-1">
@@ -103,8 +105,24 @@ export default function OrderDetailsPage() {
               Back to Orders
             </Button>
           </Link>
-          <h2 className="text-3xl font-bold tracking-tight">Order #{id}</h2>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Order #{id}</h2>
+            <p className="text-muted-foreground">View and manage order details</p>
+          </div>
         </div>
+        {!isAdmin && user?.companyLogo && (
+          <div className="hidden md:block">
+            <img 
+              src={user.companyLogo} 
+              alt={user.companyName || 'Company logo'} 
+              className="h-16 object-contain" 
+              onError={(e) => {
+                // Hide the image if it fails to load
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

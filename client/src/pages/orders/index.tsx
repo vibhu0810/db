@@ -1057,11 +1057,6 @@ export default function Orders() {
                             onClick={() => setSelectedOrderId(order.id)}
                           >
                             <MessageSquare className="h-4 w-4" />
-                            {order.unreadComments > 0 && (
-                              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
-                                {order.unreadComments}
-                              </span>
-                            )}
                           </Button>
                           {(!["Sent", "Cancelled"].includes(order.status) || isAdmin) && (
                             <DropdownMenu>

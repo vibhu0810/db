@@ -11,48 +11,30 @@ export async function updateDomainMetrics() {
 
     for (const domain of domains) {
       try {
-        // Skip if last update was less than 24 hours ago
-        if (domain.lastMetricsUpdate) {
-          const lastUpdate = new Date(domain.lastMetricsUpdate);
-          const timeSinceLastUpdate = Date.now() - lastUpdate.getTime();
-          if (timeSinceLastUpdate < UPDATE_INTERVAL) {
-            console.log(`Skipping ${domain.websiteUrl}, last update was ${Math.round(timeSinceLastUpdate / (1000 * 60 * 60))} hours ago`);
-            continue;
-          }
-        }
-
         console.log(`Fetching DR for ${domain.websiteUrl}...`);
-        try {
-          const metrics = await getDomainRating(domain.websiteUrl);
-          console.log(`Received DR for ${domain.websiteUrl}:`, metrics);
+        const metrics = await getDomainRating(domain.websiteUrl);
+        console.log(`Received DR for ${domain.websiteUrl}:`, metrics);
 
-          // Only update if we got a valid domain rating
-          if (metrics && metrics.domainRating > 0) {
-            const updatedDomain = await storage.updateDomain(domain.id, {
-              domainRating: metrics.domainRating.toString(), // Convert to string as per schema
-              lastMetricsUpdate: metrics.lastUpdated
-            });
+        // Only update if we got a valid domain rating
+        if (metrics && metrics.domainRating > 0) {
+          const updatedDomain = await storage.updateDomain(domain.id, {
+            domainRating: metrics.domainRating.toString(), // Convert to string as per schema
+            lastMetricsUpdate: metrics.lastUpdated
+          });
 
-            console.log(`Successfully updated DR for ${domain.websiteUrl}:`, {
-              domainRating: updatedDomain.domainRating,
-              lastMetricsUpdate: updatedDomain.lastMetricsUpdate
-            });
-          }
-        } catch (error) {
-          if (error.message === 'INSUFFICIENT_PLAN') {
-            console.log(`Plan restriction for ${domain.websiteUrl} - keeping existing DR value`);
-            continue;
-          }
-          throw error;
+          console.log(`Successfully updated DR for ${domain.websiteUrl}:`, {
+            domainRating: updatedDomain.domainRating,
+            lastMetricsUpdate: updatedDomain.lastMetricsUpdate
+          });
         }
-
-        // Add delay between requests to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error) {
         console.error(`Failed to update DR for ${domain.websiteUrl}:`, error);
         // Continue with next domain even if one fails
         continue;
       }
+
+      // Add delay between requests to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
     console.log("Domain DR update completed");
   } catch (error) {

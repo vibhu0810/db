@@ -22,13 +22,13 @@ export function Logo({
   };
 
   return (
-    <div className={cn("flex items-center gap-2", sizes[size].container, className)} {...props}>
+    <div className={cn("flex items-center gap-2 pointer-events-none", sizes[size].container, className)} {...props}>
       <div className="flex flex-col">
         <div className="flex items-center">
           {/* SVG Logo based on the provided Digital Gratified logo */}
           <svg 
             viewBox="0 0 500 500" 
-            className={cn("text-primary", sizes[size].logo)} 
+            className={cn("text-primary hover:text-primary", sizes[size].logo)} 
             fill="currentColor"
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -38,7 +38,7 @@ export function Logo({
           
           {/* Company name */}
           {showText && (
-            <span className={cn("text-primary font-bold ml-2", sizes[size].text)}>
+            <span className={cn("text-primary hover:text-primary font-bold ml-2", sizes[size].text)}>
               SaaSxLinks
             </span>
           )}
@@ -46,7 +46,7 @@ export function Logo({
         
         {/* Product name */}
         {showProduct && (
-          <div className={cn("text-blue-600 font-medium ml-1 -mt-1", sizes[size].product)}>
+          <div className={cn("text-primary font-medium ml-1 -mt-1", sizes[size].product)}>
             SaaSxLinks.ai
           </div>
         )}

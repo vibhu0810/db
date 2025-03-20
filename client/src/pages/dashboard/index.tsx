@@ -65,11 +65,15 @@ export default function Dashboard() {
   const totalSpent = recentOrders.reduce((sum, order) => sum + Number(order.price), 0);
   const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
 
-  // Get orders that need attention (recently submitted or pending)
-  const ordersNeedingAttention = orders
-    .filter(o => o.status === "Sent" || o.status === "Revision")
-    .sort((a, b) => new Date(b.dateOrdered).getTime() - new Date(a.dateOrdered).getTime())
-    .slice(0, 5);
+  // Get recent orders for clients - all orders sorted by date, or orders needing attention for admins
+  const recentOrdersList = isAdmin
+    ? orders
+        .filter(o => o.status === "Sent" || o.status === "Revision")
+        .sort((a, b) => new Date(b.dateOrdered).getTime() - new Date(a.dateOrdered).getTime())
+        .slice(0, 5)
+    : orders
+        .sort((a, b) => new Date(b.dateOrdered).getTime() - new Date(a.dateOrdered).getTime())
+        .slice(0, 5);
 
   // Prepare chart data for the last 30 days
   const monthlyOrderStats = recentOrders.reduce((acc: any[], order) => {
@@ -308,7 +312,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {ordersNeedingAttention.map((order) => (
+              {recentOrdersList.map((order) => (
                 <div key={order.id} className="flex items-center justify-between border-b pb-4 last:border-0">
                   <div>
                     <p className="font-medium">{order.sourceUrl}</p>
@@ -321,16 +325,16 @@ export default function Dashboard() {
                       Status: {order.status}
                     </p>
                   </div>
-                  <Link href="/orders">
+                  <Link href={`/orders/${order.id}`}>
                     <button className="text-primary hover:underline text-sm">
                       View Details →
                     </button>
                   </Link>
                 </div>
               ))}
-              {ordersNeedingAttention.length === 0 && (
+              {recentOrdersList.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  No pending orders at the moment
+                  {isAdmin ? "No orders needing attention" : "No orders yet"}
                 </p>
               )}
             </div>

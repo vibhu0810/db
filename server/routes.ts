@@ -23,10 +23,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter users based on role
       if (req.user.is_admin) {
         // Admins see all non-admin users (customers)
-        users = users.filter(user => !user.is_admin && user.id !== req.user.id);
+        users = users.filter(u => !u.is_admin && u.id !== req.user.id);
       } else {
         // Regular users only see admin users
-        users = users.filter(user => user.is_admin);
+        users = users.filter(u => u.is_admin);
       }
 
       console.log(`Filtered users for ${req.user.is_admin ? 'admin' : 'user'}:`, users.map(u => ({id: u.id, username: u.username, is_admin: u.is_admin})));

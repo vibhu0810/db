@@ -29,14 +29,7 @@ export default function ChatPage() {
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/users");
       const allUsers = await res.json();
-
-      if (isAdmin) {
-        // Admins see all non-admin users (customers)
-        return allUsers.filter((u: ChatUser) => !u.is_admin && u.id !== user?.id);
-      } else {
-        // Regular users only see admin users
-        return allUsers.filter((u: ChatUser) => u.is_admin);
-      }
+      return allUsers;
     },
   });
 

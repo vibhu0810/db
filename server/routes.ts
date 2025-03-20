@@ -29,7 +29,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         users = users.filter(u => u.is_admin);
       }
 
-      console.log(`Filtered users for ${req.user.is_admin ? 'admin' : 'user'}:`, users.map(u => ({id: u.id, username: u.username, is_admin: u.is_admin})));
+      console.log("Filtered users for", req.user.is_admin ? "admin" : "user", ":", 
+        users.map(u => ({id: u.id, username: u.username, is_admin: u.is_admin})));
 
       const filteredUsers = users.map(user => ({
         id: user.id,

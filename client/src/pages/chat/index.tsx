@@ -21,7 +21,10 @@ export default function ChatPage() {
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/users");
       const allUsers = await res.json();
-      return isAdmin ? allUsers.filter((u: any) => !u.is_admin) : allUsers.filter((u: any) => u.is_admin);
+      // Filter users based on role
+      return isAdmin 
+        ? allUsers.filter((u: any) => !u.is_admin) // Admins see all non-admin users
+        : allUsers.filter((u: any) => u.is_admin); // Regular users only see admins
     },
   });
 
@@ -38,6 +41,16 @@ export default function ChatPage() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
+      if (!selectedUserId) throw new Error("No recipient selected");
+
+      // Validate that regular users can only message admins
+      if (!isAdmin) {
+        const recipient = users.find(u => u.id === selectedUserId);
+        if (!recipient?.is_admin) {
+          throw new Error("You can only message support staff");
+        }
+      }
+
       const res = await apiRequest("POST", "/api/messages", {
         content,
         receiverId: selectedUserId,

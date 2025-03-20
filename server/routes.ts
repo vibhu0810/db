@@ -78,6 +78,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
       const otherUserId = parseInt(req.params.userId);
+
+      // Verify the other user exists
+      const otherUser = await storage.getUser(otherUserId);
+      if (!otherUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Validate that regular users can only view messages with admins
+      if (!req.user.is_admin && !otherUser.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Can only message support staff" });
+      }
+
       const messages = await storage.getMessages(req.user.id, otherUserId);
       res.json(messages);
     } catch (error) {
@@ -89,6 +101,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/messages", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const receiverId = parseInt(req.body.receiverId);
+
+      // Verify the receiver exists
+      const receiver = await storage.getUser(receiverId);
+      if (!receiver) {
+        return res.status(404).json({ error: "Recipient not found" });
+      }
+
+      // Validate that regular users can only message admins
+      if (!req.user.is_admin && !receiver.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Can only message support staff" });
+      }
 
       const messageData = insertMessageSchema.parse({
         ...req.body,

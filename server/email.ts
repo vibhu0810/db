@@ -1,5 +1,5 @@
 import { MailService } from '@sendgrid/mail';
-import { Order } from '@shared/schema';
+import { Order, Message } from '@shared/schema';
 
 const mailService = new MailService();
 
@@ -9,10 +9,112 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 const ADMIN_EMAIL = "info@digitalgratified.com";
+const APP_URL = process.env.APP_URL || "https://saasxlinks.com";
 
 // Helper function to check if email service is configured
 function isEmailConfigured(): boolean {
   return !!process.env.SENDGRID_API_KEY;
+}
+
+// Generate HTML template for all emails
+function generateEmailTemplate(title: string, content: string, buttonText: string, buttonUrl: string) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${title}</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background-color: #111827;
+      padding: 20px;
+      text-align: center;
+      border-radius: 8px 8px 0 0;
+    }
+    .header h1 {
+      color: #ffffff;
+      margin: 0;
+      font-size: 24px;
+    }
+    .content {
+      padding: 20px;
+      background-color: #ffffff;
+    }
+    .content-box {
+      background-color: #f2f2f2;
+      border-radius: 4px;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+      color: #777;
+    }
+    .button {
+      display: inline-block;
+      background-color: #111827;
+      color: #ffffff !important;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .divider {
+      height: 1px;
+      background-color: #eaeaea;
+      margin: 20px 0;
+    }
+    .info-row {
+      margin: 10px 0;
+    }
+    .info-row strong {
+      color: #555;
+      min-width: 120px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>SaaS x Links</h1>
+    </div>
+    <div class="content">
+      <h2>${title}</h2>
+      ${content}
+      <div style="text-align: center;">
+        <a href="${buttonUrl}" class="button">${buttonText}</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} SaaS x Links. All rights reserved.</p>
+      <p>This email was sent automatically, please do not reply directly to this message.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
 }
 
 export async function sendOrderNotificationEmail(order: Order, user: any) {
@@ -21,40 +123,88 @@ export async function sendOrderNotificationEmail(order: Order, user: any) {
     return;
   }
 
+  const orderURL = `${APP_URL}/orders/${order.id}`;
   const isNicheEdit = !order.title; // If no title, it's a niche edit
 
-  let emailContent = '';
+  // Format order details for admin email
+  let adminEmailContent = '';
   if (isNicheEdit) {
-    emailContent = `
-From: ${order.sourceUrl}
-To: ${order.targetUrl}
-On: ${order.anchorText}
-Edits: ${order.textEdit || 'No edits provided'}
-
-Price: $${order.price}
-`;
+    adminEmailContent = `
+      <p>A new niche edit order has been placed by <strong>${user.companyName || user.username}</strong>.</p>
+      
+      <div class="content-box">
+        <div class="info-row"><strong>From:</strong> ${order.sourceUrl}</div>
+        <div class="info-row"><strong>To:</strong> ${order.targetUrl}</div>
+        <div class="info-row"><strong>On:</strong> ${order.anchorText}</div>
+        ${order.textEdit ? `<div class="info-row"><strong>Edits:</strong> ${order.textEdit}</div>` : ''}
+        ${order.notes ? `<div class="info-row"><strong>Note:</strong> ${order.notes}</div>` : ''}
+        <div class="info-row"><strong>Price:</strong> $${order.price}</div>
+      </div>
+    `;
   } else {
-    emailContent = `
-Guest Post: ${order.title}
-
-To: ${order.targetUrl}
-On: ${order.anchorText}
-
-${order.textEdit || 'No article provided'}
-
-Price: $${order.price}
-`;
+    adminEmailContent = `
+      <p>A new guest post order has been placed by <strong>${user.companyName || user.username}</strong>.</p>
+      
+      <div class="content-box">
+        <div class="info-row"><strong>Title:</strong> ${order.title}</div>
+        <div class="info-row"><strong>To:</strong> ${order.targetUrl}</div>
+        <div class="info-row"><strong>On:</strong> ${order.anchorText}</div>
+        ${order.linkUrl ? `<div class="info-row"><strong>Content:</strong> ${order.linkUrl}</div>` : ''}
+        <div class="info-row"><strong>Content Writing:</strong> ${order.linkUrl ? 'No' : 'Yes'}</div>
+        ${order.notes ? `<div class="info-row"><strong>Note:</strong> ${order.notes}</div>` : ''}
+        <div class="info-row"><strong>Price:</strong> $${order.price}</div>
+      </div>
+    `;
   }
 
+  // Format confirmation email for user
+  const userEmailContent = `
+    <p>Thank you for your order! We've received your request and are working on it.</p>
+    
+    <div class="content-box">
+      <div class="info-row"><strong>Order Number:</strong> #${order.id}</div>
+      <div class="info-row"><strong>Order Type:</strong> ${isNicheEdit ? 'Niche Edit' : 'Guest Post'}</div>
+      <div class="info-row"><strong>Target URL:</strong> ${order.targetUrl}</div>
+      <div class="info-row"><strong>Price:</strong> $${order.price}</div>
+      <div class="info-row"><strong>Status:</strong> ${order.status}</div>
+    </div>
+    
+    <p>You can track the progress of your order using the button below.</p>
+  `;
+
   try {
+    // Send notification to admin
     await mailService.send({
       to: ADMIN_EMAIL,
       from: ADMIN_EMAIL,
       subject: `New Order #${order.id} from ${user.companyName || user.username}`,
-      text: emailContent,
+      html: generateEmailTemplate(
+        `New ${isNicheEdit ? 'Niche Edit' : 'Guest Post'} Order #${order.id}`,
+        adminEmailContent,
+        'View Order Details',
+        orderURL
+      ),
       trackingSettings: {
         clickTracking: {
-          enable: false
+          enable: true
+        }
+      }
+    });
+
+    // Send confirmation to user
+    await mailService.send({
+      to: user.email,
+      from: ADMIN_EMAIL,
+      subject: `Order Confirmation - #${order.id}`,
+      html: generateEmailTemplate(
+        'Order Confirmation',
+        userEmailContent,
+        'Track Your Order',
+        orderURL
+      ),
+      trackingSettings: {
+        clickTracking: {
+          enable: true
         }
       }
     });
@@ -75,21 +225,33 @@ export async function sendCommentNotificationEmail(
     return;
   }
 
+  const orderURL = `${APP_URL}/orders/${orderDetails.id}`;
+  const senderName = sender.companyName || sender.username;
+
+  const emailContent = `
+    <p><strong>${senderName}</strong> has left a new comment on Order #${orderDetails.id}:</p>
+    
+    <div class="content-box">
+      "${commentDetails.message}"
+    </div>
+    
+    <p>Click the button below to view and reply to this comment.</p>
+  `;
+
   try {
     await mailService.send({
       to: recipient.email,
       from: ADMIN_EMAIL,
       subject: `New Comment on Order #${orderDetails.id}`,
-      text: `
-${sender.companyName || sender.username} has commented on Order #${orderDetails.id}:
-
-"${commentDetails.message}"
-
-You can view and reply to this comment in your dashboard.
-`,
+      html: generateEmailTemplate(
+        'New Comment Notification',
+        emailContent,
+        'View & Reply',
+        orderURL
+      ),
       trackingSettings: {
         clickTracking: {
-          enable: false
+          enable: true
         }
       }
     });
@@ -108,24 +270,83 @@ export async function sendStatusUpdateEmail(
     return;
   }
 
+  const orderURL = `${APP_URL}/orders/${orderDetails.id}`;
+
+  const emailContent = `
+    <p>The status of your Order #${orderDetails.id} has been updated.</p>
+    
+    <div class="content-box">
+      <div class="info-row"><strong>New Status:</strong> <span style="color: #0d6efd; font-weight: bold;">${orderDetails.status}</span></div>
+    </div>
+    
+    <p>Click the button below to view your order details and track progress.</p>
+  `;
+
   try {
     await mailService.send({
       to: user.email,
       from: ADMIN_EMAIL,
-      subject: `Order #${orderDetails.id} Status Updated`,
-      text: `
-Your order #${orderDetails.id} has been updated to status: ${orderDetails.status}
-
-You can view the details in your dashboard.
-`,
+      subject: `Status Update for Order #${orderDetails.id}`,
+      html: generateEmailTemplate(
+        'Order Status Update',
+        emailContent,
+        'View Order Details',
+        orderURL
+      ),
       trackingSettings: {
         clickTracking: {
-          enable: false
+          enable: true
         }
       }
     });
   } catch (error) {
     console.error('Error sending status update email:', error);
+    // Don't throw error to prevent app disruption
+  }
+}
+
+export async function sendChatNotificationEmail(
+  message: Message, 
+  sender: { username: string; companyName?: string; }, 
+  recipient: { email: string; username: string; id: number; }
+) {
+  if (!isEmailConfigured()) {
+    console.warn('SendGrid API key not configured, skipping email notification');
+    return;
+  }
+
+  const chatURL = `${APP_URL}/chat`;
+  const senderName = sender.companyName || sender.username;
+
+  const emailContent = `
+    <p>You have received a new message from <strong>${senderName}</strong>:</p>
+    
+    <div class="content-box">
+      "${message.content}"
+    </div>
+    
+    <p>Click the button below to view and reply to this message.</p>
+  `;
+
+  try {
+    await mailService.send({
+      to: recipient.email,
+      from: ADMIN_EMAIL,
+      subject: `New Message from ${senderName}`,
+      html: generateEmailTemplate(
+        'New Message Notification',
+        emailContent,
+        'View & Reply',
+        chatURL
+      ),
+      trackingSettings: {
+        clickTracking: {
+          enable: true
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error sending chat notification email:', error);
     // Don't throw error to prevent app disruption
   }
 }

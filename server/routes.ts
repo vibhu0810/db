@@ -8,7 +8,8 @@ import { insertMessageSchema, insertDomainSchema, updateProfileSchema } from "@s
 import {
   sendOrderNotificationEmail,
   sendCommentNotificationEmail,
-  sendStatusUpdateEmail
+  sendStatusUpdateEmail,
+  sendChatNotificationEmail
 } from "./email";
 
 const typingUsers = new Map<number, { isTyping: boolean; timestamp: number }>();
@@ -237,6 +238,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const message = await storage.createMessage(messageData);
+
+      // Create a notification for the recipient
+      await storage.createNotification({
+        userId: receiverId,
+        message: `New message from ${req.user.username}`,
+        type: "message",
+        read: false,
+      });
+
+      // Send email notification about the new message
+      try {
+        if (receiver.email) {
+          await sendChatNotificationEmail(
+            message,
+            {
+              username: req.user.username,
+              companyName: req.user.companyName
+            },
+            {
+              email: receiver.email,
+              username: receiver.username,
+              id: receiver.id
+            }
+          );
+        }
+      } catch (emailError) {
+        console.error("Error sending chat notification email:", emailError);
+        // Continue without failing the message creation
+      }
 
       res.status(201).json(message);
     } catch (error) {

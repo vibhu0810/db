@@ -9,11 +9,6 @@ import {
   sendCommentNotificationEmail,
   sendStatusUpdateEmail
 } from "./email";
-//import { WebSocketServer, WebSocket } from 'ws'; // Removed WebSocket imports
-//import { parse as cookieParse } from 'cookie'; // Removed cookie parsing imports
-//import { MemoryStore } from 'express-session'; //Removed session store imports
-
-// Add this near the top with other imports
 const typingUsers = new Map<number, { isTyping: boolean; timestamp: number }>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -115,6 +110,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const messages = await storage.getMessages(req.user.id, otherUserId);
+
+      // Mark messages as read when fetched
+      if (messages.length > 0) {
+        await storage.markMessagesAsRead(otherUserId, req.user.id);
+      }
+
       res.json(messages);
     } catch (error) {
       console.error("Error fetching messages:", error);

@@ -46,6 +46,7 @@ export default function ChatPage() {
       return res.json();
     },
     enabled: !!selectedUserId,
+    refetchInterval: 1000, // Poll every second for new messages
   });
 
   // Get typing status of selected user

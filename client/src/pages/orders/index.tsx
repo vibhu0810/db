@@ -290,7 +290,7 @@ export default function Orders() {
     targetUrl: 200,
     anchorText: 150,
     textEdit: 200,
-    status: 200, // Add status column width
+    status: 200,
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -300,8 +300,7 @@ export default function Orders() {
   const [userFilter, setUserFilter] = useState<number | "all">("all");
   const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
-  const [selectedType, setSelectedType] = useState<string>("all"); // Added state for order type
-
+  const [selectedType, setSelectedType] = useState<string>("all");
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -309,7 +308,7 @@ export default function Orders() {
       targetUrl: 400,
       anchorText: 300,
       textEdit: 400,
-      status: 300, // Add maximum width for status column
+      status: 300,
     };
 
     const newWidth = Math.min(size.width, maxWidths[column as keyof typeof maxWidths]);
@@ -990,192 +989,124 @@ export default function Orders() {
                   highlightedOrderId === order.id && "bg-muted transition-colors duration-500"
                 )}
               >
-                {isAdmin && (
-                  <TableCell>
-                    {/*Removed Checkbox*/}
-                  </TableCell>
-                )}
-                {isAdmin && (
-                  <TableCell className="max-w-[150px] truncate">
-                    {order.user?.companyName || order.user?.username}
-                  </TableCell>
-                )}
-                <TableCell style={{ width: columnWidths.sourceUrl, maxWidth: '400px' }}>
+                <TableCell>
+                  {isAdmin && (
+                    <div className="truncate max-w-[150px]">
+                      {order.user?.companyName || order.user?.username}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell style={{ width: columnWidths.sourceUrl }}>
                   <div className="flex items-center space-x-2">
-                    <div className="truncate">
+                    <div className="truncate max-w-[350px]">
                       {order.sourceUrl === "not_applicable" ? (
-                        <span>{order.title || 'Untitled Post'}</span>
+                        order.title || "No title yet"
                       ) : (
-                        <span>{order.sourceUrl}</span>
+                        <a
+                          href={order.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline text-primary"
+                        >
+                          {order.sourceUrl}
+                        </a>
                       )}
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 p-0"
-                      onClick={() => copyToClipboard(order.sourceUrl === "not_applicable" ? (order.title || 'Untitled Post') : order.sourceUrl)}
+                      onClick={() => copyToClipboard(order.sourceUrl)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
-                <TableCell style={{ width: columnWidths.targetUrl, maxWidth: '400px' }}>
-                  <span className="truncate">{order.targetUrl}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => copyToClipboard(order.targetUrl)}
-                    className="h-8 w-8 shrink-0"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-                <TableCell style={{ width: columnWidths.anchorText, maxWidth: '300px' }}>
-                  <span className="truncate">{order.anchorText}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => copyToClipboard(order.anchorText)}
-                    className="h-8 w-8 shrink-0"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-                <TableCell>${Number(order.price).toFixed(2)}</TableCell>
-                <TableCell>
-                  {isAdmin ? (
-                    <Select
-                      value={order.status}
-                      onValueChange={(newStatus) => {
-                        updateOrderStatusMutation.mutate({
-                          orderId: order.id,
-                          status: newStatus
-                        });
-                      }}
-                    >
-                      <SelectTrigger className="w-[130px]">
-                        <SelectValue>{order.status}</SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getStatusOptions(!!order.title)}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span>{order.status}</span>
-                      {!order.title && order.status === "In Progress" && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => setOrderToCancel(order.id)}
-                        >
-                          Cancel
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {format(new Date(order.dateOrdered), "MMM d, yyyy")}
-                </TableCell>
-                <TableCell style={{ width: columnWidths.textEdit, maxWidth: '400px' }}>
+                <TableCell style={{ width: columnWidths.targetUrl }}>
                   <div className="flex items-center space-x-2">
-                    <span className="truncate">{order.textEdit}</span>
-                    {order.textEdit && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => copyToClipboard(order.textEdit || '')}
-                        className="h-8 w-8 shrink-0"
+                    <div className="truncate max-w-[350px]">
+                      <a
+                        href={order.targetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline text-primary"
                       >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    )}
+                        {order.targetUrl}
+                      </a>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => copyToClipboard(order.targetUrl)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
                   </div>
                 </TableCell>
-                {isAdmin && <TableCell className="max-w-[200px] truncate">{order.notes}</TableCell>}
-                <TableCell>
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="flex items-center gap-2 text-muted-foreground hover:text-primary"
-                        onClick={() => setSelectedOrderId(order.id)}
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Comments
-                        {order.unreadComments > 0 && (
-                          <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
-                            {order.unreadComments}
-                          </span>
-                        )}
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent>
-                      <SheetHeader>
-                        <SheetTitle>Order Comments</SheetTitle>
-                        <SheetDescription>
-                          View and add comments for this order
-                        </SheetDescription>
-                      </SheetHeader>
-                      <div className="mt-6 space-y-6">
-                        <div className="h-[60vh] overflow-y-auto space-y-4 pr-4">
-                          {isLoadingComments ? (
-                            <div className="flex justify-center">
-                              <Loader2 className="h-6 w-6 animate-spin" />
-                            </div>
-                          ) : comments.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">No comments yet</p>
-                          ) : (
-                            comments.map((comment) => (
-                              <div
-                                key={comment.id}
-                                className="rounded-lg border p-4"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium">
-                                    {comment.user?.companyName || comment.user?.username}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
-                                  </p>
-                                </div>
-                                <p className="mt-2">{comment.message}</p>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                        <div className="space-y-4 pt-4 border-t">
-                          <Textarea
-                            placeholder="Add a comment..."
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                          />
-                          <Button
-                            onClick={() => addCommentMutation.mutate()}
-                            disabled={!newComment.trim() || addCommentMutation.isPending}
-                            className="w-full"
-                          >
-                            {addCommentMutation.isPending && (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            )}
-                            Add Comment
-                          </Button>
-                        </div>
-                      </div>
-                    </SheetContent>
-                  </Sheet>
+                <TableCell style={{ width: columnWidths.anchorText }}>
+                  <div className="flex items-center space-x-2">
+                    <div className="truncate max-w-[250px]">
+                      {order.anchorText}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => copyToClipboard(order.anchorText)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
-                {isAdmin && (
-                  <TableCell>
+                <TableCell className="text-right whitespace-nowrap">
+                  ${order.price}
+                </TableCell>
+                <TableCell style={{ width: columnWidths.status }}>
+                  {order.status === "Sent" || order.status === "In Progress" ? (
+                    <div className="flex items-center">
+                      <Select
+                        value={order.status}
+                        onValueChange={(value) =>
+                          updateOrderStatusMutation.mutate({
+                            orderId: order.id,
+                            status: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-[180px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getStatusOptions(order.type === "guest_post")}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="truncate max-w-[180px]">{order.status}</div>
+                  )}
+                </TableCell>
+                <TableCell className="w-[120px] whitespace-nowrap">
+                  {format(new Date(order.dateOrdered), "MMM d, yyyy")}
+                </TableCell>
+                <TableCell className="w-[200px] truncate">
+                  <div className="max-w-[200px] truncate">
+                    {order.textEdit || "No content"}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedOrderId(order.id)}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                    </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <Button variant="ghost" size="icon">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="w-[200px]">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem
                           onClick={() => {
@@ -1183,7 +1114,7 @@ export default function Orders() {
                           }}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
-                          Edit Order
+                          <span className="truncate">Edit Order</span>
                         </DropdownMenuItem>
                         {order.status !== "Completed" && order.status !== "Cancelled" && (
                           <DropdownMenuItem
@@ -1191,10 +1122,7 @@ export default function Orders() {
                             className="text-destructive focus:text-destructive"
                           >
                             <X className="mr-2 h-4 w-4" />
-                            <span className="sr-only">Cancel Order</span>
-                            <span className="hover:block absolute invisible group-hover:visible bg-popover px-2 py-1 rounded text-sm -mt-8">
-                              Cancel Order
-                            </span>
+                            Cancel Order
                           </DropdownMenuItem>
                         )}
                         {isAdmin && (
@@ -1208,8 +1136,8 @@ export default function Orders() {
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </TableCell>
-                )}
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

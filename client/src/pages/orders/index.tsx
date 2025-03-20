@@ -910,25 +910,25 @@ export default function Orders() {
                         <SortableHeader field="user.username">User</SortableHeader>
                       </TableHead>
                     )}
-                    <TableHead className="min-w-[200px] max-w-[400px]">
+                    <TableHead className="min-w-[200px] max-w-[300px]">
                       <SortableHeader field="sourceUrl">Source URL</SortableHeader>
                     </TableHead>
-                    <TableHead className="min-w-[200px] max-w-[400px]">
+                    <TableHead className="min-w-[200px] max-w-[300px]">
                       <SortableHeader field="targetUrl">Target URL</SortableHeader>
                     </TableHead>
-                    <TableHead className="min-w-[150px] max-w-[300px]">
+                    <TableHead className="min-w-[150px] max-w-[250px]">
                       <SortableHeader field="anchorText">Anchor Text</SortableHeader>
                     </TableHead>
-                    <TableHead className="w-[100px]">
+                    <TableHead className="w-[100px] text-right">
                       <SortableHeader field="price">Price</SortableHeader>
                     </TableHead>
-                    <TableHead className="min-w-[180px] max-w-[300px]">
+                    <TableHead className="min-w-[150px] max-w-[200px]">
                       <SortableHeader field="status">Status</SortableHeader>
                     </TableHead>
                     <TableHead className="w-[120px]">
                       <SortableHeader field="dateOrdered">Date Ordered</SortableHeader>
                     </TableHead>
-                    <TableHead className="min-w-[200px] max-w-[400px]">
+                    <TableHead className="min-w-[200px] max-w-[300px]">
                       Text Edit/Article
                     </TableHead>
                     <TableHead className="w-[100px]"></TableHead>
@@ -948,9 +948,9 @@ export default function Orders() {
                           <div className="truncate">{order.user?.companyName || order.user?.username}</div>
                         </TableCell>
                       )}
-                      <TableCell className="max-w-[400px]">
+                      <TableCell>
                         <div className="flex items-center space-x-2">
-                          <div className="truncate">
+                          <div className="truncate max-w-[250px]">
                             {order.sourceUrl}
                           </div>
                           <Button
@@ -963,9 +963,9 @@ export default function Orders() {
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[400px]">
+                      <TableCell>
                         <div className="flex items-center space-x-2">
-                          <div className="truncate">
+                          <div className="truncate max-w-[250px]">
                             {order.targetUrl}
                           </div>
                           <Button
@@ -978,25 +978,25 @@ export default function Orders() {
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[300px]">
+                      <TableCell>
                         <div className="flex items-center space-x-2">
-                          <div className="truncate">
+                          <div className="truncate max-w-[200px]">
                             {order.anchorText}
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="flex-shrink-0"
-                            onClick={() =>copyToClipboard(order.anchorText)}
+                            onClick={() => copyToClipboard(order.anchorText)}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-right">
                         ${Number(order.price).toFixed(2)}
                       </TableCell>
-                      <TableCell className="max-w-[300px]">
+                      <TableCell>
                         {isAdmin ? (
                           <Select
                             value={order.status}
@@ -1015,15 +1015,15 @@ export default function Orders() {
                             </SelectContent>
                           </Select>
                         ) : (
-                          <div className="truncate">{order.status}</div>
+                          <div className="truncate max-w-[180px]">{order.status}</div>
                         )}
                       </TableCell>
                       <TableCell>
                         {format(new Date(order.dateOrdered), "MMM d, yyyy")}
                       </TableCell>
-                      <TableCell className="max-w-[400px]">
+                      <TableCell>
                         <div className="flex items-center space-x-2">
-                          <div className="truncate">
+                          <div className="truncate max-w-[250px]">
                             {order.textEdit || "No content"}
                           </div>
                           <Button

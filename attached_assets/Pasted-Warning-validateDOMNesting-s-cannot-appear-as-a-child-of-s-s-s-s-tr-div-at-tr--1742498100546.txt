@@ -1,0 +1,25 @@
+Warning: validateDOMNesting(...): %s cannot appear as a child of <%s>.%s%s%s <tr> div   
+    at tr
+    at _c9 (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/table.tsx:102:12)
+    at div
+    at tbody
+    at _c5 (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/table.tsx:55:12)
+    at table
+    at div
+    at _c (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/table.tsx:20:11)
+    at div
+    at div
+    at UsersPage (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/pages/users/index.tsx:44:41)
+    at main
+    at div
+    at div
+    at DashboardShell (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/layout/dashboard-shell.tsx:26:34)
+    at ProtectedRoute (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/lib/protected-route.tsx:21:34)
+    at Route (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7a714e0b:338:16)
+    at Switch (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7a714e0b:394:17)
+    at div
+    at AuthProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/hooks/use-auth.tsx:35:32)
+    at QueryClientProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=7a714e0b:2881:3)
+    at App
+    at AuthProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/hooks/use-auth.tsx:35:32)
+    at QueryClientProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=7a714e0b:2881:3)

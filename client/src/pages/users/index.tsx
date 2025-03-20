@@ -221,139 +221,151 @@ export default function UsersPage() {
         </Card>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]"></TableHead>
-              <TableHead>
-                <SortButton field="username">Name</SortButton>
-              </TableHead>
-              <TableHead>
-                <SortButton field="companyName">Company</SortButton>
-              </TableHead>
-              <TableHead>
-                <SortButton field="email">Email</SortButton>
-              </TableHead>
-              <TableHead>
-                <SortButton field="country">Country</SortButton>
-              </TableHead>
-              <TableHead className="text-right">
-                <SortButton field="orders.total">Total Orders</SortButton>
-              </TableHead>
-              <TableHead className="text-right">
-                <SortButton field="orders.pending">Pending Orders</SortButton>
-              </TableHead>
-              <TableHead className="text-right">
-                <SortButton field="orders.totalSpent">Total Spent</SortButton>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredUsers.map((user) => (
-              <div key={user.id}>
-                <TableRow className="hover:bg-muted/50 cursor-pointer">
-                  <TableCell className="w-[50px]">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleUserExpanded(user.id)}
-                    >
-                      {expandedUsers.includes(user.id) ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      {user.firstName} {user.lastName}
-                      <div className="text-sm text-muted-foreground">
-                        @{user.username}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{user.companyName}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.country}</TableCell>
-                  <TableCell className="text-right">{user.orders.total}</TableCell>
-                  <TableCell className="text-right">{user.orders.pending}</TableCell>
-                  <TableCell className="text-right">${user.orders.totalSpent.toFixed(2)}</TableCell>
-                </TableRow>
-                {expandedUsers.includes(user.id) && (
+      <div className="rounded-lg border">
+        <div className="overflow-x-auto">
+          <div className="min-w-full inline-block align-middle">
+            <div className="overflow-hidden">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="p-0">
-                      <div className="p-4 bg-muted/30 space-y-4">
-                        <div className="grid grid-cols-3 gap-4">
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="text-sm">Order Status Breakdown</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-2">
-                                <div className="flex justify-between">
-                                  <span>Completed:</span>
-                                  <span>{user.orders.completed}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Pending:</span>
-                                  <span>{user.orders.pending}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Total:</span>
-                                  <span>{user.orders.total}</span>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="text-sm">Contact Information</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-2">
-                                <div>
-                                  <span className="text-muted-foreground">Email:</span>
-                                  <div className="truncate">{user.email}</div>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Country:</span>
-                                  <div>{user.country}</div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="text-sm">Financial Summary</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-2">
-                                <div className="flex justify-between">
-                                  <span>Total Spent:</span>
-                                  <span>${user.orders.totalSpent.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Average Order Value:</span>
-                                  <span>
-                                    ${(user.orders.totalSpent / (user.orders.total || 1)).toFixed(2)}
-                                  </span>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </div>
-                    </TableCell>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="min-w-[200px] max-w-[300px]">
+                      <SortButton field="username">Name</SortButton>
+                    </TableHead>
+                    <TableHead className="min-w-[200px] max-w-[300px]">
+                      <SortButton field="companyName">Company</SortButton>
+                    </TableHead>
+                    <TableHead className="min-w-[200px] max-w-[300px]">
+                      <SortButton field="email">Email</SortButton>
+                    </TableHead>
+                    <TableHead className="min-w-[120px]">
+                      <SortButton field="country">Country</SortButton>
+                    </TableHead>
+                    <TableHead className="text-right min-w-[120px]">
+                      <SortButton field="orders.total">Total Orders</SortButton>
+                    </TableHead>
+                    <TableHead className="text-right min-w-[120px]">
+                      <SortButton field="orders.pending">Pending Orders</SortButton>
+                    </TableHead>
+                    <TableHead className="text-right min-w-[120px]">
+                      <SortButton field="orders.totalSpent">Total Spent</SortButton>
+                    </TableHead>
                   </TableRow>
-                )}
-              </div>
-            ))}
-          </TableBody>
-        </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <div key={user.id}>
+                      <TableRow className="hover:bg-muted/50 cursor-pointer">
+                        <TableCell className="w-[50px]">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleUserExpanded(user.id)}
+                          >
+                            {expandedUsers.includes(user.id) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {user.firstName} {user.lastName}
+                            </div>
+                            <div className="text-sm text-muted-foreground truncate">
+                              @{user.username}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="truncate max-w-[250px]">{user.companyName}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="truncate max-w-[250px]">{user.email}</div>
+                        </TableCell>
+                        <TableCell>{user.country}</TableCell>
+                        <TableCell className="text-right">{user.orders.total}</TableCell>
+                        <TableCell className="text-right">{user.orders.pending}</TableCell>
+                        <TableCell className="text-right">${user.orders.totalSpent.toFixed(2)}</TableCell>
+                      </TableRow>
+                      {expandedUsers.includes(user.id) && (
+                        <TableRow>
+                          <TableCell colSpan={8} className="p-0">
+                            <div className="p-4 bg-muted/30 space-y-4">
+                              <div className="grid grid-cols-3 gap-4">
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-sm">Order Status Breakdown</CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between">
+                                        <span>Completed:</span>
+                                        <span>{user.orders.completed}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>Pending:</span>
+                                        <span>{user.orders.pending}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>Total:</span>
+                                        <span>{user.orders.total}</span>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-sm">Contact Information</CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <span className="text-muted-foreground">Email:</span>
+                                        <div className="truncate">{user.email}</div>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Country:</span>
+                                        <div>{user.country}</div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-sm">Financial Summary</CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between">
+                                        <span>Total Spent:</span>
+                                        <span>${user.orders.totalSpent.toFixed(2)}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>Average Order Value:</span>
+                                        <span>
+                                          ${(user.orders.totalSpent / (user.orders.total || 1)).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

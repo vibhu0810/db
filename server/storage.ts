@@ -160,7 +160,7 @@ export class DatabaseStorage implements IStorage {
   async deleteOrderNotifications(orderId: number): Promise<void> {
     try {
       // Delete notifications related to the order
-      await db.delete(notifications).where(eq(notifications.user_id, orderId));
+      await db.delete(notifications).where(eq(notifications.orderId, orderId));
     } catch (error) {
       console.error('Error deleting order notifications:', error);
       throw new Error('Failed to delete order notifications');

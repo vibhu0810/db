@@ -7,15 +7,6 @@ interface AhrefsDRMetrics {
   lastUpdated: Date;
 }
 
-// Known DR values for domains when API access is restricted
-const knownDRValues: Record<string, number> = {
-  'forbes.com': 94,
-  'techcrunch.com': 89,
-  'entrepreneur.com': 88,
-  'mashable.com': 87,
-  'readwrite.com': 82
-};
-
 export async function getDomainRating(domainUrl: string): Promise<AhrefsDRMetrics> {
   if (!process.env.AHREFS_API_KEY) {
     throw new Error('Ahrefs API key not configured');
@@ -41,19 +32,6 @@ export async function getDomainRating(domainUrl: string): Promise<AhrefsDRMetric
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Ahrefs API error response:', errorText);
-
-      // For insufficient plan errors, use known DR values
-      if (response.status === 403 && errorText.includes('Insufficient plan')) {
-        if (domain in knownDRValues) {
-          console.log(`Using known DR value for ${domain}: ${knownDRValues[domain]}`);
-          return {
-            domainRating: knownDRValues[domain],
-            lastUpdated: new Date()
-          };
-        }
-        throw new Error('INSUFFICIENT_PLAN');
-      }
-
       throw new Error(`Ahrefs API error: ${response.statusText}`);
     }
 

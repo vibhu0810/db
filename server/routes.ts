@@ -723,7 +723,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let response = "";
       const query = message.toLowerCase();
       
-      if (query.includes("domain authority") || query.includes("da")) {
+      // Check for simple greetings first
+      const greetings = ["hi", "hello", "hey", "hey there", "hi there", "hello there", "greetings"];
+      const isSimpleGreeting = greetings.some(greeting => 
+        query.includes(greeting) && message.length < 25
+      );
+      
+      if (isSimpleGreeting) {
+        response = "Hello! I'm your AI link-building strategy assistant. How can I help you with your link building strategy today? You can ask me about anchor text distribution, guest posts vs niche edits, competitor analysis, or budget allocation.";
+      } else if (query.includes("domain authority") || query.includes("da")) {
         response = "Domain Authority (DA) is an important metric for link building. Higher DA sites typically provide more SEO value, but don't focus exclusively on DA. Relevance to your niche is equally important for effective link building.";
       } else if (query.includes("anchor text")) {
         response = "For anchor text strategy, I recommend using a diverse mix: about 20% exact match, 30% partial match, 30% branded, and 20% generic. This natural distribution helps avoid over-optimization penalties while still targeting your key terms.";

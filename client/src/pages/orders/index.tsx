@@ -1178,19 +1178,34 @@ export default function Orders() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem
-                          onClick={() => setOrderToEdit(order)}
+                          onClick={() => {
+                            setOrderToEdit(order);
+                          }}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit Order
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => setOrderToDelete(order.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Order
-                        </DropdownMenuItem>
+                        {order.status !== "Completed" && order.status !== "Cancelled" && (
+                          <DropdownMenuItem
+                            onClick={() => setOrderToCancel(order.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            <span className="sr-only">Cancel Order</span>
+                            <span className="hover:block absolute invisible group-hover:visible bg-popover px-2 py-1 rounded text-sm -mt-8">
+                              Cancel Order
+                            </span>
+                          </DropdownMenuItem>
+                        )}
+                        {isAdmin && (
+                          <DropdownMenuItem
+                            onClick={() => setOrderToDelete(order.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Order
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

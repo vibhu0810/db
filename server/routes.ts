@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import express from "express";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSEOJoke } from "./openai";
@@ -52,6 +53,9 @@ type NicheEditStatus = typeof NICHE_EDIT_STATUSES[number];
 type OrderStatus = GuestPostStatus | NicheEditStatus;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add JSON parsing middleware before routes
+  app.use(express.json());
+
   setupAuth(app);
 
   // Add check online status endpoint

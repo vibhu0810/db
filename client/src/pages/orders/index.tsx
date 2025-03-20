@@ -472,7 +472,13 @@ export default function Orders() {
 
   const bulkDeleteOrdersMutation = useMutation({
     mutationFn: async (orderIds: number[]) => {
-      const res = await apiRequest("DELETE", `/api/orders/bulk`, { orderIds });
+      // Validate order IDs
+      const validOrderIds = orderIds.filter(id => typeof id === 'number' && !isNaN(id));
+      if (validOrderIds.length === 0) {
+        throw new Error("No valid order IDs provided");
+      }
+
+      const res = await apiRequest("DELETE", `/api/orders/bulk`, { orderIds: validOrderIds });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to delete orders");
@@ -643,17 +649,22 @@ export default function Orders() {
     );
   };
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedOrders(paginatedOrders.map(order => order.id));
+  const handleSelectAll = (checked: boolean | string) => {
+    if (checked === true) {
+      const validOrderIds = paginatedOrders
+        .map(order => order.id)
+        .filter(id => typeof id === 'number' && !isNaN(id));
+      setSelectedOrders(validOrderIds);
     } else {
       setSelectedOrders([]);
     }
   };
 
-  const handleSelectOrder = (orderId: number, checked: boolean) => {
+  const handleSelectOrder = (orderId: number, checked: boolean | string) => {
+    if (typeof orderId !== 'number' || isNaN(orderId)) return;
+
     setSelectedOrders(prev => {
-      if (checked) {
+      if (checked === true) {
         return [...prev, orderId];
       } else {
         return prev.filter(id => id !== orderId);
@@ -975,6 +986,7 @@ export default function Orders() {
                   <Checkbox
                     checked={paginatedOrders.length > 0 && selectedOrders.length === paginatedOrders.length}
                     onCheckedChange={handleSelectAll}
+                    aria-label="Select all orders"
                   />
                 </TableHead>
               )}
@@ -997,7 +1009,7 @@ export default function Orders() {
               </TableHead>
               <TableHead>
                 <Resizable
-                  width={columnWidths.targetUrl}
+                                    width={columnWidths.targetUrl}
                   height={0}
                   onResize={onResize("targetUrl")}
                   handle={<div className="react-resizable-handle" />}
@@ -1059,6 +1071,7 @@ export default function Orders() {
                     <Checkbox
                       checked={selectedOrders.includes(order.id)}
                       onCheckedChange={(checked) => handleSelectOrder(order.id, checked)}
+                      aria-label={`Select order ${order.id}`}
                     />
                   </TableCell>
                 )}

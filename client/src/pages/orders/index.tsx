@@ -899,199 +899,200 @@ export default function Orders() {
 
 
       <div className="rounded-lg border">
-          <div className="overflow-x-auto">
-            <div className="min-w-full inline-block align-middle">
-              <div className="overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {isAdmin && (
-                        <TableHead className="w-[150px]">
-                          <SortableHeader field="user.username">User</SortableHeader>
-                        </TableHead>
+        <div className="overflow-x-auto">
+          <div className="min-w-full inline-block align-middle">
+            <div className="overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {isAdmin && (
+                      <TableHead className="w-[150px]">
+                        <SortableHeader field="user.username">User</SortableHeader>
+                      </TableHead>
+                    )}
+                    <TableHead className="min-w-[200px] max-w-[400px]">
+                      <SortableHeader field="sourceUrl">Source URL</SortableHeader>
+                    </TableHead>
+                    <TableHead className="min-w-[200px] max-w-[400px]">
+                      <SortableHeader field="targetUrl">Target URL</SortableHeader>
+                    </TableHead>
+                    <TableHead className="min-w-[150px] max-w-[300px]">
+                      <SortableHeader field="anchorText">Anchor Text</SortableHeader>
+                    </TableHead>
+                    <TableHead className="w-[100px]">
+                      <SortableHeader field="price">Price</SortableHeader>
+                    </TableHead>
+                    <TableHead className="min-w-[180px] max-w-[300px]">
+                      <SortableHeader field="status">Status</SortableHeader>
+                    </TableHead>
+                    <TableHead className="w-[120px]">
+                      <SortableHeader field="dateOrdered">Date Ordered</SortableHeader>
+                    </TableHead>
+                    <TableHead className="min-w-[200px] max-w-[400px]">
+                      Text Edit/Article
+                    </TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedOrders.map((order) => (
+                    <TableRow
+                      key={order.id}
+                      id={`order-${order.id}`}
+                      className={cn(
+                        highlightedOrderId === order.id && "bg-muted transition-colors duration-500"
                       )}
-                      <TableHead className="min-w-[200px] max-w-[400px]">
-                        <SortableHeader field="sourceUrl">Source URL</SortableHeader>
-                      </TableHead>
-                      <TableHead className="min-w-[200px] max-w-[400px]">
-                        <SortableHeader field="targetUrl">Target URL</SortableHeader>
-                      </TableHead>
-                      <TableHead className="min-w-[150px] max-w-[300px]">
-                        <SortableHeader field="anchorText">Anchor Text</SortableHeader>
-                      </TableHead>
-                      <TableHead className="w-[100px]">
-                        <SortableHeader field="price">Price</SortableHeader>
-                      </TableHead>
-                      <TableHead className="min-w-[180px] max-w-[300px]">
-                        <SortableHeader field="status">Status</SortableHeader>
-                      </TableHead>
-                      <TableHead className="w-[120px]">
-                        <SortableHeader field="dateOrdered">Date Ordered</SortableHeader>
-                      </TableHead>
-                      <TableHead className="min-w-[200px] max-w-[400px]">
-                        Text Edit/Article
-                      </TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedOrders.map((order) => (
-                      <TableRow
-                        key={order.id}
-                        id={`order-${order.id}`}
-                        className={cn(
-                          highlightedOrderId === order.id && "bg-muted transition-colors duration-500"
+                    >
+                      {isAdmin && (
+                        <TableCell className="max-w-[150px]">
+                          <div className="truncate">{order.user?.companyName || order.user?.username}</div>
+                        </TableCell>
+                      )}
+                      <TableCell className="max-w-[400px]">
+                        <div className="flex items-center space-x-2">
+                          <div className="truncate">
+                            {order.sourceUrl}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="flex-shrink-0"
+                            onClick={() => copyToClipboard(order.sourceUrl)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[400px]">
+                        <div className="flex items-center space-x-2">
+                          <div className="truncate">
+                            {order.targetUrl}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="flex-shrink-0"
+                            onClick={() => copyToClipboard(order.targetUrl)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[300px]">
+                        <div className="flex items-center space-x-2">
+                          <div className="truncate">
+                            {order.anchorText}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="flex-shrink-0"
+                            onClick={() => copyToClipboard(order.anchorText)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        ${Number(order.price).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="max-w-[300px]">
+                        {isAdmin ? (
+                          <Select
+                            value={order.status}
+                            onValueChange={(newStatus) => {
+                              updateOrderStatusMutation.mutate({
+                                orderId: order.id,
+                                status: newStatus
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue>{order.status}</SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getStatusOptions(!!order.title)}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="truncate">{order.status}</div>
                         )}
-                      >
-                        {isAdmin && (
-                          <TableCell className="max-w-[150px]">
-                            <div className="truncate">{order.user?.companyName || order.user?.username}</div>
-                          </TableCell>
-                        )}
-                        <TableCell className="max-w-[400px]">
-                          <div className="flex items-center space-x-2">
-                            <div className="truncate">
-                              {order.sourceUrl}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="flex-shrink-0"
-                              onClick={() => copyToClipboard(order.sourceUrl)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(order.dateOrdered), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell className="max-w-[400px]">
+                        <div className="flex items-center space-x-2">
+                          <div className="truncate">
+                            {order.textEdit || "No content"}
                           </div>
-                        </TableCell>
-                        <TableCell className="max-w-[400px]">
-                          <div className="flex items-center space-x-2">
-                            <div className="truncate">
-                              {order.targetUrl}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="flex-shrink-0"
-                              onClick={() => copyToClipboard(order.targetUrl)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-[300px]">
-                          <div className="flex items-center space-x-2">
-                            <div className="truncate">
-                              {order.anchorText}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="flex-shrink-0"
-                              onClick={() => copyToClipboard(order.anchorText)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          ${Number(order.price).toFixed(2)}
-                        </TableCell>
-                        <TableCell className="max-w-[300px]">
-                          {isAdmin ? (
-                            <Select
-                              value={order.status}
-                              onValueChange={(newStatus) => {
-                                updateOrderStatusMutation.mutate({
-                                  orderId: order.id,
-                                  status: newStatus
-                                });
-                              }}
-                            >
-                              <SelectTrigger className="w-[180px]">
-                                <SelectValue>{order.status}</SelectValue>
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getStatusOptions(!!order.title)}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <div className="truncate">{order.status}</div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(order.dateOrdered), "MMM d, yyyy")}
-                        </TableCell>
-                        <TableCell className="max-w-[400px]">
-                          <div className="flex items-center space-x-2">
-                            <div className="truncate">
-                              {order.textEdit || "No content"}
-                            </div>
-                            {order.textEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="flex-shrink-0"
+                            onClick={() => copyToClipboard(order.textEdit || '')}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end space-x-2">
+                          {(!["Sent", "Cancelled"].includes(order.status) || isAdmin) && (
+                            <>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="flex-shrink-0"
-                                onClick={() => copyToClipboard(order.textEdit || '')}
+                                onClick={() => setSelectedOrderId(order.id)}
                               >
-                                <Copy className="h-4 w-4" />
+                                <MessageSquare className="h-4 w-4" />
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setSelectedOrderId(order.id)}
-                            >
-                              <MessageSquare className="h-4 w-4" />
-                            </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                {isAdmin && (
-                                  <DropdownMenuItem onClick={() => setOrderToEdit(order)}>
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Edit Order
-                                  </DropdownMenuItem>
-                                )}
-                                {order.status !== "Completed" && order.status !== "Cancelled" && (
-                                  <DropdownMenuItem
-                                    onClick={() => setOrderToCancel(order.id)}
-                                    className="text-destructive focus:text-destructive"
-                                  >
-                                    <X className="mr-2 h-4 w-4" />
-                                    Cancel Order
-                                  </DropdownMenuItem>
-                                )}
-                                {isAdmin && (
-                                  <DropdownMenuItem
-                                    onClick={() => setOrderToDelete(order.id)}
-                                    className="text-destructive focus:text-destructive"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete Order
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  {isAdmin && (
+                                    <DropdownMenuItem onClick={() => setOrderToEdit(order)}>
+                                      <Pencil className="mr-2 h-4 w-4" />
+                                      Edit Order
+                                    </DropdownMenuItem>
+                                  )}
+                                  {order.status !== "Completed" && order.status !== "Cancelled" && (
+                                    <DropdownMenuItem
+                                      onClick={() => setOrderToCancel(order.id)}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      <X className="mr-2 h-4 w-4" />
+                                      Cancel Order
+                                    </DropdownMenuItem>
+                                  )}
+                                  {isAdmin && (
+                                    <DropdownMenuItem
+                                      onClick={() => setOrderToDelete(order.id)}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete Order
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </div>
         </div>
-
+      </div>
       <div className="flex items-center justify-center mt-4">
         <Pagination>
           <PaginationContent>

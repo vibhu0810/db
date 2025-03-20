@@ -104,7 +104,9 @@ export default function NewOrder() {
         notes: data.notes,
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
-        sourceUrl: selectedType === "niche_edit" ? data.sourceUrl : "not_applicable", // Provide default value for guest posts
+        sourceUrl: selectedType === "niche_edit" ? data.sourceUrl : "not_applicable",
+        // Set different default status based on order type
+        status: selectedType === "guest_post" ? "Title Approval Pending" : "In Progress",
       };
 
       if (selectedType === "guest_post") {

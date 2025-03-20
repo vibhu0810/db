@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   billingAddress: text("billing_address").notNull(),
   bio: text("bio"),
   profilePicture: text("profile_picture"),
+  companyLogo: text("company_logo"),
   is_admin: boolean("is_admin").notNull().default(false),
 });
 
@@ -42,6 +43,7 @@ export const updateProfileSchema = createInsertSchema(users)
   .extend({
     bio: z.string().optional(),
     profilePicture: z.string().optional(),
+    companyLogo: z.string().optional(),
   });
 
 // Types

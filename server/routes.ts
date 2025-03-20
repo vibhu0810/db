@@ -611,20 +611,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate order IDs
-      const validOrderIds = orderIds.filter(id => typeof id === 'number' && !isNaN(id));
+      const validOrderIds = orderIds.filter(id =>
+        typeof id === 'number' &&
+        !isNaN(id) &&
+        Number.isInteger(id) &&
+        id > 0
+      );
+
       if (validOrderIds.length === 0) {
         return res.status(400).json({ error: "No valid order IDs provided" });
       }
 
       // Delete each order in the array
-      await Promise.all(validOrderIds.map(async (orderId) => {
+      for (const orderId of validOrderIds) {
         try {
           await storage.deleteOrder(orderId);
-        } catch (err) {
-          console.error(`Error deleting order ${orderId}:`, err);
-          throw err;
+        } catch (error) {
+          console.error(`Error deleting order ${orderId}:`, error);
+          throw error;
         }
-      }));
+      }
 
       res.sendStatus(200);
     } catch (error) {

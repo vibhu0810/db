@@ -473,12 +473,21 @@ export default function Orders() {
   const bulkDeleteOrdersMutation = useMutation({
     mutationFn: async (orderIds: number[]) => {
       // Validate order IDs
-      const validOrderIds = orderIds.filter(id => typeof id === 'number' && !isNaN(id));
+      const validOrderIds = orderIds.filter(id =>
+        typeof id === 'number' &&
+        !isNaN(id) &&
+        Number.isInteger(id) &&
+        id > 0
+      );
+
       if (validOrderIds.length === 0) {
         throw new Error("No valid order IDs provided");
       }
 
-      const res = await apiRequest("DELETE", `/api/orders/bulk`, { orderIds: validOrderIds });
+      const res = await apiRequest("DELETE", `/api/orders/bulk`, { 
+        body: JSON.stringify({ orderIds: validOrderIds }) 
+      });
+
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to delete orders");
@@ -653,7 +662,7 @@ export default function Orders() {
     if (checked === true) {
       const validOrderIds = paginatedOrders
         .map(order => order.id)
-        .filter(id => typeof id === 'number' && !isNaN(id));
+        .filter(id => typeof id === 'number' && !isNaN(id) && Number.isInteger(id) && id > 0);
       setSelectedOrders(validOrderIds);
     } else {
       setSelectedOrders([]);
@@ -661,7 +670,7 @@ export default function Orders() {
   };
 
   const handleSelectOrder = (orderId: number, checked: boolean | string) => {
-    if (typeof orderId !== 'number' || isNaN(orderId)) return;
+    if (typeof orderId !== 'number' || isNaN(orderId) || !Number.isInteger(orderId) || orderId <= 0) return;
 
     setSelectedOrders(prev => {
       if (checked === true) {

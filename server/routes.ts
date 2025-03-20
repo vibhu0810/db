@@ -20,11 +20,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Unauthorized: Admin access required" });
       }
       const users = await storage.getUsers();
-      const filteredUsers = users.map(user => ({ id: user.id, username: user.username, companyName: user.companyName }));
+      const filteredUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        companyName: user.companyName,
+        country: user.country,
+      }));
       res.json(filteredUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Add user statistics endpoint for admin
+  app.get("/api/users/stats", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+
+      const users = await storage.getUsers();
+      const orders = await storage.getAllOrders();
+
+      const usersWithStats = users.map(user => {
+        const userOrders = orders.filter(order => order.userId === user.id);
+        return {
+          id: user.id,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          companyName: user.companyName,
+          country: user.country,
+          orders: {
+            total: userOrders.length,
+            completed: userOrders.filter(o => o.status === "Completed").length,
+            pending: userOrders.filter(o => ["Sent", "Revision"].includes(o.status)).length,
+            totalSpent: userOrders.reduce((sum, order) => sum + parseFloat(order.price || "0"), 0)
+          }
+        };
+      });
+
+      res.json(usersWithStats);
+    } catch (error) {
+      console.error("Error fetching user statistics:", error);
+      res.status(500).json({ error: "Failed to fetch user statistics" });
     }
   });
 

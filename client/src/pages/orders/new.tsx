@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { Domain } from "@shared/schema";
+import { Domain, User } from "@shared/schema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import {
   Card,
@@ -32,7 +34,6 @@ import { z } from "zod";
 
 type OrderType = "guest_post" | "niche_edit";
 
-// Helper functions remain unchanged
 const getTurnaroundTime = (domain: Domain, orderType: OrderType | null) => {
   if (domain.websiteUrl === "engagebay.com") {
     return "3 working days";
@@ -56,13 +57,20 @@ const getContentWritingPrice = (domain: Domain) => {
 export default function NewOrder() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const searchParams = new URLSearchParams(window.location.search);
   const domainUrl = searchParams.get("domain");
   const [selectedType, setSelectedType] = useState<OrderType | null>(null);
   const [weWriteContent, setWeWriteContent] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   const { data: domains = [] } = useQuery<Domain[]>({
     queryKey: ['/api/domains']
+  });
+
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+    enabled: isAdmin
   });
 
   const domain = domains.find(d => d.websiteUrl === domainUrl);
@@ -105,6 +113,7 @@ export default function NewOrder() {
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
         status: "Sent",
         dateOrdered: new Date().toISOString(),
+        userId: isAdmin && selectedUserId ? selectedUserId : undefined,
       };
 
       console.log("Processed order data:", orderData);
@@ -211,6 +220,27 @@ export default function NewOrder() {
             ) : (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  {isAdmin && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Select User</h3>
+                      <Select
+                        value={selectedUserId?.toString()}
+                        onValueChange={(value) => setSelectedUserId(Number(value))}
+                      >
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue placeholder="Select a user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users.map((user) => (
+                            <SelectItem key={user.id} value={user.id.toString()}>
+                              {user.companyName || user.username}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   {isGuestPost && (
                     <>
                       <FormField
@@ -385,7 +415,7 @@ export default function NewOrder() {
                     </Button>
                     <Button
                       type="submit"
-                      disabled={createOrderMutation.isPending}
+                      disabled={createOrderMutation.isPending || (isAdmin && !selectedUserId)}
                     >
                       {createOrderMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

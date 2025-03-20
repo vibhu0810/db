@@ -182,9 +182,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
+      let userId = req.user.id;
+
+      // If admin is creating order for another user
+      if (req.user.is_admin && req.body.userId) {
+        // Verify the target user exists
+        const targetUser = await storage.getUser(req.body.userId);
+        if (!targetUser) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        userId = req.body.userId;
+      }
+
       const orderData = {
         ...req.body,
-        userId: req.user.id,
+        userId,
         status: "Sent",
       };
 
@@ -192,7 +204,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send email notification to admin
       try {
-        await sendOrderNotificationEmail(order, req.user);
+        const orderUser = userId === req.user.id ? req.user : await storage.getUser(userId);
+        await sendOrderNotificationEmail(order, orderUser);
       } catch (error) {
         console.error("Failed to send order notification email:", error);
         // Continue even if email fails

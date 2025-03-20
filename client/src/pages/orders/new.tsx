@@ -50,7 +50,7 @@ const formSchema = z.object({
     .min(1, "Target URL is required")
     .url("Must be a valid URL"),
   anchorText: z.string().min(1, "Anchor text is required"),
-  title: z.string().min(1, "Title is required for guest posts"),
+  title: z.string().optional(),
   content: z.string().optional(),
   textEdit: z.string().optional(),
   notes: z.string().optional(),
@@ -93,28 +93,18 @@ export default function NewOrder() {
   });
 
   const createOrderMutation = useMutation({
-    mutationFn: async (formData: FormValues) => {
+    mutationFn: async (data: FormValues) => {
       if (!domain) throw new Error("Domain not found");
       if (!selectedType) throw new Error("Order type not selected");
 
       const orderData = {
-        ...formData,
+        ...data,
         type: selectedType,
         domainId: domain.id,
         weWriteContent,
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
       };
-
-      // For guest posts, validate title
-      if (selectedType === "guest_post" && !formData.title) {
-        throw new Error("Title is required for guest posts");
-      }
-
-      // For guest posts with user-provided content, validate content URL
-      if (selectedType === "guest_post" && !weWriteContent && !formData.content) {
-        throw new Error("Content URL is required when not using our writing service");
-      }
 
       const res = await apiRequest("POST", "/api/orders", orderData);
       if (!res.ok) {
@@ -141,29 +131,19 @@ export default function NewOrder() {
   });
 
   const onSubmit = async (data: FormValues) => {
-    if (selectedType === "guest_post" && !data.title?.trim()) {
-      toast({
-        title: "Error",
-        description: "Title is required for guest posts",
-        variant: "destructive",
-      });
-      return;
+    if (selectedType === "guest_post") {
+      if (!data.title?.trim()) {
+        form.setError("title", { message: "Title is required for guest posts" });
+        return;
+      }
+
+      if (!weWriteContent && !data.content?.trim()) {
+        form.setError("content", { message: "Content URL is required when not using our writing service" });
+        return;
+      }
     }
 
-    if (selectedType === "guest_post" && !weWriteContent && !data.content?.trim()) {
-      toast({
-        title: "Error",
-        description: "Content URL is required when not using our writing service",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await createOrderMutation.mutateAsync(data);
-    } catch (error) {
-      console.error("Form submission error:", error);
-    }
+    createOrderMutation.mutate(data);
   };
 
   if (!domain) {

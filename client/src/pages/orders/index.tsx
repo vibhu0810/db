@@ -643,20 +643,20 @@ export default function Orders() {
     );
   };
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
       setSelectedOrders(paginatedOrders.map(order => order.id));
     } else {
       setSelectedOrders([]);
     }
   };
 
-  const handleSelectOrder = (orderId: number) => {
+  const handleSelectOrder = (orderId: number, checked: boolean) => {
     setSelectedOrders(prev => {
-      if (prev.includes(orderId)) {
-        return prev.filter(id => id !== orderId);
-      } else {
+      if (checked) {
         return [...prev, orderId];
+      } else {
+        return prev.filter(id => id !== orderId);
       }
     });
   };
@@ -1058,7 +1058,7 @@ export default function Orders() {
                   <TableCell>
                     <Checkbox
                       checked={selectedOrders.includes(order.id)}
-                      onCheckedChange={() => handleSelectOrder(order.id)}
+                      onCheckedChange={(checked) => handleSelectOrder(order.id, checked)}
                     />
                   </TableCell>
                 )}

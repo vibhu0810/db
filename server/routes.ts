@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import express from "express";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { generateSEOJoke } from "./openai";
+import { generateSEOJoke, generateWelcomeMessage } from "./openai";
 import { insertMessageSchema, insertDomainSchema, updateProfileSchema } from "@shared/schema";
 import {
   sendOrderNotificationEmail,
@@ -648,6 +648,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting SEO joke:", error);
       res.status(500).json({ error: "Failed to generate joke" });
+    }
+  });
+
+  // Welcome message endpoint
+  app.get("/api/welcome-message", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const username = req.user.firstName || req.user.username;
+      const companyName = req.user.companyName;
+      
+      const welcomeMessage = await generateWelcomeMessage(username, companyName);
+      res.json({ message: welcomeMessage });
+    } catch (error) {
+      console.error("Error generating welcome message:", error);
+      res.status(500).json({ error: "Failed to generate welcome message" });
     }
   });
 

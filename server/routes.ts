@@ -53,9 +53,65 @@ type GuestPostStatus = typeof GUEST_POST_STATUSES[number];
 type NicheEditStatus = typeof NICHE_EDIT_STATUSES[number];
 type OrderStatus = GuestPostStatus | NicheEditStatus;
 
+// Clients connected to WebSocket
+const connectedClients = new Map<string, { userId: number, ws: WebSocket }>();
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add JSON parsing middleware before routes
   app.use(express.json());
+
+  // Create HTTP server
+  const server = createServer(app);
+  
+  // Create WebSocket server
+  const wss = new WebSocketServer({ server });
+  
+  // Handle WebSocket connections
+  wss.on('connection', (ws, req) => {
+    console.log('WebSocket client connected');
+    
+    // Extract sessionId from cookies
+    const cookieHeader = req.headers.cookie;
+    if (!cookieHeader) {
+      console.log('No cookie header, closing connection');
+      ws.close();
+      return;
+    }
+    
+    const sessionCookie = cookieHeader.split(';').find(cookie => cookie.trim().startsWith('connect.sid='));
+    if (!sessionCookie) {
+      console.log('No session cookie, closing connection');
+      ws.close();
+      return;
+    }
+    
+    const sessionId = sessionCookie.split('=')[1].split('.')[0].slice(2);
+    console.log('WebSocket connection with sessionId:', sessionId);
+    
+    // Add client to connected clients with a pending userId
+    connectedClients.set(sessionId, { userId: -1, ws });
+    
+    // Handle messages from the client
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        if (data.type === 'auth' && data.userId) {
+          // Update the userId for this connection
+          connectedClients.set(sessionId, { userId: data.userId, ws });
+          console.log(`WebSocket client authenticated for user ${data.userId}`);
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
+    });
+    
+    // Handle disconnection
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+      connectedClients.delete(sessionId);
+    });
+  });
 
   setupAuth(app);
 

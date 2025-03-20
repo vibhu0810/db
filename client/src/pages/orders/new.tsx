@@ -41,6 +41,23 @@ function getTurnaroundTime(domain: Domain, orderType: OrderType | null) {
   }
 }
 
+// Update the form schema to properly handle guest post fields
+const formSchema = z.object({
+  sourceUrl: z.string()
+    .min(1, "Source URL is required")
+    .url("Must be a valid URL"),
+  targetUrl: z.string()
+    .min(1, "Target URL is required")
+    .url("Must be a valid URL"),
+  anchorText: z.string().min(1, "Anchor text is required"),
+  title: z.string().min(1, "Title is required for guest posts"),
+  content: z.string().optional(),
+  textEdit: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
 export default function NewOrder() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -62,38 +79,17 @@ export default function NewOrder() {
 
   const domain = domains.find(d => d.websiteUrl === domainUrl);
 
-  const formSchema = z.object({
-    sourceUrl: z.string()
-      .min(1, "Source URL is required")
-      .url("Must be a valid URL")
-      .refine(
-        (url) => url.includes(domain?.websiteUrl || ''),
-        `Source URL must be from ${domain?.websiteUrl}`
-      ),
-    targetUrl: z.string()
-      .min(1, "Target URL is required")
-      .url("Must be a valid URL"),
-    anchorText: z.string().min(1, "Anchor text is required"),
-    title: z.string().optional(),
-    textEdit: z.string().optional(),
-    content: z.string().optional(),
-    notes: z.string().optional(),
-  });
-
-  type FormValues = z.infer<typeof formSchema>;
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       sourceUrl: "",
       targetUrl: "",
       anchorText: "",
-      textEdit: "",
-      notes: "",
       title: "",
       content: "",
+      textEdit: "",
+      notes: "",
     },
-    mode: "onChange", // Enable real-time validation
   });
 
   const createOrderMutation = useMutation({
@@ -107,10 +103,18 @@ export default function NewOrder() {
         domainId: domain.id,
         weWriteContent,
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
-        status: selectedType === "guest_post" ? "Title Approval Pending" : "In Progress",
-        dateOrdered: new Date().toISOString(),
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
       };
+
+      // For guest posts, validate title
+      if (selectedType === "guest_post" && !formData.title) {
+        throw new Error("Title is required for guest posts");
+      }
+
+      // For guest posts with user-provided content, validate content URL
+      if (selectedType === "guest_post" && !weWriteContent && !formData.content) {
+        throw new Error("Content URL is required when not using our writing service");
+      }
 
       const res = await apiRequest("POST", "/api/orders", orderData);
       if (!res.ok) {
@@ -137,6 +141,24 @@ export default function NewOrder() {
   });
 
   const onSubmit = async (data: FormValues) => {
+    if (selectedType === "guest_post" && !data.title?.trim()) {
+      toast({
+        title: "Error",
+        description: "Title is required for guest posts",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedType === "guest_post" && !weWriteContent && !data.content?.trim()) {
+      toast({
+        title: "Error",
+        description: "Content URL is required when not using our writing service",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await createOrderMutation.mutateAsync(data);
     } catch (error) {

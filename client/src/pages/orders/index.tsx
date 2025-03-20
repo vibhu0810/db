@@ -1194,6 +1194,63 @@ export default function Orders() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {selectedOrderId && (
+        <Sheet open={selectedOrderId !== null} onOpenChange={() => setSelectedOrderId(null)}>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Order Comments</SheetTitle>
+              <SheetDescription>
+                View and add comments for this order
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6 space-y-6">
+              <div className="h-[60vh] overflow-y-auto space-y-4 pr-4">
+                {isLoadingComments ? (
+                  <div className="flex justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : comments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No comments yet</p>
+                ) : (
+                  comments.map((comment) => (
+                    <div
+                      key={comment.id}
+                      className="rounded-lg border p-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">
+                          {comment.user?.companyName || comment.user?.username}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                        </p>
+                      </div>
+                      <p className="mt-2">{comment.message}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="space-y-4 pt-4 border-t">
+                <Textarea
+                  placeholder="Add a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                />
+                <Button
+                  onClick={() => addCommentMutation.mutate()}
+                  disabled={!newComment.trim() || addCommentMutation.isPending}
+                  className="w-full"
+                >
+                  {addCommentMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Add Comment
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   );
 }

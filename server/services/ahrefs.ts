@@ -33,13 +33,9 @@ export async function getDomainRating(domainUrl: string): Promise<AhrefsDRMetric
       const errorText = await response.text();
       console.error('Ahrefs API error response:', errorText);
 
-      // For insufficient plan errors, return the existing DR value instead of failing
+      // For insufficient plan errors, throw a specific error
       if (response.status === 403 && errorText.includes('Insufficient plan')) {
-        console.log('Skipping DR update due to plan restrictions');
-        return {
-          domainRating: 0, // This will be handled by the metrics service to skip the update
-          lastUpdated: new Date()
-        };
+        throw new Error('INSUFFICIENT_PLAN');
       }
 
       throw new Error(`Ahrefs API error: ${response.statusText}`);

@@ -22,22 +22,28 @@ export async function updateDomainMetrics() {
         }
 
         console.log(`Fetching DR for ${domain.websiteUrl}...`);
-        const metrics = await getDomainRating(domain.websiteUrl);
-        console.log(`Received DR for ${domain.websiteUrl}:`, metrics);
+        try {
+          const metrics = await getDomainRating(domain.websiteUrl);
+          console.log(`Received DR for ${domain.websiteUrl}:`, metrics);
 
-        // Only update if we got a valid domain rating
-        if (metrics && metrics.domainRating > 0) {
-          const updatedDomain = await storage.updateDomain(domain.id, {
-            domainRating: metrics.domainRating.toString(), // Convert to string as per schema
-            lastMetricsUpdate: metrics.lastUpdated
-          });
+          // Only update if we got a valid domain rating
+          if (metrics && metrics.domainRating > 0) {
+            const updatedDomain = await storage.updateDomain(domain.id, {
+              domainRating: metrics.domainRating.toString(), // Convert to string as per schema
+              lastMetricsUpdate: metrics.lastUpdated
+            });
 
-          console.log(`Successfully updated DR for ${domain.websiteUrl}:`, {
-            domainRating: updatedDomain.domainRating,
-            lastMetricsUpdate: updatedDomain.lastMetricsUpdate
-          });
-        } else {
-          console.log(`Skipping update for ${domain.websiteUrl} - insufficient plan or invalid domain rating`);
+            console.log(`Successfully updated DR for ${domain.websiteUrl}:`, {
+              domainRating: updatedDomain.domainRating,
+              lastMetricsUpdate: updatedDomain.lastMetricsUpdate
+            });
+          }
+        } catch (error) {
+          if (error.message === 'INSUFFICIENT_PLAN') {
+            console.log(`Plan restriction for ${domain.websiteUrl} - keeping existing DR value`);
+            continue;
+          }
+          throw error;
         }
 
         // Add delay between requests to avoid rate limiting

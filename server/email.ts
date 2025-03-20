@@ -58,6 +58,12 @@ function generateEmailTemplate(title: string, content: string, buttonText: strin
       margin: 0;
       font-size: 24px;
     }
+    .product-name {
+      color: #3182ce;
+      margin: 5px 0 0;
+      font-size: 16px;
+      font-weight: 500;
+    }
     .content {
       padding: 20px;
       background-color: #ffffff;
@@ -104,7 +110,8 @@ function generateEmailTemplate(title: string, content: string, buttonText: strin
   <div class="container">
     <div class="header">
       ${companyLogo ? `<img src="${companyLogo}" alt="Company Logo" />` : ''}
-      <h1>SaaS x Links</h1>
+      <h1>Digital Gratified</h1>
+      <p class="product-name">SaaSxLinks.ai</p>
     </div>
     <div class="content">
       <h2>${title}</h2>
@@ -114,7 +121,7 @@ function generateEmailTemplate(title: string, content: string, buttonText: strin
       </div>
     </div>
     <div class="footer">
-      <p>© ${new Date().getFullYear()} SaaS x Links. All rights reserved.</p>
+      <p>© ${new Date().getFullYear()} Digital Gratified | SaaSxLinks.ai. All rights reserved.</p>
       <p>This email was sent automatically, please do not reply directly to this message.</p>
     </div>
   </div>

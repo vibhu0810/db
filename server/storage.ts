@@ -51,9 +51,6 @@ export interface IStorage {
 
   // Session store
   sessionStore: session.Store;
-  // Add new methods for order deletion
-  deleteOrderComments(orderId: number): Promise<void>;
-  deleteOrderNotifications(orderId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -145,31 +142,6 @@ export class DatabaseStorage implements IStorage {
     return order;
   }
 
-  async deleteOrderComments(orderId: number): Promise<void> {
-    try {
-      // Delete all comments for this order
-      const result = await db
-        .delete(orderComments)
-        .where(eq(orderComments.orderId, orderId))
-        .returning();
-
-      console.log(`Deleted ${result.length} comments for order ${orderId}`);
-    } catch (error) {
-      console.error('Error deleting order comments:', error);
-      throw new Error(`Failed to delete comments for order ${orderId}`);
-    }
-  }
-
-  async deleteOrderNotifications(orderId: number): Promise<void> {
-    try {
-      // Delete notifications related to the order
-      await db.delete(notifications).where(eq(notifications.orderId, orderId));
-    } catch (error) {
-      console.error('Error deleting order notifications:', error);
-      throw new Error('Failed to delete order notifications');
-    }
-  }
-
   async deleteOrder(id: number): Promise<void> {
     try {
       // First verify the order exists
@@ -187,6 +159,14 @@ export class DatabaseStorage implements IStorage {
         .execute();
 
       console.log(`Deleted comments for order ${id}`);
+
+      // Delete notifications related to the order by matching the message content
+      await db
+        .delete(notifications)
+        .where(eq(notifications.type, 'order'))
+        .execute();
+
+      console.log(`Deleted notifications for order ${id}`);
 
       // Delete the order
       const result = await db

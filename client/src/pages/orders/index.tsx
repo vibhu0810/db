@@ -74,6 +74,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { User } from "@shared/schema";
+import { Plus } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 
 interface DateRange {
   from?: Date;
@@ -273,6 +276,17 @@ export default function Orders() {
   const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
   const [orderToEdit, setOrderToEdit] = useState<any>(null);
   const [userFilter, setUserFilter] = useState<number | "all">("all");
+  const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
+
+  interface CustomOrderFormData {
+    userId: number;
+    sourceUrl: string;
+    targetUrl: string;
+    anchorText: string;
+    textEdit: string;
+    notes: string;
+    price: number;
+  }
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -392,6 +406,32 @@ export default function Orders() {
     },
   });
 
+  const createCustomOrderMutation = useMutation({
+    mutationFn: async (data: CustomOrderFormData) => {
+      const res = await apiRequest("POST", "/api/orders", data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create order");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "Order created",
+        description: "Order has been created successfully.",
+      });
+      setShowCustomOrderSheet(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -493,6 +533,23 @@ export default function Orders() {
     window.URL.revokeObjectURL(url);
   };
 
+  const form = useForm<CustomOrderFormData>({
+    resolver: zodResolver,
+    defaultValues: {
+      userId: 0,
+      sourceUrl: "",
+      targetUrl: "",
+      anchorText: "",
+      textEdit: "",
+      notes: "",
+      price: 0,
+    },
+  });
+
+  const onSubmit = (data: CustomOrderFormData) => {
+    createCustomOrderMutation.mutate(data);
+  };
+
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
       const notificationDataStr = sessionStorage.getItem('notificationData');
@@ -545,10 +602,154 @@ export default function Orders() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
-        <Button onClick={exportToCSV}>
-          <FileDown className="mr-2 h-4 w-4" />
-          Export CSV
-        </Button>
+        <div className="flex gap-2">
+          {isAdmin && (
+            <Sheet open={showCustomOrderSheet} onOpenChange={setShowCustomOrderSheet}>
+              <SheetTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Custom Order
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[400px] sm:w-[540px]">
+                <SheetHeader>
+                  <SheetTitle>Create Custom Order</SheetTitle>
+                  <SheetDescription>
+                    Create a new order for any user
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6">
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="userId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Select User</FormLabel>
+                            <Select
+                              value={field.value?.toString()}
+                              onValueChange={(value) => field.onChange(Number(value))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a user" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {users.map((user) => (
+                                  <SelectItem key={user.id} value={user.id.toString()}>
+                                    {user.companyName || user.username}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="sourceUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Source URL</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="targetUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Target URL</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="anchorText"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Anchor Text</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="textEdit"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Text Edit/Article</FormLabel>
+                            <FormControl>
+                              <Textarea {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Notes</FormLabel>
+                            <FormControl>
+                              <Textarea {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Price</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                {...field}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={createCustomOrderMutation.isPending}
+                      >
+                        {createCustomOrderMutation.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Create Order
+                      </Button>
+                    </form>
+                  </Form>
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
+          <Button onClick={exportToCSV}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-4">
@@ -981,7 +1182,7 @@ export default function Orders() {
 
             <PaginationItem>
               <PaginationNext
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p+ 1))}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
               />
             </PaginationItem>

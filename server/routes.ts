@@ -244,6 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: receiverId,
         message: `New message from ${req.user.username}`,
         type: "message",
+        createdAt: new Date(),
         read: false,
       });
 
@@ -531,6 +532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: `Admin commented on your order #${orderId}`,
           type: "comment",
           orderId,
+          createdAt: new Date(),
         });
       } else {
         // User commented - notify all admins
@@ -639,6 +641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `Your order #${orderId} status has been updated to ${status}`,
         type: "status",
         orderId,
+        createdAt: new Date(),
       });
 
       res.json(updatedOrder);

@@ -100,9 +100,12 @@ export default function NewOrder() {
         ...data,
         type: selectedType,
         domainId: domain.id,
-        weWriteContent,
+        weWriteContent: selectedType === "guest_post" ? weWriteContent : undefined,
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
+        sourceUrl: selectedType === "niche_edit" ? data.sourceUrl : undefined,
+        title: selectedType === "guest_post" ? data.title : undefined,
+        content: selectedType === "guest_post" && !weWriteContent ? data.content : undefined,
       };
 
       console.log('Submitting order with data:', orderData);
@@ -142,7 +145,6 @@ export default function NewOrder() {
       return;
     }
 
-    // Guest post validation
     if (selectedType === "guest_post") {
       if (!data.title?.trim()) {
         form.setError("title", { message: "Title is required for guest posts" });
@@ -155,19 +157,8 @@ export default function NewOrder() {
       }
     }
 
-    const orderData = {
-      ...data,
-      type: selectedType,
-      domainId: domain.id,
-      weWriteContent,
-      price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
-      userId: isAdmin && selectedUserId ? selectedUserId : undefined,
-    };
-
-    console.log('Submitting order:', orderData);
-
     try {
-      await createOrderMutation.mutateAsync(orderData);
+      await createOrderMutation.mutateAsync(data);
     } catch (error) {
       console.error("Form submission error:", error);
     }

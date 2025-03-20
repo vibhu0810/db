@@ -996,7 +996,7 @@ export default function Orders() {
                 <TableCell style={{ width: columnWidths.targetUrl, maxWidth: '400px' }}>
                   <span className="truncate">{order.targetUrl}</span>
                   <Button
-                    variant="ghost"
+                                        variant="ghost"
                     size="icon"
                     onClick={() => copyToClipboard(order.targetUrl)}
                     className="h-8 w-8 shrink-0"
@@ -1027,11 +1027,11 @@ export default function Orders() {
                         });
                       }}
                     >
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[130px]">
                         <SelectValue>{order.status}</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {getStatusOptions(order.title !== null)}
+                        {getStatusOptions(!!order.title)}
                       </SelectContent>
                     </Select>
                   ) : (

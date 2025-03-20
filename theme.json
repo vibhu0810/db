@@ -3,6 +3,7 @@
   "primary": "hsl(47 100% 50%)",
   "appearance": "light",
   "radius": 0.5,
+  "link": "hsl(210 100% 50%)",
   "sidebar": {
     "background": "hsl(0 0% 10%)",
     "foreground": "hsl(0 0% 98%)",

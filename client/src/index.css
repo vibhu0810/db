@@ -10,6 +10,14 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+  
+  a.text-primary, button.text-primary, .text-primary {
+    color: hsl(210 100% 50%);
+  }
+  
+  a.text-primary:hover, button.text-primary:hover, .text-primary:hover {
+    color: hsl(210 100% 40%);
+  }
 }
 
 /* Resizable handle styles */

@@ -975,7 +975,7 @@ export default function Orders() {
                       <TableCell>
                         <Link 
                           href={`/orders/${order.id}`}
-                          className="text-primary hover:underline"
+                          className="text-blue-600 hover:underline"
                         >
                           #{order.id}
                         </Link>

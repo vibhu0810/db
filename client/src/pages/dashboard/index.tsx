@@ -347,7 +347,7 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <Link href={`/orders/${order.id}`}>
-                    <button className="text-primary hover:underline text-sm">
+                    <button className="text-blue-600 hover:underline text-sm">
                       View Details →
                     </button>
                   </Link>

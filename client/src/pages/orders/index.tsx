@@ -619,7 +619,6 @@ export default function Orders() {
     );
   };
 
-
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
       const notificationDataStr = sessionStorage.getItem('notificationData');
@@ -991,8 +990,9 @@ export default function Orders() {
                   </TableCell>
                 )}
                 <TableCell style={{ width: columnWidths.sourceUrl, maxWidth: '400px' }}>
-                  <div className="flex items-center space-x-2 max-w-[200px]">
-                    <div className="truncate">                      {order.type === "guest_post" ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="truncate">
+                      {order.sourceUrl === "not_applicable" ? (
                         <span>{order.title || 'Untitled Post'}</span>
                       ) : (
                         <span>{order.sourceUrl}</span>
@@ -1002,7 +1002,7 @@ export default function Orders() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 p-0"
-                      onClick={() => copyToClipboard(order.type === "guest_post" ? (order.title || 'Untitled Post') : order.sourceUrl)}
+                      onClick={() => copyToClipboard(order.sourceUrl === "not_applicable" ? (order.title || 'Untitled Post') : order.sourceUrl)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>

@@ -25,16 +25,20 @@ export async function updateDomainMetrics() {
         const metrics = await getDomainRating(domain.websiteUrl);
         console.log(`Received DR for ${domain.websiteUrl}:`, metrics);
 
-        // Update domain with new DR
-        const updatedDomain = await storage.updateDomain(domain.id, {
-          domainRating: metrics.domainRating.toString(), // Convert to string as per schema
-          lastMetricsUpdate: metrics.lastUpdated
-        });
+        // Only update if we got a valid domain rating
+        if (metrics && metrics.domainRating > 0) {
+          const updatedDomain = await storage.updateDomain(domain.id, {
+            domainRating: metrics.domainRating.toString(), // Convert to string as per schema
+            lastMetricsUpdate: metrics.lastUpdated
+          });
 
-        console.log(`Successfully updated DR for ${domain.websiteUrl}:`, {
-          domainRating: updatedDomain.domainRating,
-          lastMetricsUpdate: updatedDomain.lastMetricsUpdate
-        });
+          console.log(`Successfully updated DR for ${domain.websiteUrl}:`, {
+            domainRating: updatedDomain.domainRating,
+            lastMetricsUpdate: updatedDomain.lastMetricsUpdate
+          });
+        } else {
+          console.log(`Skipping update for ${domain.websiteUrl} - insufficient plan or invalid domain rating`);
+        }
 
         // Add delay between requests to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 2000));

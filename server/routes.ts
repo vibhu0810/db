@@ -20,10 +20,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let users = await storage.getUsers();
 
+      console.log("All users before filtering:", 
+        users.map(u => ({id: u.id, username: u.username, is_admin: u.is_admin})));
+
       // Filter users based on role
       if (req.user.is_admin) {
-        // Admins see all users except themselves
-        users = users.filter(u => u.id !== req.user.id);
+        // Admins see all non-admin users
+        users = users.filter(u => !u.is_admin);
       } else {
         // Regular users only see admin users
         users = users.filter(u => u.is_admin);

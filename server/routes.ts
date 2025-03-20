@@ -415,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Regular users can only cancel their own Niche Edit orders in "In Progress" status
       if (!req.user.is_admin) {
         if (order.userId !== req.user.id) {
-          return res.status(403).json({ error: "Unauthorized: You can only cancel your own orders" });
+          return res.status(403).json({ error: "Unauthorized: You can only modify your own orders" });
         }
 
         if (status !== "Cancelled") {

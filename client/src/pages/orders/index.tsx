@@ -297,7 +297,7 @@ export default function Orders() {
   const [orderToEdit, setOrderToEdit] = useState<any>(null);
   const [userFilter, setUserFilter] = useState<number | "all">("all");
   const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
-  const [orderToCancel, setOrderToCancel] = useState<number | null>(null); // New state for order cancellation
+  const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
 
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
@@ -444,7 +444,7 @@ export default function Orders() {
     },
   });
 
-  const cancelOrderMutation = useMutation({ // New mutation for cancelling orders
+  const cancelOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
       const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: "Cancelled" });
       if (!res.ok) {
@@ -458,7 +458,7 @@ export default function Orders() {
         title: "Order cancelled",
         description: "The order has been cancelled successfully.",
       });
-      setOrderToCancel(null); //added this line
+      setOrderToCancel(null);
     },
     onError: (error: Error) => {
       toast({
@@ -519,7 +519,6 @@ export default function Orders() {
         : (bValue as number) - (aValue as number);
     });
 
-  // Calculate pagination
   const totalItems = filteredOrders.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -587,8 +586,8 @@ export default function Orders() {
     const orderData = {
       ...data,
       dateOrdered: new Date().toISOString(),
-      price: Number(data.price) || 0, // Ensure price is a number
-      userId: Number(data.userId) || 0, // Ensure userId is a number
+      price: Number(data.price) || 0,
+      userId: Number(data.userId) || 0,
     };
     createCustomOrderMutation.mutate(orderData);
   };
@@ -596,20 +595,16 @@ export default function Orders() {
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
       const notificationDataStr = sessionStorage.getItem('notificationData');
-      console.log('Notification data from storage:', notificationDataStr);
       if (notificationDataStr) {
         try {
           const notificationData = JSON.parse(notificationDataStr);
-          console.log('Parsed notification data:', notificationData);
           const { orderId, type } = notificationData;
 
           setHighlightedOrderId(orderId);
 
           const orderIndex = filteredOrders.findIndex(order => order.id === orderId);
-          console.log('Found order index:', orderIndex);
           if (orderIndex !== -1) {
             const pageNumber = Math.floor(orderIndex / itemsPerPage) + 1;
-            console.log('Setting page number to:', pageNumber);
             setCurrentPage(pageNumber);
 
             if (type === 'comment') {
@@ -620,7 +615,6 @@ export default function Orders() {
 
             setTimeout(() => {
               const element = document.getElementById(`order-${orderId}`);
-              console.log('Found element to scroll to:', !!element);
               if (element) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }
@@ -802,6 +796,7 @@ export default function Orders() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="max-w-sm"
         />
+        {/* Updated status filter */}
         <Select
           value={statusFilter}
           onValueChange={setStatusFilter}
@@ -811,7 +806,6 @@ export default function Orders() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            {/* Guest Post Statuses */}
             <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
             <SelectItem value="Title Approved">Title Approved</SelectItem>
             <SelectItem value="Content Writing">Content Writing</SelectItem>
@@ -819,7 +813,6 @@ export default function Orders() {
             <SelectItem value="Completed">Completed</SelectItem>
             <SelectItem value="Rejected">Rejected</SelectItem>
             <SelectItem value="Cancelled">Cancelled</SelectItem>
-            {/* Niche Edit Statuses */}
             <SelectItem value="In Progress">In Progress</SelectItem>
             <SelectItem value="Sent">Sent</SelectItem>
           </SelectContent>
@@ -1127,6 +1120,7 @@ export default function Orders() {
                 </TableCell>
                 {isAdmin && (
                   <TableCell>
+                    {/* Updated dropdown menu */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -1136,89 +1130,78 @@ export default function Orders() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setOrderToEdit(order);
-                          }}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setOrderToDelete(order.id);
-                              }}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the order
-                                and remove the data from our servers.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => setOrderToDelete(null)}>
-                                Cancel
-                              </AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => {
-                                  if (orderToDelete) {
-                                    deleteOrderMutation.mutate(orderToDelete);
-                                  }
-                                }}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                {deleteOrderMutation.isPending ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : null}
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                        {!isAdmin && order.type === "niche_edit" && order.status === "In Progress" && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem
-                                onSelect={(e) => {
-                                  e.preventDefault();
-                                  setOrderToCancel(order.id);
-                                }}
-                                className="text-destructive"
-                              >
-                                <X className="mr-2 h-4 w-4" />
-                                Cancel Order
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Cancel Order</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to cancel this order? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>No, keep order</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => {
-                                    if (order.id) {
-                                      cancelOrderMutation.mutate(order.id);
-                                    }
+                        {isAdmin ? (
+                          <Select
+                            value={order.status}
+                            onValueChange={(newStatus) => {
+                              updateOrderStatusMutation.mutate({
+                                orderId: order.id,
+                                status: newStatus
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="w-[200px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {order.title ? (
+                                <>
+                                  <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
+                                  <SelectItem value="Title Approved">Title Approved</SelectItem>
+                                  <SelectItem value="Content Writing">Content Writing</SelectItem>
+                                  <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
+                                  <SelectItem value="Completed">Completed</SelectItem>
+                                  <SelectItem value="Rejected">Rejected</SelectItem>
+                                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                </>
+                              ) : (
+                                <>
+                                  <SelectItem value="In Progress">In Progress</SelectItem>
+                                  <SelectItem value="Sent">Sent</SelectItem>
+                                  <SelectItem value="Rejected">Rejected</SelectItem>
+                                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                  <SelectItem value="Completed">Completed</SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          !order.title && order.status === "In Progress" && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem
+                                  onSelect={(e) => {
+                                    e.preventDefault();
+                                    setOrderToCancel(order.id);
                                   }}
+                                  className="text-destructive"
                                 >
-                                  Yes, cancel order
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                                  <X className="mr-2 h-4 w-4" />
+                                  Cancel Order
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to cancel this order? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>No, keep order</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => {
+                                      if (order.id) {
+                                        cancelOrderMutation.mutate(order.id);
+                                      }
+                                    }}
+                                  >
+                                    Yes, cancel order
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1286,7 +1269,7 @@ export default function Orders() {
           onOpenChange={(open) => !open && setOrderToEdit(null)}
         />
       )}
-      {orderToCancel && ( // Add AlertDialog for cancel confirmation
+      {orderToCancel && (
         <AlertDialog open={true} onOpenChange={() => setOrderToCancel(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>

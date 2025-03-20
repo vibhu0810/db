@@ -43,8 +43,8 @@ function getTurnaroundTime(domain: Domain, orderType: OrderType | null) {
 
 const formSchema = z.object({
   sourceUrl: z.string()
-    .min(1, "Source URL is required")
-    .url("Must be a valid URL"),
+    .optional() 
+    .refine(val => !val || val.startsWith('http'), "Must be a valid URL if provided"),
   targetUrl: z.string()
     .min(1, "Target URL is required")
     .url("Must be a valid URL"),
@@ -96,7 +96,7 @@ export default function NewOrder() {
       if (!domain) throw new Error("Domain not found");
       if (!selectedType) throw new Error("Order type not selected");
 
-      // Base order data for both types
+      // Base order data
       const orderData = {
         type: selectedType,
         domainId: domain.id,
@@ -120,6 +120,8 @@ export default function NewOrder() {
           textEdit: data.textEdit,
         });
       }
+
+      console.log('Submitting order data:', orderData);
 
       const res = await apiRequest("POST", "/api/orders", orderData);
       if (!res.ok) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +30,14 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
   const { data: seoJokeData, refetch: fetchJoke } = useSEOJoke();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (user) {
+      // Use wouter's navigation instead of window.location
+      setLocation("/");
+    }
+  }, [user, setLocation]);
 
   useEffect(() => {
     fetchJoke();
@@ -57,7 +65,6 @@ export default function AuthPage() {
   });
 
   if (user) {
-    window.location.href = "/";
     return null;
   }
 

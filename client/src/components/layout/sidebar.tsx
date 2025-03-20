@@ -16,7 +16,7 @@ const userNavigation = [
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Invoice", href: "/invoice", icon: FileText },
-  { name: "Chat", href: "/chat", icon: MessageSquare },
+  { name: "Chat with Support", href: "/chat", icon: MessageSquare },
   { name: "Profile", href: "/profile", icon: User },
 ];
 
@@ -25,7 +25,7 @@ const adminNavigation = [
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Users", href: "/users", icon: Users },
-  { name: "Chat", href: "/chat", icon: MessageSquare },
+  { name: "Chat Support", href: "/chat", icon: MessageSquare },
 ];
 
 export function Sidebar() {

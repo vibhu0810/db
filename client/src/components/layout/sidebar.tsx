@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { Logo } from "@/components/ui/logo";
 
 const userNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -49,9 +50,14 @@ export function Sidebar() {
             </span>
           </div>
         ) : (
-          <span className="text-lg font-semibold">
-            {isAdmin ? "Admin Dashboard" : "SaaS x Links"}
-          </span>
+          <div className="flex items-center">
+            <Logo size="lg" showText={true} />
+            {isAdmin && (
+              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
+                Admin
+              </span>
+            )}
+          </div>
         )}
       </div>
       <nav className="p-4 space-y-2">

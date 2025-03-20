@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { Redirect } from "wouter";
 import { useSEOJoke } from "@/hooks/use-seo-joke";
+import { Logo } from "@/components/ui/logo";
 
 export default function AuthPage() {
   const { user, loginMutation } = useAuth();
@@ -15,7 +16,7 @@ export default function AuthPage() {
   const [displayText, setDisplayText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
   const [showAltText, setShowAltText] = useState(false);
-  const fullText = "Welcome to SaaS x Links!";
+  const fullText = "Welcome to Digital Gratified!";
   const { data: seoJokeData, refetch: fetchJoke } = useSEOJoke();
 
   useEffect(() => {

@@ -9,10 +9,59 @@ import {
   sendCommentNotificationEmail,
   sendStatusUpdateEmail
 } from "./email";
+
 const typingUsers = new Map<number, { isTyping: boolean; timestamp: number }>();
+const onlineUsers = new Map<number, { lastActive: number }>();
+
+const OFFLINE_THRESHOLD = 1000 * 60; // 1 minute of inactivity = offline
+
+function updateUserActivity(userId: number) {
+  onlineUsers.set(userId, { lastActive: Date.now() });
+}
+
+// Clean up old activity records
+setInterval(() => {
+  const now = Date.now();
+  for (const [userId, data] of onlineUsers.entries()) {
+    if (now - data.lastActive > OFFLINE_THRESHOLD) {
+      onlineUsers.delete(userId);
+    }
+  }
+}, 60000); // Clean up every minute
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Add check online status endpoint
+  app.get("/api/users/online-status", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const userIds = req.query.userIds?.toString().split(',').map(Number) || [];
+      const now = Date.now();
+
+      const onlineStatus = Object.fromEntries(
+        userIds.map(id => [
+          id,
+          onlineUsers.has(id) && 
+          (now - onlineUsers.get(id)!.lastActive) < OFFLINE_THRESHOLD
+        ])
+      );
+
+      res.json(onlineStatus);
+    } catch (error) {
+      console.error("Error fetching online status:", error);
+      res.status(500).json({ error: "Failed to fetch online status" });
+    }
+  });
+
+  // Update user's last active timestamp on any authenticated request
+  app.use((req, res, next) => {
+    if (req.user?.id) {
+      updateUserActivity(req.user.id);
+    }
+    next();
+  });
 
   // Add users route for admins
   app.get("/api/users", async (req, res) => {
@@ -115,13 +164,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Try to mark messages as read, but don't fail if it errors
       try {
-        const unreadMessages = messages.filter(m => 
+        const unreadMessages = messages.filter(m =>
           m.receiverId === req.user?.id && !m.read
         );
 
         if (unreadMessages.length > 0) {
           await Promise.all(
-            unreadMessages.map(msg => 
+            unreadMessages.map(msg =>
               storage.updateMessage(msg.id, { ...msg, read: true })
             )
           );
@@ -162,7 +211,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const message = await storage.createMessage(messageData);
-
 
       res.status(201).json(message);
     } catch (error) {

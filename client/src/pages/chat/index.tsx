@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -47,11 +47,11 @@ export default function ChatPage() {
       return res.json();
     },
     enabled: !!selectedUserId,
-    refetchInterval: 3000, // Poll every 3 seconds
+    refetchInterval: 3000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     retry: 3,
-    staleTime: 1000, // Consider data fresh for 1 second
+    staleTime: 1000,
   });
 
   // Get typing status of selected user
@@ -63,9 +63,23 @@ export default function ChatPage() {
       return res.json();
     },
     enabled: !!selectedUserId,
-    refetchInterval: 2000, // Poll every 2 seconds
-    retry: false, // Don't retry on typing status errors
+    refetchInterval: 2000,
+    retry: false,
   });
+
+  // Get online status of users
+  const { data: onlineStatus = {} } = useQuery({
+    queryKey: ['/api/users/online-status', users],
+    queryFn: async () => {
+      if (!users.length) return {};
+      const userIds = users.map(u => u.id).join(',');
+      const res = await apiRequest("GET", `/api/users/online-status?userIds=${userIds}`);
+      return res.json();
+    },
+    enabled: users.length > 0,
+    refetchInterval: 10000, // Check online status every 10 seconds
+  });
+
 
   // Update typing status mutation
   const updateTypingStatus = useMutation({
@@ -165,39 +179,58 @@ export default function ChatPage() {
         </div>
         <ScrollArea className="h-[calc(100%-6rem)]">
           {users.length > 0 ? (
-            users.map((chatUser) => (
-              <button
-                key={chatUser.id}
-                onClick={() => setSelectedUserId(chatUser.id)}
-                className={cn(
-                  "w-full p-4 text-left hover:bg-accent transition-colors flex items-center gap-3",
-                  selectedUserId === chatUser.id && "bg-accent"
-                )}
-              >
-                <Avatar>
-                  {chatUser.profilePicture ? (
-                    <img src={chatUser.profilePicture} alt={chatUser.username} />
-                  ) : (
-                    <div className="bg-primary/10 w-full h-full flex items-center justify-center text-primary font-semibold">
-                      {chatUser.username[0].toUpperCase()}
+            users.map((chatUser) => {
+              // Count unread messages for this user
+              const unreadCount = messages?.filter(
+                (m: any) => m.senderId === chatUser.id && !m.read
+              ).length;
+
+              return (
+                <button
+                  key={chatUser.id}
+                  onClick={() => setSelectedUserId(chatUser.id)}
+                  className={cn(
+                    "w-full p-4 text-left hover:bg-accent transition-colors flex items-center gap-3 relative",
+                    selectedUserId === chatUser.id && "bg-accent"
+                  )}
+                >
+                  <div className="relative">
+                    <Avatar>
+                      {chatUser.profilePicture ? (
+                        <img src={chatUser.profilePicture} alt={chatUser.username} />
+                      ) : (
+                        <div className="bg-primary/10 w-full h-full flex items-center justify-center text-primary font-semibold">
+                          {chatUser.username[0].toUpperCase()}
+                        </div>
+                      )}
+                    </Avatar>
+                    {/* Online/Offline indicator */}
+                    <div className={cn(
+                      "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background",
+                      onlineStatus[chatUser.id] ? "bg-emerald-500" : "bg-destructive"
+                    )} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">
+                      {chatUser.companyName || chatUser.username}
+                      {chatUser.is_admin && (
+                        <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          Admin
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground truncate">
+                      {chatUser.is_admin ? "Support Agent" : chatUser.email}
+                    </div>
+                  </div>
+                  {unreadCount > 0 && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                      {unreadCount}
                     </div>
                   )}
-                </Avatar>
-                <div>
-                  <div className="font-medium">
-                    {chatUser.companyName || chatUser.username}
-                    {chatUser.is_admin && (
-                      <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                        Admin
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {chatUser.is_admin ? "Support Agent" : chatUser.email}
-                  </div>
-                </div>
-              </button>
-            ))
+                </button>
+              );
+            })
           ) : (
             <div className="p-4 text-center text-muted-foreground">
               {isAdmin
@@ -242,13 +275,25 @@ export default function ChatPage() {
                           </p>
                           <div
                             className={cn(
-                              "text-xs mt-1",
+                              "text-xs mt-1 flex items-center gap-1",
                               message.senderId === user?.id
                                 ? "text-primary-foreground/70"
                                 : "text-muted-foreground"
                             )}
                           >
-                            {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                            <span>
+                              {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                            </span>
+                            {message.senderId === user?.id && (
+                              <span className="flex items-center">
+                                •
+                                {message.read ? (
+                                  <CheckCheck className="h-3 w-3 ml-1" />
+                                ) : (
+                                  <Check className="h-3 w-3 ml-1" />
+                                )}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

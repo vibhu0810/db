@@ -388,13 +388,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid order type. Must be either 'guest_post' or 'niche_edit'" });
       }
 
-      // Set initial status based on type - enforced at API level
+      // Set initial status based on type
       const initialStatus = orderType === "guest_post" ? "Title Approval Pending" : "In Progress";
 
       const orderData = {
         ...req.body,
         userId,
-        status: initialStatus, // Override any status that might have been sent
+        status: initialStatus,
         dateOrdered: new Date(),
       };
 

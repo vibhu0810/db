@@ -136,7 +136,6 @@ export class DatabaseStorage implements IStorage {
       .insert(orders)
       .values({
         ...orderData,
-        status: "Sent",
         dateOrdered: new Date(),
       })
       .returning();

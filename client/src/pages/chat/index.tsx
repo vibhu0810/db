@@ -54,7 +54,7 @@ export default function ChatPage() {
     mutationFn: async (content: string) => {
       if (!selectedUserId) throw new Error("No recipient selected");
       const res = await apiRequest("POST", "/api/messages", {
-        content,
+        message: content, // Changed from content to message to match schema
         receiverId: selectedUserId,
       });
       return res.json();

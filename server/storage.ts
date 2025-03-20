@@ -312,11 +312,11 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
 
-    // Create notification for the receiver
+    // Create notification for the receiver with correct field name
     await this.createNotification({
       userId: messageData.receiverId,
       type: "message",
-      content: "You have a new message",
+      message: "You have a new message", // Changed from content to message
       relatedId: message.id
     });
 

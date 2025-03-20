@@ -63,7 +63,13 @@ export default function NewOrder() {
   const domain = domains.find(d => d.websiteUrl === domainUrl);
 
   const formSchema = z.object({
-    sourceUrl: z.string().url("Must be a valid URL").min(1, "Source URL is required"),
+    sourceUrl: z.string()
+      .url("Must be a valid URL")
+      .refine(
+        (url) => url.includes(domain?.websiteUrl || ''),
+        `Source URL must be from ${domain?.websiteUrl}`
+      )
+      .min(1, "Source URL is required"),
     targetUrl: z.string().url("Must be a valid URL").min(1, "Target URL is required"),
     anchorText: z.string().min(1, "Anchor text is required"),
     title: z.string().optional(),
@@ -85,6 +91,7 @@ export default function NewOrder() {
       title: "",
       content: "",
     },
+    mode: "onChange", // Enable real-time validation
   });
 
   const createOrderMutation = useMutation({
@@ -320,6 +327,10 @@ export default function NewOrder() {
                             {...field}
                             required
                             placeholder={`https://${domain.websiteUrl}/blog/example`}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              form.trigger("sourceUrl"); // Trigger validation on change
+                            }}
                           />
                         </FormControl>
                         <FormDescription>

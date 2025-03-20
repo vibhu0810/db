@@ -931,7 +931,7 @@ export default function Orders() {
                     <TableHead className="min-w-[200px] max-w-[400px]">
                       Text Edit/Article
                     </TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
+                    <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

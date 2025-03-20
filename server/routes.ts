@@ -29,6 +29,28 @@ setInterval(() => {
   }
 }, 60000); // Clean up every minute
 
+const GUEST_POST_STATUSES = [
+  "Title Approval Pending",
+  "Title Approved",
+  "Content Writing",
+  "Sent To Editor",
+  "Completed",
+  "Rejected",
+  "Cancelled"
+] as const;
+
+const NICHE_EDIT_STATUSES = [
+  "In Progress",
+  "Sent",
+  "Rejected",
+  "Cancelled",
+  "Completed"
+] as const;
+
+type GuestPostStatus = typeof GUEST_POST_STATUSES[number];
+type NicheEditStatus = typeof NICHE_EDIT_STATUSES[number];
+type OrderStatus = GuestPostStatus | NicheEditStatus;
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
@@ -43,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const onlineStatus = Object.fromEntries(
         userIds.map(id => [
           id,
-          onlineUsers.has(id) && 
+          onlineUsers.has(id) &&
           (now - onlineUsers.get(id)!.lastActive) < OFFLINE_THRESHOLD
         ])
       );
@@ -354,11 +376,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId = req.body.userId;
       }
 
+      // Determine if it's a guest post based on whether title is provided
+      const isGuestPost = !!req.body.title;
+
       // Set the correct status based on order type
+      const initialStatus = isGuestPost ? "Title Approval Pending" : "In Progress";
+
       const orderData = {
         ...req.body,
         userId,
-        status: req.body.type === "guest_post" ? "Title Approval Pending" : "In Progress",
+        status: initialStatus,
       };
 
       const order = await storage.createOrder(orderData);
@@ -506,28 +533,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // For admin updates, validate status based on order type
       if (req.user.is_admin) {
-        const guestPostStatuses = [
-          "Title Approval Pending",
-          "Title Approved",
-          "Content Writing",
-          "Sent To Editor",
-          "Completed",
-          "Rejected",
-          "Cancelled"
-        ];
-
-        const nicheEditStatuses = [
-          "In Progress",
-          "Sent",
-          "Rejected",
-          "Cancelled",
-          "Completed"
-        ];
-
         const isGuestPost = order.title !== null;
-        const validStatuses = isGuestPost ? guestPostStatuses : nicheEditStatuses;
+        const validStatuses = isGuestPost ? GUEST_POST_STATUSES : NICHE_EDIT_STATUSES;
 
-        if (!validStatuses.includes(status)) {
+        if (!validStatuses.includes(status as any)) {
           return res.status(400).json({
             error: `Invalid status. Valid statuses for ${isGuestPost ? 'guest post' : 'niche edit'} orders are: ${validStatuses.join(', ')}`
           });

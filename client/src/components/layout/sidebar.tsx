@@ -30,16 +30,29 @@ const adminNavigation = [
 
 export function Sidebar() {
   const [location] = useLocation();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const navigation = isAdmin ? adminNavigation : userNavigation;
 
   return (
     <div className="w-64 border-r bg-sidebar text-sidebar-foreground">
-      <div className="h-14 border-b flex items-center px-6">
-        <span className="text-lg font-semibold">
-          {isAdmin ? "Admin Dashboard" : "SaaS x Links"}
-        </span>
+      <div className="h-16 border-b flex items-center px-4">
+        {user?.companyLogo ? (
+          <div className="flex items-center">
+            <img 
+              src={user.companyLogo} 
+              alt={user.companyName || "Company Logo"} 
+              className="h-10 max-w-[120px] object-contain mr-2" 
+            />
+            <span className="text-lg font-semibold truncate">
+              {isAdmin ? "Admin" : ""}
+            </span>
+          </div>
+        ) : (
+          <span className="text-lg font-semibold">
+            {isAdmin ? "Admin Dashboard" : "SaaS x Links"}
+          </span>
+        )}
       </div>
       <nav className="p-4 space-y-2">
         {navigation.map((item) => {

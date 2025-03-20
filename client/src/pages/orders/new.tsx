@@ -43,7 +43,7 @@ function getTurnaroundTime(domain: Domain, orderType: OrderType | null) {
 
 const formSchema = z.object({
   sourceUrl: z.string()
-    .optional() 
+    .optional()
     .refine(val => !val || val.startsWith('http'), "Must be a valid URL if provided"),
   targetUrl: z.string()
     .min(1, "Target URL is required")
@@ -96,7 +96,6 @@ export default function NewOrder() {
       if (!domain) throw new Error("Domain not found");
       if (!selectedType) throw new Error("Order type not selected");
 
-      // Base order data
       const orderData = {
         type: selectedType,
         domainId: domain.id,
@@ -105,9 +104,9 @@ export default function NewOrder() {
         notes: data.notes,
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
+        sourceUrl: selectedType === "niche_edit" ? data.sourceUrl : "not_applicable", // Provide default value for guest posts
       };
 
-      // Add type-specific fields
       if (selectedType === "guest_post") {
         Object.assign(orderData, {
           title: data.title,
@@ -116,7 +115,6 @@ export default function NewOrder() {
         });
       } else {
         Object.assign(orderData, {
-          sourceUrl: data.sourceUrl,
           textEdit: data.textEdit,
         });
       }
@@ -159,7 +157,6 @@ export default function NewOrder() {
     }
 
     try {
-      // For guest posts, validate required fields
       if (selectedType === "guest_post") {
         if (!data.title?.trim()) {
           toast({
@@ -180,7 +177,6 @@ export default function NewOrder() {
         }
       }
 
-      // For niche edits, validate source URL
       if (selectedType === "niche_edit" && !data.sourceUrl?.trim()) {
         toast({
           title: "Error",

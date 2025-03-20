@@ -10,14 +10,14 @@ export async function generateWelcomeMessage(username: string, companyName?: str
       messages: [
         {
           role: "system",
-          content: "You are a professional digital marketing assistant. Generate an extremely brief welcome message. MUST be 5 words or less, no punctuation except exclamation points."
+          content: "You are a professional digital marketing assistant. Generate a brief, punchy welcome message. MUST be 7 words or less. Only use exclamation points for punctuation."
         },
         {
           role: "user",
-          content: `Generate a very short welcome message (5 words or less) for a user named ${username}${companyName ? ` from ${companyName}` : ''}. They are logging into a digital marketing platform called SaaS x Links.`
+          content: `Generate a short, impactful welcome message (max 7 words) for a user named ${username}${companyName ? ` from ${companyName}` : ''}. Make it professional but friendly.`
         }
       ],
-      max_tokens: 20,
+      max_tokens: 30,
       temperature: 0.7,
     });
 

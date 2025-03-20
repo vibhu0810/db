@@ -610,8 +610,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid order IDs provided" });
       }
 
+      // Validate order IDs
+      const validOrderIds = orderIds.filter(id => typeof id === 'number' && !isNaN(id));
+      if (validOrderIds.length === 0) {
+        return res.status(400).json({ error: "No valid order IDs provided" });
+      }
+
       // Delete each order in the array
-      await Promise.all(orderIds.map(orderId => storage.deleteOrder(orderId)));
+      await Promise.all(validOrderIds.map(async (orderId) => {
+        try {
+          await storage.deleteOrder(orderId);
+        } catch (err) {
+          console.error(`Error deleting order ${orderId}:`, err);
+          throw err;
+        }
+      }));
 
       res.sendStatus(200);
     } catch (error) {
@@ -679,7 +692,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch domain" });
     }
   });
-
 
 
   // Add these new routes before the httpServer creation

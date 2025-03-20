@@ -38,7 +38,7 @@ export function Sidebar() {
     <div className="w-64 border-r bg-sidebar text-sidebar-foreground">
       <div className="h-14 border-b flex items-center px-6">
         <span className="text-lg font-semibold">
-          {isAdmin ? "Admin Dashboard" : "LinkManager"}
+          {isAdmin ? "Admin Dashboard" : "SaaS x Links"}
         </span>
       </div>
       <nav className="p-4 space-y-2">

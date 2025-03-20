@@ -14,17 +14,17 @@ export async function generateWelcomeMessage(username: string, companyName?: str
         },
         {
           role: "user",
-          content: `Generate a welcome message for a user named ${username}${companyName ? ` from ${companyName}` : ''}. They are logging into a digital marketing platform focused on link building and content placement.`
+          content: `Generate a welcome message for a user named ${username}${companyName ? ` from ${companyName}` : ''}. They are logging into a digital marketing platform called SaaS x Links focused on link building and content placement.`
         }
       ],
       max_tokens: 100,
       temperature: 0.7,
     });
 
-    return response.choices[0].message.content || "Welcome to LinkManager!";
+    return response.choices[0].message.content || "Welcome to SaaS x Links!";
   } catch (error) {
     console.error("Error generating welcome message:", error);
-    return "Welcome to LinkManager!";
+    return "Welcome to SaaS x Links!";
   }
 }
 

@@ -502,24 +502,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const orderId = parseInt(req.params.orderId);
 
-      // Get the order first to verify it exists
-      const order = await storage.getOrder(orderId);
-      if (!order) {
-        return res.status(404).json({ error: "Order not found" });
-      }
-
-      console.log(`Starting deletion process for order ${orderId}`);
-
-      // First delete associated comments
-      await storage.deleteOrderComments(orderId);
-
-      // Then delete notifications related to this order
-      await storage.deleteOrderNotifications(orderId);
-
-      // Delete the order
+      // Delete the order (this will also delete associated comments and notifications)
       await storage.deleteOrder(orderId);
 
-      console.log(`Successfully deleted order ${orderId}`);
       res.sendStatus(200);
     } catch (error) {
       console.error("Error deleting order:", error);

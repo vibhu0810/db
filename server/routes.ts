@@ -777,5 +777,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Set up WebSocketServer
+  const wss = new WebSocketServer({ server: httpServer });
+  
+  // Store active WebSocket connections by user ID
+  const clients = new Map<number, WebSocket[]>();
+  
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('WebSocket client connected');
+    let userId: number | null = null;
+    
+    ws.on('message', (message: string) => {
+      try {
+        const data = JSON.parse(message);
+        
+        // Handle authentication message to store userId for this connection
+        if (data.type === 'auth') {
+          userId = data.userId;
+          // Store the client connection
+          if (!clients.has(userId)) {
+            clients.set(userId, []);
+          }
+          clients.get(userId)?.push(ws);
+          console.log(`WebSocket client authenticated for user ${userId}`);
+        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+      
+      // Remove the connection from clients map
+      if (userId) {
+        const userConnections = clients.get(userId);
+        if (userConnections) {
+          const index = userConnections.indexOf(ws);
+          if (index !== -1) {
+            userConnections.splice(index, 1);
+          }
+          // If no more connections for this user, remove the user entry
+          if (userConnections.length === 0) {
+            clients.delete(userId);
+          }
+        }
+      }
+    });
+  });
+  
+  // Helper function to broadcast messages to all connected clients of a user
+  const broadcastToUser = (userId: number, message: any) => {
+    const userConnections = clients.get(userId);
+    if (userConnections && userConnections.length > 0) {
+      const messageStr = JSON.stringify(message);
+      userConnections.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(messageStr);
+        }
+      });
+    }
+  };
+  
   return httpServer;
 }

@@ -491,6 +491,7 @@ export default function Orders() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ orderIds: validOrderIds }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -514,7 +515,6 @@ export default function Orders() {
       });
     },
   });
-
 
   const handleSort = (field: string) => {
     if (sortField === field) {

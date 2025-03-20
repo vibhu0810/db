@@ -104,22 +104,22 @@ export default function NewOrder() {
         notes: data.notes,
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
-        sourceUrl: selectedType === "niche_edit" ? data.sourceUrl : "not_applicable",
-        // Set different default status based on order type
-        status: selectedType === "guest_post" ? "Title Approval Pending" : "In Progress",
+        // For guest posts, set title and content. For niche edits, set sourceUrl
+        ...(selectedType === "guest_post"
+          ? {
+              sourceUrl: "not_applicable",
+              title: data.title,
+              weWriteContent,
+              content: !weWriteContent ? data.content : undefined,
+              status: "Title Approval Pending" // Force status for guest posts
+            }
+          : {
+              sourceUrl: data.sourceUrl,
+              textEdit: data.textEdit,
+              status: "In Progress" // Force status for niche edits
+            }
+        )
       };
-
-      if (selectedType === "guest_post") {
-        Object.assign(orderData, {
-          title: data.title,
-          weWriteContent,
-          content: !weWriteContent ? data.content : undefined,
-        });
-      } else {
-        Object.assign(orderData, {
-          textEdit: data.textEdit,
-        });
-      }
 
       console.log('Submitting order data:', orderData);
 
@@ -168,8 +168,6 @@ export default function NewOrder() {
           });
           return;
         }
-        // Remove content validation since it's optional now
-
       }
 
       if (selectedType === "niche_edit" && !data.sourceUrl?.trim()) {

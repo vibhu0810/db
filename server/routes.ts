@@ -380,16 +380,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId = req.body.userId;
       }
 
-      // Determine if it's a guest post based on whether title is provided
+      // Use the status from the request body or set default based on order type
       const isGuestPost = !!req.body.title;
-
-      // Set the correct status based on order type
-      const initialStatus = isGuestPost ? "Title Approval Pending" : "In Progress";
+      const status = req.body.status || (isGuestPost ? "Title Approval Pending" : "In Progress");
 
       const orderData = {
         ...req.body,
         userId,
-        status: initialStatus,
+        status,
         dateOrdered: new Date(),
       };
 

@@ -171,7 +171,6 @@ export default function NewOrder() {
             Create a new order for {domain.websiteUrl}
             {selectedType && (
               <div className="mt-2">
-                <p className="font-medium">Price: ${price}</p>
                 <p className="text-sm text-muted-foreground">
                   TAT: {turnaroundTime}
                   {isGuestPost && (
@@ -315,7 +314,7 @@ export default function NewOrder() {
                     name="sourceUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Link from URL *</FormLabel>
+                        <FormLabel>Source URL *</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -338,7 +337,7 @@ export default function NewOrder() {
                   name="targetUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Link to URL *</FormLabel>
+                      <FormLabel>Target URL *</FormLabel>
                       <FormControl>
                         <Input {...field} required type="url" />
                       </FormControl>

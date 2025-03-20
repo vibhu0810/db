@@ -9,11 +9,8 @@ import { db } from "./db";
 import { eq, or, and, desc } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
-import { scrypt, randomBytes } from "crypto";
-import { promisify } from "util";
 
 const MemoryStore = createMemoryStore(session);
-const scryptAsync = promisify(scrypt);
 
 export interface IStorage {
   // User operations
@@ -150,10 +147,16 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOrderComments(orderId: number): Promise<void> {
     try {
-      await db.delete(orderComments).where(eq(orderComments.orderId, orderId));
+      // Delete all comments for this order
+      const result = await db
+        .delete(orderComments)
+        .where(eq(orderComments.orderId, orderId))
+        .returning();
+
+      console.log(`Deleted ${result.length} comments for order ${orderId}`);
     } catch (error) {
       console.error('Error deleting order comments:', error);
-      throw new Error('Failed to delete order comments');
+      throw new Error(`Failed to delete comments for order ${orderId}`);
     }
   }
 
@@ -169,14 +172,36 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOrder(id: number): Promise<void> {
     try {
-      // First delete any associated comments
-      await this.deleteOrderComments(id);
+      // First verify the order exists
+      const order = await this.getOrder(id);
+      if (!order) {
+        throw new Error(`Order ${id} not found`);
+      }
 
-      // Finally delete the order itself
-      await db.delete(orders).where(eq(orders.id, id));
+      console.log(`Starting deletion process for order ${id}`);
+
+      // Delete comments first
+      await db
+        .delete(orderComments)
+        .where(eq(orderComments.orderId, id))
+        .execute();
+
+      console.log(`Deleted comments for order ${id}`);
+
+      // Delete the order
+      const result = await db
+        .delete(orders)
+        .where(eq(orders.id, id))
+        .returning();
+
+      if (!result.length) {
+        throw new Error(`Order ${id} could not be deleted`);
+      }
+
+      console.log(`Successfully deleted order ${id}`);
     } catch (error) {
-      console.error('Error deleting order:', error);
-      throw new Error('Failed to delete order');
+      console.error('Error in deleteOrder:', error);
+      throw error;
     }
   }
 

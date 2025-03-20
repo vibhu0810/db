@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Order, Domain } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
+import { useWelcome } from "@/hooks/use-welcome";
 import { Link } from "wouter";
 import {
   CircleDollarSign,
@@ -28,6 +29,7 @@ import {
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
+  const { data: welcomeData, isLoading: welcomeLoading } = useWelcome();
 
   // Use different endpoints based on user role
   const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
@@ -110,7 +112,11 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user?.firstName || user?.username}!</h2>
+        <h2 className="text-3xl font-bold tracking-tight">
+          {welcomeLoading || !welcomeData?.message
+            ? `Welcome back, ${user?.firstName || user?.username}!`
+            : welcomeData.message}
+        </h2>
         <p className="text-muted-foreground mt-2">
           {isAdmin 
             ? "Here's an overview of order fulfillment in the last 30 days"

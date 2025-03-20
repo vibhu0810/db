@@ -46,12 +46,24 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export default function Reports() {
+export default function ReportsPage() {
+  // Date range for filtering
   const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
 
+  // AI Chat state
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([
+    { role: "assistant", content: "Hello! I'm your AI link-building assistant. Ask me anything about your link building strategy!" }
+  ]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Data fetching
   const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
     queryKey: ['/api/orders']
   });
@@ -60,6 +72,29 @@ export default function Reports() {
     queryKey: ['/api/reviews']
   });
 
+  // Performance data state
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
+
+  // Strategy suggestions based on order history
+  const suggestions = [
+    {
+      title: "Diversify Your Anchor Text",
+      description: "Analysis of your link profile shows heavy use of exact-match anchors. Try using more branded and natural variations.",
+      id: 1
+    },
+    {
+      title: "Target Higher Authority Domains",
+      description: "Your recent links are from domains with DA<40. Consider investing in higher authority sites for better impact.",
+      id: 2
+    },
+    {
+      title: "Content Gap Opportunity",
+      description: "We noticed your competitors rank for 'SaaS pricing strategies' - consider creating link-worthy content on this topic.",
+      id: 3
+    }
+  ];
+
+  // Calculate filtered orders and metrics
   const filteredOrders = orders.filter(
     (order) =>
       date?.from &&
@@ -93,6 +128,31 @@ export default function Reports() {
     "hsl(var(--accent))",
   ];
 
+  // Generate performance data when orders change
+  useEffect(() => {
+    if (orders.length > 0) {
+      const months = [];
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const month = subMonths(now, i);
+        const monthOrders = orders.filter(order => {
+          const orderDate = new Date(order.dateOrdered);
+          return orderDate.getMonth() === month.getMonth() && 
+                 orderDate.getFullYear() === month.getFullYear();
+        });
+        
+        months.push({
+          name: format(month, 'MMM'),
+          orders: monthOrders.length,
+          links: monthOrders.filter(o => o.status === 'Completed').length,
+          traffic: Math.round(monthOrders.filter(o => o.status === 'Completed').length * (Math.random() * 200 + 50))
+        });
+      }
+      setPerformanceData(months);
+    }
+  }, [orders]);
+
+  // Export report functionality  
   const exportReport = () => {
     const report = {
       dateRange: {
@@ -118,68 +178,6 @@ export default function Reports() {
     a.click();
     window.URL.revokeObjectURL(url);
   };
-
-  if (ordersLoading || reviewsLoading) {
-    return (
-      <DashboardShell>
-        <div className="flex items-center justify-center h-full">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
-        </div>
-      </DashboardShell>
-    );
-  }
-
-  // AI Chat state
-  const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([
-    { role: "assistant", content: "Hello! I'm your AI link-building assistant. Ask me anything about your link building strategy!" }
-  ]);
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-  const { user } = useAuth();
-
-  // Campaign performance data (monthly growth data)
-  const [performanceData, setPerformanceData] = useState(() => {
-    // Generate 6 months of data for demonstration
-    const months = [];
-    const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const month = subMonths(now, i);
-      const monthOrders = orders.filter(order => {
-        const orderDate = new Date(order.dateOrdered);
-        return orderDate.getMonth() === month.getMonth() && 
-               orderDate.getFullYear() === month.getFullYear();
-      });
-      
-      months.push({
-        name: format(month, 'MMM'),
-        orders: monthOrders.length,
-        links: monthOrders.filter(o => o.status === 'Completed').length,
-        traffic: Math.round(monthOrders.filter(o => o.status === 'Completed').length * (Math.random() * 200 + 50))
-      });
-    }
-    return months;
-  });
-
-  // Strategy suggestions based on order history
-  const suggestions = [
-    {
-      title: "Diversify Your Anchor Text",
-      description: "Analysis of your link profile shows heavy use of exact-match anchors. Try using more branded and natural variations.",
-      id: 1
-    },
-    {
-      title: "Target Higher Authority Domains",
-      description: "Your recent links are from domains with DA<40. Consider investing in higher authority sites for better impact.",
-      id: 2
-    },
-    {
-      title: "Content Gap Opportunity",
-      description: "We noticed your competitors rank for 'SaaS pricing strategies' - consider creating link-worthy content on this topic.",
-      id: 3
-    }
-  ];
 
   // Handle chat submission
   const sendChatRequest = async () => {
@@ -236,6 +234,18 @@ export default function Reports() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
+  // Show loading state
+  if (ordersLoading || reviewsLoading) {
+    return (
+      <DashboardShell>
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin text-border" />
+        </div>
+      </DashboardShell>
+    );
+  }
+
+  // Render the reports page
   return (
     <DashboardShell>
       <div className="space-y-6">
@@ -465,13 +475,15 @@ export default function Reports() {
                         <div className={`flex gap-3 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
                           <Avatar className="h-8 w-8">
                             {message.role === 'user' ? (
-                              <AvatarImage src={user?.profilePicture || ''} alt="Your profile" />
+                              <AvatarImage src={user?.profilePicture || ""} />
                             ) : (
-                              <AvatarImage src="/ai-avatar.png" alt="AI Assistant" />
+                              <AvatarImage src="/ai-assistant.png" />
                             )}
-                            <AvatarFallback>{message.role === 'user' ? user?.firstName?.charAt(0) || 'U' : 'AI'}</AvatarFallback>
+                            <AvatarFallback>
+                              {message.role === 'user' ? user?.username?.charAt(0).toUpperCase() : 'AI'}
+                            </AvatarFallback>
                           </Avatar>
-                          <div className={`rounded-lg px-4 py-2 ${
+                          <div className={`p-3 rounded-lg ${
                             message.role === 'user' 
                               ? 'bg-primary text-primary-foreground' 
                               : 'bg-muted'
@@ -484,10 +496,9 @@ export default function Reports() {
                     <div ref={chatEndRef} />
                   </div>
                   
-                  <div className="relative">
-                    <Textarea
-                      placeholder="Ask about link-building strategies..."
-                      className="resize-none pr-12"
+                  <div className="flex gap-3">
+                    <Textarea 
+                      placeholder="Ask a question about link-building strategy..."
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -496,13 +507,10 @@ export default function Reports() {
                           sendChatRequest();
                         }
                       }}
+                      className="resize-none"
                     />
-                    <Button 
-                      size="sm" 
-                      className="absolute right-4 bottom-3 h-8 w-8 p-0" 
-                      onClick={sendChatRequest}
-                      disabled={chatLoading || !chatInput.trim()}
-                    >
+                    <Button type="submit" onClick={sendChatRequest} className="shrink-0" 
+                      disabled={chatLoading || !chatInput.trim()}>
                       {chatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     </Button>
                   </div>
@@ -513,51 +521,43 @@ export default function Reports() {
           
           {/* PERSONALIZED SUGGESTIONS TAB */}
           <TabsContent value="suggestions" className="pt-4">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium">Personalized Link-Building Suggestions</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Based on your campaign history and industry trends, we've curated these recommendations to improve your results
-                </p>
-              </div>
-              
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <CardTitle>AI-Powered Strategy Suggestions</CardTitle>
+                </div>
+                <CardDescription>
+                  Personalized recommendations based on your link-building history
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 {suggestions.map(suggestion => (
-                  <Card key={suggestion.id} className="overflow-hidden transition-all duration-200 hover:shadow-md">
-                    <CardHeader className="bg-muted/50">
-                      <CardTitle className="flex gap-2 text-base font-semibold">
-                        <LightbulbIcon className="h-5 w-5 text-primary" />
-                        {suggestion.title}
-                      </CardTitle>
+                  <Card key={suggestion.id} className="overflow-hidden">
+                    <CardHeader className="py-3 bg-muted/50">
+                      <CardTitle className="text-base font-medium">{suggestion.title}</CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-4">
-                      <p className="text-sm text-muted-foreground">{suggestion.description}</p>
+                    <CardContent className="py-4">
+                      <p>{suggestion.description}</p>
                     </CardContent>
-                    <CardFooter className="border-t px-6 py-3 bg-background">
-                      <Button variant="outline" size="sm" className="w-full">
-                        <span>Learn More</span>
-                        <TrendingUp className="ml-2 h-4 w-4" />
-                      </Button>
+                    <CardFooter className="border-t py-3 bg-muted/30 flex justify-end">
+                      <Button variant="outline" size="sm">Implement</Button>
                     </CardFooter>
                   </Card>
                 ))}
-              </div>
-              
-              <Card className="border-dashed">
-                <CardContent className="flex items-center justify-center p-6">
-                  <div className="text-center">
-                    <Sparkles className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                    <h3 className="text-lg font-medium">Get More Personalized Suggestions</h3>
-                    <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-md mx-auto">
+                
+                {filteredOrders.length < 3 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">
                       Complete more campaigns to receive AI-powered suggestions tailored to your link-building strategy
                     </p>
-                    <Button>
-                      <span>Start New Campaign</span>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="/orders/new">Start a New Campaign</a>
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

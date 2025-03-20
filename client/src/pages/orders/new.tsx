@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Domain, User } from "@shared/schema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -154,11 +153,9 @@ export default function NewOrder() {
 
   if (!domain) {
     return (
-      <DashboardShell>
-        <div className="flex items-center justify-center h-full">
-          <p>Domain not found</p>
-        </div>
-      </DashboardShell>
+      <div className="flex items-center justify-center h-full">
+        <p>Domain not found</p>
+      </div>
     );
   }
 
@@ -170,265 +167,277 @@ export default function NewOrder() {
   const turnaroundTime = getTurnaroundTime(domain, selectedType);
 
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation("/domains")}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Domains
+          </Button>
           <h2 className="text-3xl font-bold tracking-tight">New Order</h2>
         </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Details</CardTitle>
-            <CardDescription>
-              Create a new order for {domain.websiteName}
-              {price && (
-                <div className="mt-2 text-lg font-semibold">
-                  Price: ${price}
-                  {isGuestPost && weWriteContent && contentWritingPrice > 0 && (
-                    <span> + ${contentWritingPrice} (content writing)</span>
-                  )}
-                </div>
-              )}
-            </CardDescription>
-            <div className="mt-2 text-sm text-muted-foreground">
-              * Estimated turnaround time: {turnaroundTime}. This is not a guaranteed timeframe for the {isNicheEdit ? "Niche Edit" : "Guest Post"} to go live.
-              It is based on previous requests we made live on this domain.
-            </div>
-          </CardHeader>
-          <CardContent>
-            {showTypeSelection ? (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Select Order Type</h3>
-                <RadioGroup
-                  onValueChange={(value) => setSelectedType(value as OrderType)}
-                  className="space-y-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="guest_post" id="guest_post" />
-                    <label htmlFor="guest_post">
-                      Guest Post (${domain.guestPostPrice})
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="niche_edit" id="niche_edit" />
-                    <label htmlFor="niche_edit">
-                      Niche Edit (${domain.nicheEditPrice})
-                    </label>
-                  </div>
-                </RadioGroup>
+      <Card>
+        <CardHeader>
+          <CardTitle>Order Details</CardTitle>
+          <CardDescription>
+            Create a new order for {domain.websiteName}
+            {price && (
+              <div className="mt-2 text-lg font-semibold">
+                Price: ${price}
+                {isGuestPost && weWriteContent && contentWritingPrice > 0 && (
+                  <span> + ${contentWritingPrice} (content writing)</span>
+                )}
               </div>
-            ) : (
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  {isAdmin && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">Select User</h3>
-                      <Select
-                        value={selectedUserId?.toString()}
-                        onValueChange={(value) => setSelectedUserId(Number(value))}
-                      >
-                        <SelectTrigger className="w-[200px]">
-                          <SelectValue placeholder="Select a user" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {users.map((user) => (
-                            <SelectItem key={user.id} value={user.id.toString()}>
-                              {user.companyName || user.username}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+            )}
+          </CardDescription>
+          <div className="mt-2 text-sm text-muted-foreground">
+            * {isGuestPost ? "Guest Post" : "Niche Edit"} TAT: {turnaroundTime}
+            {isGuestPost && (
+              <div className="mt-1">
+                Note: Guest post title must be approved before proceeding with content creation.
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {showTypeSelection ? (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Select Order Type</h3>
+              <RadioGroup
+                onValueChange={(value) => setSelectedType(value as OrderType)}
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="guest_post" id="guest_post" />
+                  <label htmlFor="guest_post">
+                    Guest Post (${domain.guestPostPrice})
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="niche_edit" id="niche_edit" />
+                  <label htmlFor="niche_edit">
+                    Niche Edit (${domain.nicheEditPrice})
+                  </label>
+                </div>
+              </RadioGroup>
+            </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {isAdmin && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Select User</h3>
+                    <Select
+                      value={selectedUserId?.toString()}
+                      onValueChange={(value) => setSelectedUserId(Number(value))}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Select a user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id.toString()}>
+                            {user.companyName || user.username}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-                  {isGuestPost && (
-                    <>
+                {isGuestPost && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Post Title</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Enter the title for your guest post
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {contentWritingPrice > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium">Content Source</h3>
+                        <RadioGroup
+                          value={weWriteContent ? "we_write" : "user_provides"}
+                          onValueChange={(value) =>
+                            setWeWriteContent(value === "we_write")
+                          }
+                          className="space-y-2"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="user_provides" id="user_provides" />
+                            <label htmlFor="user_provides">
+                              I'll provide the content (URL)
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="we_write" id="we_write" />
+                            <label htmlFor="we_write">
+                              Write the content for me (${contentWritingPrice} for 1000 words)
+                            </label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                    )}
+
+                    {!weWriteContent && (
                       <FormField
                         control={form.control}
-                        name="title"
+                        name="content"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Post Title</FormLabel>
+                            <FormLabel>Content URL</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input
+                                {...field}
+                                type="url"
+                                placeholder="https://docs.google.com/document/d/..."
+                              />
                             </FormControl>
                             <FormDescription>
-                              Enter the title for your guest post
+                              Provide a URL to your content (e.g., Google Docs, Dropbox)
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+                    )}
+                  </>
+                )}
 
-                      {contentWritingPrice > 0 && (
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-medium">Content Source</h3>
-                          <RadioGroup
-                            value={weWriteContent ? "we_write" : "user_provides"}
-                            onValueChange={(value) =>
-                              setWeWriteContent(value === "we_write")
-                            }
-                            className="space-y-2"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="user_provides" id="user_provides" />
-                              <label htmlFor="user_provides">
-                                I'll provide the content (URL)
-                              </label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="we_write" id="we_write" />
-                              <label htmlFor="we_write">
-                                Write the content for me (${contentWritingPrice} for 1000 words)
-                              </label>
-                            </div>
-                          </RadioGroup>
-                        </div>
-                      )}
-
-                      {!weWriteContent && (
-                        <FormField
-                          control={form.control}
-                          name="content"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Content URL</FormLabel>
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  type="url"
-                                  placeholder="https://docs.google.com/document/d/..."
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Provide a URL to your content (e.g., Google Docs, Dropbox)
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </>
-                  )}
-
-                  {isNicheEdit && (
-                    <FormField
-                      control={form.control}
-                      name="sourceUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Link from URL</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder={`https://${domain.websiteUrl}/blog/example`}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Enter the URL of the existing article where you want to add your link
-                            (must be from {domain.websiteUrl})
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
+                {isNicheEdit && (
                   <FormField
                     control={form.control}
-                    name="targetUrl"
+                    name="sourceUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Link to URL</FormLabel>
+                        <FormLabel>Link from URL</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input
+                            {...field}
+                            placeholder={`https://${domain.websiteUrl}/blog/example`}
+                          />
                         </FormControl>
                         <FormDescription>
-                          The URL you want to link to
+                          Enter the URL of the existing article where you want to add your link
+                          (must be from {domain.websiteUrl})
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                )}
 
-                  <FormField
-                    control={form.control}
-                    name="anchorText"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Anchor Text</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          The text that will be linked
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {isNicheEdit && (
-                    <FormField
-                      control={form.control}
-                      name="textEdit"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Text Edit Instructions</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Provide instructions for how you want the link to be added
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <FormField
+                  control={form.control}
+                  name="targetUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Link to URL</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        The URL you want to link to
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
                   )}
+                />
 
+                <FormField
+                  control={form.control}
+                  name="anchorText"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Anchor Text</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        The text that will be linked
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {isNicheEdit && (
                   <FormField
                     control={form.control}
-                    name="notes"
+                    name="textEdit"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Notes</FormLabel>
+                        <FormLabel>Text Edit Instructions</FormLabel>
                         <FormControl>
                           <Textarea {...field} />
                         </FormControl>
                         <FormDescription>
-                          Add any additional notes
+                          Provide instructions for how you want the link to be added
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notes</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Add any additional notes
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
 
-                  <div className="flex justify-end gap-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setLocation("/domains")}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={createOrderMutation.isPending || (isAdmin && !selectedUserId)}
-                    >
-                      {createOrderMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Create Order
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </DashboardShell>
+                <div className="flex justify-end gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setLocation("/domains")}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createOrderMutation.isPending || (isAdmin && !selectedUserId)}
+                  >
+                    {createOrderMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Create Order
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -44,6 +44,24 @@ interface Domain {
   nicheEditPrice?: string;
 }
 
+function getGuestPostTAT(domain: Domain): string {
+  if (domain.websiteUrl === "engagebay.com") {
+    return "3 working days";
+  } else if (domain.websiteUrl === "blog.powr.io") {
+    return "10 working days post content approval";
+  }
+  return "7-14 business days";
+}
+
+function getNicheEditTAT(domain: Domain): string {
+  if (domain.websiteUrl === "engagebay.com") {
+    return "3 working days";
+  } else if (domain.websiteUrl === "blog.powr.io") {
+    return "3 working days";
+  }
+  return "5-7 business days";
+}
+
 export default function DomainsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "guest_post" | "niche_edit" | "both">("all");
@@ -245,7 +263,8 @@ export default function DomainsPage() {
               </TableHead>
               <TableHead className="w-[120px]">Guest Post Price</TableHead>
               <TableHead className="w-[120px]">Niche Edit Price</TableHead>
-              <TableHead className="w-[120px]">TAT</TableHead>
+              <TableHead className="w-[120px]">Guest Post TAT</TableHead>
+              <TableHead className="w-[120px]">Niche Edit TAT</TableHead>
               <TableHead className="min-w-[200px]">Guidelines</TableHead>
               {!isAdmin && <TableHead className="w-[100px]">Action</TableHead>}
             </TableRow>
@@ -285,7 +304,8 @@ export default function DomainsPage() {
                 </TableCell>
                 <TableCell>${domain.guestPostPrice}</TableCell>
                 <TableCell>${domain.nicheEditPrice}</TableCell>
-                <TableCell>{getTurnaroundTime(domain)}</TableCell>
+                <TableCell>{getGuestPostTAT(domain)}</TableCell>
+                <TableCell>{getNicheEditTAT(domain)}</TableCell>
                 <TableCell className="max-w-[200px]">
                   <span className="truncate block">{domain.guidelines}</span>
                 </TableCell>

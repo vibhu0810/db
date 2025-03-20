@@ -480,6 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: admin.id,
           message: `New order #${order.id} placed by ${req.user?.username}`,
           type: "order",
+          orderId: order.id,
           createdAt: new Date(),
           read: false,
         })
@@ -509,7 +510,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderId,
         userId: req.user.id,
         message: req.body.message,
-        createdAt: new Date(),
       });
 
       // Get admins and order owner
@@ -519,12 +519,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user.is_admin) {
         // Admin commented - notify the order owner
         if (orderOwner) {
-          await sendCommentNotificationEmail(
-            order,
-            comment,
-            req.user,
-            orderOwner
-          );
+          if (req.user) {
+            await sendCommentNotificationEmail(
+              order,
+              comment,
+              {
+                username: req.user.username,
+                companyName: req.user.companyName
+              },
+              orderOwner
+            );
+          }
         }
 
         await storage.createNotification({
@@ -537,18 +542,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // User commented - notify all admins
         await Promise.all(admins.map(async (admin) => {
-          await sendCommentNotificationEmail(
-            order,
-            comment,
-            req.user,
-            admin
-          );
+          if (req.user) {
+            await sendCommentNotificationEmail(
+              order,
+              comment,
+              {
+                username: req.user.username,
+                companyName: req.user.companyName
+              },
+              admin
+            );
+          }
 
           await storage.createNotification({
             userId: admin.id,
             message: `${req.user?.username} commented on order #${orderId}`,
             type: "comment",
             orderId,
+            createdAt: new Date(),
           });
         }));
       }

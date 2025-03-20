@@ -529,27 +529,31 @@ export default function ReportsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {suggestions.map(suggestion => (
-                <Card key={suggestion.id} className="overflow-hidden">
-                  <CardHeader className="py-3 bg-muted/50">
-                    <CardTitle className="text-base font-medium">{suggestion.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-4">
-                    <p>{suggestion.description}</p>
-                  </CardContent>
-                  <CardFooter className="border-t py-3 bg-muted/30 flex justify-end">
-                    <Button variant="outline" size="sm">Implement</Button>
-                  </CardFooter>
-                </Card>
-              ))}
-              
-              {filteredOrders.length < 3 && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">
-                    Complete more campaigns to receive AI-powered suggestions tailored to your link-building strategy
+              {filteredOrders.length >= 5 ? (
+                // Only show suggestions when there are at least 5 orders for reliable data
+                suggestions.map(suggestion => (
+                  <Card key={suggestion.id} className="overflow-hidden">
+                    <CardHeader className="py-3 bg-muted/50">
+                      <CardTitle className="text-base font-medium">{suggestion.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-4">
+                      <p>{suggestion.description}</p>
+                    </CardContent>
+                    <CardFooter className="border-t py-3 bg-muted/30 flex justify-end">
+                      <Button variant="outline" size="sm">Implement</Button>
+                    </CardFooter>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-medium mb-2">Not Enough Campaign Data</h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    We need more campaign data to generate accurate personalized suggestions. 
+                    Complete at least 5 campaigns to unlock AI-powered recommendations tailored to your link-building strategy.
                   </p>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href="/orders/new">Start a New Campaign</a>
+                  <Button size="sm" asChild>
+                    <a href="/domains">Browse Domain Inventory</a>
                   </Button>
                 </div>
               )}

@@ -9,26 +9,42 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { User } from "@shared/schema";
+
+interface ChatUser extends User {
+  companyName: string;
+  username: string;
+  is_admin: boolean;
+  email: string;
+}
 
 export default function ChatPage() {
   const { user, isAdmin } = useAuth();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
 
-  // Get all users for admin, or just admin users for regular users
-  const { data: users = [], isLoading: usersLoading } = useQuery({
+  // Get users based on role
+  const { data: users = [], isLoading: usersLoading } = useQuery<ChatUser[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/users");
       const allUsers = await res.json();
-      // Filter users based on role
-      return isAdmin 
-        ? allUsers.filter((u: any) => !u.is_admin) // Admins see only non-admin users
-        : allUsers.filter((u: any) => u.is_admin); // Regular users see only admin users
+
+      if (isAdmin) {
+        // Admins only see non-admin users
+        return allUsers.filter((u: ChatUser) => !u.is_admin);
+      } else {
+        // Regular users only see admin users
+        const adminUsers = allUsers.filter((u: ChatUser) => u.is_admin);
+        if (adminUsers.length === 0) {
+          console.log("No admin users found");
+        }
+        return adminUsers;
+      }
     },
   });
 
-  // Get messages for the selected conversation
+  // Get messages for selected conversation
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['/api/messages', selectedUserId],
     queryFn: async () => {
@@ -82,7 +98,7 @@ export default function ChatPage() {
           </p>
         </div>
         <ScrollArea className="h-[calc(100%-6rem)]">
-          {users.map((chatUser: any) => (
+          {users.map((chatUser) => (
             <button
               key={chatUser.id}
               onClick={() => setSelectedUserId(chatUser.id)}

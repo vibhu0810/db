@@ -5,26 +5,14 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function generateWelcomeMessage(username: string, companyName?: string): Promise<string> {
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are a professional digital marketing assistant. Generate a brief, punchy welcome message. MUST be 7 words or less. Only use exclamation points for punctuation."
-        },
-        {
-          role: "user",
-          content: `Generate a short, impactful welcome message (max 7 words) for a user named ${username}${companyName ? ` from ${companyName}` : ''}. Make it professional but friendly.`
-        }
-      ],
-      max_tokens: 30,
-      temperature: 0.7,
-    });
-
-    return response.choices[0].message.content || "Welcome back!";
+    // Extract first name from username if it contains spaces
+    const firstName = username.includes(' ') ? username.split(' ')[0] : username;
+    
+    // Return fixed format message
+    return `Welcome ${firstName} to SaaS x Links! 🥷`;
   } catch (error) {
     console.error("Error generating welcome message:", error);
-    return "Welcome back!";
+    return "Welcome to SaaS x Links! 🥷";
   }
 }
 

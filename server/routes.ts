@@ -282,10 +282,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId = req.body.userId;
       }
 
+      // Set the correct status based on order type
       const orderData = {
         ...req.body,
         userId,
-        status: "Sent",
+        status: req.body.type === "guest_post" ? "Title Approval Pending" : "In Progress",
       };
 
       const order = await storage.createOrder(orderData);

@@ -380,14 +380,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId = req.body.userId;
       }
 
-      // Use the status from the request body or set default based on order type
-      const isGuestPost = !!req.body.title;
-      const status = req.body.status || (isGuestPost ? "Title Approval Pending" : "In Progress");
+      // Check order type from the request body
+      const orderType = req.body.type;
+
+      // Set initial status based on order type
+      let initialStatus;
+      if (orderType === "guest_post") {
+        initialStatus = "Title Approval Pending";
+      } else if (orderType === "niche_edit") {
+        initialStatus = "In Progress";
+      } else {
+        return res.status(400).json({ error: "Invalid order type" });
+      }
 
       const orderData = {
         ...req.body,
         userId,
-        status,
+        status: initialStatus,
         dateOrdered: new Date(),
       };
 

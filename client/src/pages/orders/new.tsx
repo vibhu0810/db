@@ -111,12 +111,10 @@ export default function NewOrder() {
               title: data.title,
               weWriteContent,
               content: !weWriteContent ? data.content : undefined,
-              status: "Title Approval Pending" // Force status for guest posts
             }
           : {
               sourceUrl: data.sourceUrl,
               textEdit: data.textEdit,
-              status: "In Progress" // Force status for niche edits
             }
         )
       };

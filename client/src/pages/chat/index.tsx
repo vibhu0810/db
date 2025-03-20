@@ -181,9 +181,12 @@ export default function ChatPage() {
           {users.length > 0 ? (
             users.map((chatUser) => {
               // Count unread messages for this user
-              const unreadCount = messages?.filter(
-                (m: any) => m.senderId === chatUser.id && !m.read
-              ).length;
+              const unreadMessages = messages?.filter(
+                (m: any) => m.senderId === chatUser.id && !m.read &&
+                // Only count messages from conversations other than the currently selected one
+                (selectedUserId !== chatUser.id)
+              );
+              const unreadCount = unreadMessages?.length || 0;
 
               return (
                 <button

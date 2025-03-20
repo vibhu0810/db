@@ -221,11 +221,11 @@ export default function UsersPage() {
         </Card>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead></TableHead>
+              <TableHead className="w-[50px]"></TableHead>
               <TableHead>
                 <SortButton field="username">Name</SortButton>
               </TableHead>
@@ -238,22 +238,22 @@ export default function UsersPage() {
               <TableHead>
                 <SortButton field="country">Country</SortButton>
               </TableHead>
-              <TableHead>
+              <TableHead className="text-right">
                 <SortButton field="orders.total">Total Orders</SortButton>
               </TableHead>
-              <TableHead>
+              <TableHead className="text-right">
                 <SortButton field="orders.pending">Pending Orders</SortButton>
               </TableHead>
-              <TableHead>
+              <TableHead className="text-right">
                 <SortButton field="orders.totalSpent">Total Spent</SortButton>
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredUsers.map((user) => (
-              <div key={user.id}>
+              <React.Fragment key={user.id}>
                 <TableRow className="hover:bg-muted/50 cursor-pointer">
-                  <TableCell>
+                  <TableCell className="w-[50px]">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -267,23 +267,24 @@ export default function UsersPage() {
                     </Button>
                   </TableCell>
                   <TableCell>
-                    {user.firstName} {user.lastName}
-                    <br />
-                    <span className="text-sm text-muted-foreground">
-                      @{user.username}
-                    </span>
+                    <div>
+                      {user.firstName} {user.lastName}
+                      <div className="text-sm text-muted-foreground">
+                        @{user.username}
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell>{user.companyName}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.country}</TableCell>
-                  <TableCell>{user.orders.total}</TableCell>
-                  <TableCell>{user.orders.pending}</TableCell>
-                  <TableCell>${user.orders.totalSpent.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">{user.orders.total}</TableCell>
+                  <TableCell className="text-right">{user.orders.pending}</TableCell>
+                  <TableCell className="text-right">${user.orders.totalSpent.toFixed(2)}</TableCell>
                 </TableRow>
                 {expandedUsers.includes(user.id) && (
                   <TableRow>
-                    <TableCell colSpan={8}>
-                      <div className="p-4 space-y-4">
+                    <TableCell colSpan={8} className="p-0">
+                      <div className="p-4 bg-muted/30 space-y-4">
                         <div className="grid grid-cols-3 gap-4">
                           <Card>
                             <CardHeader>
@@ -315,13 +316,11 @@ export default function UsersPage() {
                               <div className="space-y-2">
                                 <div>
                                   <span className="text-muted-foreground">Email:</span>
-                                  <br />
-                                  {user.email}
+                                  <div className="truncate">{user.email}</div>
                                 </div>
                                 <div>
                                   <span className="text-muted-foreground">Country:</span>
-                                  <br />
-                                  {user.country}
+                                  <div>{user.country}</div>
                                 </div>
                               </div>
                             </CardContent>
@@ -351,7 +350,7 @@ export default function UsersPage() {
                     </TableCell>
                   </TableRow>
                 )}
-              </div>
+              </React.Fragment>
             ))}
           </TableBody>
         </Table>

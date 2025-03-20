@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { User } from "@shared/schema";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 interface ChatUser extends User {
   companyName: string;
@@ -22,6 +23,7 @@ export default function ChatPage() {
   const { user, isAdmin } = useAuth();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
+  const socket = useWebSocket();
 
   // Get users based on role
   const { data: users = [], isLoading: usersLoading } = useQuery<ChatUser[]>({
@@ -30,9 +32,6 @@ export default function ChatPage() {
       const res = await apiRequest("GET", "/api/users");
       const allUsers = await res.json();
 
-      // Filter users based on role:
-      // - Admins can see all non-admin users
-      // - Regular users can only see admin users
       return allUsers.filter((chatUser: ChatUser) =>
         isAdmin ? !chatUser.is_admin : chatUser.is_admin
       );
@@ -49,6 +48,38 @@ export default function ChatPage() {
     },
     enabled: !!selectedUserId,
   });
+
+  // Handle incoming WebSocket messages
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'new_message') {
+          const message = data.message;
+
+          // If this message belongs to the current conversation, update the messages
+          if (
+            (message.senderId === selectedUserId && message.receiverId === user?.id) ||
+            (message.senderId === user?.id && message.receiverId === selectedUserId)
+          ) {
+            // Invalidate and refetch messages
+            queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
+          }
+        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error);
+      }
+    };
+
+    socket.addEventListener('message', handleMessage);
+
+    return () => {
+      socket.removeEventListener('message', handleMessage);
+    };
+  }, [socket, selectedUserId, user?.id]);
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -152,7 +183,7 @@ export default function ChatPage() {
               ) : (
                 <div className="space-y-4">
                   {messages.length > 0 ? (
-                    messages.map((message) => (
+                    messages.map((message: any) => (
                       <div
                         key={message.id}
                         className={cn(

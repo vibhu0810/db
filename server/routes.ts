@@ -9,6 +9,15 @@ import {
   sendCommentNotificationEmail,
   sendStatusUpdateEmail
 } from "./email";
+import { WebSocketServer } from 'ws';
+
+// Add this after imports at the top
+interface WebSocketClient {
+  ws: WebSocket;
+  userId: number;
+}
+
+let wsClients: WebSocketClient[] = [];
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -140,6 +149,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const message = await storage.createMessage(messageData);
+
+      // Send real-time notification to the receiver
+      const receiverClient = wsClients.find(client => client.userId === receiverId);
+      if (receiverClient?.ws.readyState === WebSocket.OPEN) {
+        receiverClient.ws.send(JSON.stringify({
+          type: 'new_message',
+          message: {
+            ...message,
+            senderName: req.user.username
+          }
+        }));
+      }
+
       res.status(201).json(message);
     } catch (error) {
       console.error("Error creating message:", error);
@@ -508,7 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.sendStatus(200);
     } catch (error) {
       console.error("Error deleting order:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: error instanceof Error ? error.message : "Failed to delete order",
         details: error instanceof Error ? error.stack : undefined
       });
@@ -573,5 +595,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   const httpServer = createServer(app);
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws' 
+  });
+
+  wss.on('connection', async (ws: any, req: any) => {
+    console.log('New WebSocket connection');
+
+    // Get user from session
+    if (!req.session?.passport?.user) {
+      ws.close();
+      return;
+    }
+
+    const userId = req.session.passport.user;
+    wsClients.push({ ws, userId });
+
+    ws.on('close', () => {
+      console.log('Client disconnected');
+      wsClients = wsClients.filter(client => client.ws !== ws);
+    });
+
+    ws.on('error', console.error);
+  });
+
   return httpServer;
 }

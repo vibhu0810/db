@@ -4,7 +4,7 @@ import express from "express";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSEOJoke } from "./openai";
-import { insertMessageSchema, insertDomainSchema } from "@shared/schema";
+import { insertMessageSchema, insertDomainSchema, updateProfileSchema } from "@shared/schema";
 import {
   sendOrderNotificationEmail,
   sendCommentNotificationEmail,
@@ -669,8 +669,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add this with the other routes before the httpServer creation
+  app.patch("/api/user/profile", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
 
-  // Add these new routes before the httpServer creation
+      const profileData = updateProfileSchema.parse(req.body);
+      const updatedUser = await storage.updateUser(req.user.id, profileData);
+
+      // Return only the necessary user data
+      const sanitizedUser = {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        companyName: updatedUser.companyName,
+        country: updatedUser.country,
+        billingAddress: updatedUser.billingAddress,
+        bio: updatedUser.bio,
+        profilePicture: updatedUser.profilePicture,
+        companyLogo: updatedUser.companyLogo,
+        is_admin: updatedUser.is_admin
+      };
+
+      res.json(sanitizedUser);
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(400).json({ 
+        error: "Failed to update profile",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   app.post("/api/typing-status", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });

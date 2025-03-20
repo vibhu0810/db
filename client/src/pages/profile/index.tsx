@@ -74,22 +74,23 @@ export default function ProfilePage() {
       const res = await apiRequest("PATCH", "/api/user/profile", data);
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || "Failed to update profile");
+        throw new Error(error.message || error.error || "Failed to update profile");
       }
-      return res.json();
+      const updatedUser = await res.json();
+      return updatedUser;
     },
     onSuccess: async () => {
       await refreshUser();
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
-        title: "Profile updated",
+        title: "Success",
         description: "Your profile has been updated successfully.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error updating profile",
-        description: error.message,
+        title: "Error",
+        description: error.message || "Failed to update profile",
         variant: "destructive",
       });
     },

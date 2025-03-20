@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { useLocation } from "wouter";
+import { Redirect } from "wouter";
 import { useSEOJoke } from "@/hooks/use-seo-joke";
 
 export default function AuthPage() {
@@ -17,14 +17,6 @@ export default function AuthPage() {
   const [showAltText, setShowAltText] = useState(false);
   const fullText = "Welcome to SaaS x Links!";
   const { data: seoJokeData, refetch: fetchJoke } = useSEOJoke();
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (user) {
-      // Use wouter's navigation instead of Redirect component
-      setLocation("/");
-    }
-  }, [user, setLocation]);
 
   useEffect(() => {
     let index = 0;
@@ -51,6 +43,11 @@ export default function AuthPage() {
 
     return () => clearInterval(textTimer);
   }, []);
+
+  // If user is already logged in, redirect to home
+  if (user) {
+    return <Redirect to="/" />;
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

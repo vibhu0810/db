@@ -2,20 +2,22 @@ import fetch from 'node-fetch';
 
 const AHREFS_API_ENDPOINT = 'https://api.ahrefs.com/v3';
 
-interface AhrefsMetrics {
+interface AhrefsDRMetrics {
   domainRating: number;
-  traffic: number;
   lastUpdated: Date;
 }
 
-export async function getDomainMetrics(domain: string): Promise<AhrefsMetrics> {
+export async function getDomainRating(domainUrl: string): Promise<AhrefsDRMetrics> {
   if (!process.env.AHREFS_API_KEY) {
     throw new Error('Ahrefs API key not configured');
   }
 
   try {
-    console.log(`Fetching Ahrefs metrics for domain: ${domain}`);
-    const response = await fetch(`${AHREFS_API_ENDPOINT}/metrics`, {
+    // Clean the domain URL - remove protocol and www if present
+    const domain = domainUrl.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
+    console.log(`Fetching Ahrefs DR for domain: ${domain}`);
+
+    const response = await fetch(`${AHREFS_API_ENDPOINT}/domain-rating`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -23,7 +25,6 @@ export async function getDomainMetrics(domain: string): Promise<AhrefsMetrics> {
       },
       body: JSON.stringify({
         target: domain,
-        metrics: ['domain_rating', 'organic_traffic'],
         limit: 1
       })
     });
@@ -37,11 +38,10 @@ export async function getDomainMetrics(domain: string): Promise<AhrefsMetrics> {
 
     return {
       domainRating: data.domain_rating || 0,
-      traffic: data.organic_traffic || 0,
       lastUpdated: new Date()
     };
   } catch (error) {
-    console.error('Error fetching Ahrefs metrics:', error);
+    console.error('Error fetching Ahrefs DR:', error);
     throw error;
   }
 }

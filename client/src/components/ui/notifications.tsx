@@ -71,23 +71,36 @@ export function NotificationsDropdown() {
         await markAsReadMutation.mutate(notification.id);
       }
 
-      // If we have an orderId, store notification data and redirect
-      if (notification.orderId) {
-        console.log('Setting notification data for order:', notification.orderId);
-
-        // Store both orderId and notification type
-        sessionStorage.setItem('notificationData', JSON.stringify({
-          orderId: notification.orderId,
-          type: notification.type
-        }));
-
-        // Close dropdown and navigate to orders page
+      // Check if this is an order-related notification
+      const orderIdFromMessage = extractOrderIdFromMessage(notification.message);
+      
+      if (orderIdFromMessage) {
+        console.log('Extracted order ID from message:', orderIdFromMessage);
+        
+        // Close dropdown and navigate to the specific order page
+        setIsOpen(false);
+        setLocation(`/orders/${orderIdFromMessage}`);
+      } else {
+        // Default behavior for non-order notifications
         setIsOpen(false);
         setLocation('/orders');
       }
     } catch (error) {
       console.error('Error handling notification click:', error);
     }
+  };
+  
+  // Helper function to extract order ID from notification message
+  const extractOrderIdFromMessage = (message: string): number | null => {
+    // Look for patterns like "order #123" or "#123" in the message
+    const regex = /(?:order\s+)?#(\d+)/i;
+    const match = message.match(regex);
+    
+    if (match && match[1]) {
+      return parseInt(match[1], 10);
+    }
+    
+    return null;
   };
 
   const unreadCount = notifications.filter((n: any) => !n.read).length;

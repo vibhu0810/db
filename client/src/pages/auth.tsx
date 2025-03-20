@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { Redirect } from "wouter";
 import { useSEOJoke } from "@/hooks/use-seo-joke";
 
@@ -11,9 +11,11 @@ export default function AuthPage() {
   const { user, loginMutation } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [displayText, setDisplayText] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
   const [showAltText, setShowAltText] = useState(false);
-  const fullText = "Welcome to DG Land! 🥷";
+  const fullText = "Welcome to SaaS x Links!";
   const { data: seoJokeData, refetch: fetchJoke } = useSEOJoke();
 
   useEffect(() => {
@@ -24,6 +26,8 @@ export default function AuthPage() {
         index++;
       } else {
         clearInterval(timer);
+        // Hide cursor after animation
+        setShowCursor(false);
       }
     }, 100);
 
@@ -63,7 +67,7 @@ export default function AuthPage() {
         <CardHeader>
           <h1 className="text-2xl font-bold animate-in slide-in-from-top duration-500">
             {displayText}
-            <span className="animate-pulse">|</span>
+            {showCursor && <span className="animate-pulse">|</span>}
           </h1>
           <p className="text-sm text-muted-foreground animate-in fade-in-50 duration-700 delay-500">
             Sign in to {" "}
@@ -91,14 +95,27 @@ export default function AuthPage() {
               <label className="text-sm font-medium" htmlFor="password">
                 Password
               </label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="transition-all duration-200 focus:scale-[1.02]"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="transition-all duration-200 focus:scale-[1.02] pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             <Button 
               type="submit" 

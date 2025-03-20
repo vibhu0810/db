@@ -299,7 +299,8 @@ export default function Orders() {
   const [userFilter, setUserFilter] = useState<number | "all">("all");
   const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
-  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  // Remove bulk delete related state
+  //const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -470,51 +471,12 @@ export default function Orders() {
     },
   });
 
-  const bulkDeleteOrdersMutation = useMutation({
-    mutationFn: async (orderIds: number[]) => {
-      // Validate order IDs
-      const validOrderIds = orderIds.filter(id =>
-        typeof id === 'number' &&
-        !isNaN(id) &&
-        Number.isInteger(id) &&
-        id > 0
-      );
-
-      if (validOrderIds.length === 0) {
-        throw new Error("No valid order IDs provided");
-      }
-
-      // Make the request
-      const response = await fetch('/api/orders/bulk', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ orderIds: validOrderIds }),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete orders");
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-      toast({
-        title: "Orders deleted",
-        description: "Selected orders have been deleted successfully.",
-      });
-      setSelectedOrders([]); // Clear selection after delete
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  // Remove bulk delete mutation
+  //const bulkDeleteOrdersMutation = useMutation({
+  //  mutationFn: async (orderIds: number[]) => {
+  //    // Remove this mutation
+  //  }
+  //});
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -663,28 +625,14 @@ export default function Orders() {
     );
   };
 
-  const handleSelectAll = (checked: boolean | string) => {
-    if (checked === true) {
-      const validOrderIds = paginatedOrders
-        .map(order => order.id)
-        .filter(id => typeof id === 'number' && !isNaN(id) && Number.isInteger(id) && id > 0);
-      setSelectedOrders(validOrderIds);
-    } else {
-      setSelectedOrders([]);
-    }
-  };
+  // Remove the handleSelectAll and handleSelectOrder functions
+  //const handleSelectAll = (checked: boolean | string) => {
+  //  // Remove this function
+  //};
 
-  const handleSelectOrder = (orderId: number, checked: boolean | string) => {
-    if (typeof orderId !== 'number' || isNaN(orderId) || !Number.isInteger(orderId) || orderId <= 0) return;
-
-    setSelectedOrders(prev => {
-      if (checked === true) {
-        return [...prev, orderId];
-      } else {
-        return prev.filter(id => id !== orderId);
-      }
-    });
-  };
+  //const handleSelectOrder = (orderId: number, checked: boolean | string) => {
+  //  // Remove this function
+  //};
 
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
@@ -876,33 +824,6 @@ export default function Orders() {
               </SheetContent>
             </Sheet>
           )}
-          {isAdmin && selectedOrders.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  Delete Selected ({selectedOrders.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the selected orders
-                    and remove their data from the server.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => bulkDeleteOrdersMutation.mutate(selectedOrders)}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete Orders
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
           <Button onClick={exportToCSV}>
             <FileDown className="mr-2 h-4 w-4" />
             Export CSV
@@ -996,15 +917,6 @@ export default function Orders() {
           <TableHeader>
             <TableRow>
               {isAdmin && (
-                <TableHead className="w-[50px]">
-                  <Checkbox
-                    checked={paginatedOrders.length > 0 && selectedOrders.length === paginatedOrders.length}
-                    onCheckedChange={handleSelectAll}
-                    aria-label="Select all orders"
-                  />
-                </TableHead>
-              )}
-              {isAdmin && (
                 <TableHead className="w-[150px]">
                   <SortableHeader field="user.username">User</SortableHeader>
                 </TableHead>
@@ -1082,12 +994,8 @@ export default function Orders() {
               >
                 {isAdmin && (
                   <TableCell>
-                    <Checkbox
-                      checked={selectedOrders.includes(order.id)}
-                      onCheckedChange={(checked) => handleSelectOrder(order.id, checked)}
-                      aria-label={`Select order ${order.id}`}
-                    />
-                  </TableCell>
+                    {/*Removed Checkbox*/}
+                    </TableCell>
                 )}
                 {isAdmin && (
                   <TableCell className="max-w-[150px] truncate">

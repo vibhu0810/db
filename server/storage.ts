@@ -172,10 +172,7 @@ export class DatabaseStorage implements IStorage {
       // First delete any associated comments
       await this.deleteOrderComments(id);
 
-      // Then delete notifications
-      await this.deleteOrderNotifications(id);
-
-      // Finally delete the order
+      // Finally delete the order itself
       await db.delete(orders).where(eq(orders.id, id));
     } catch (error) {
       console.error('Error deleting order:', error);

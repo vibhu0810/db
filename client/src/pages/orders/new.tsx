@@ -33,25 +33,13 @@ import { z } from "zod";
 
 type OrderType = "guest_post" | "niche_edit";
 
-const getTurnaroundTime = (domain: Domain, orderType: OrderType | null) => {
-  if (domain.websiteUrl === "engagebay.com") {
-    return "3 working days";
-  } else if (domain.websiteUrl === "blog.powr.io") {
-    if (orderType === "guest_post" || domain.type === "guest_post") {
-      return "10 working days post content approval";
-    } else {
-      return "3 working days";
-    }
+function getTurnaroundTime(domain: Domain, orderType: OrderType | null) {
+  if (orderType === "guest_post") {
+    return "10 working days post content approval";
+  } else {
+    return "5-7 business days";
   }
-  return "7-14 business days";
-};
-
-const getContentWritingPrice = (domain: Domain) => {
-  if (domain.websiteUrl === "blog.powr.io") {
-    return 80;
-  }
-  return 0;
-};
+}
 
 export default function NewOrder() {
   const [, setLocation] = useLocation();
@@ -159,11 +147,10 @@ export default function NewOrder() {
     );
   }
 
-  const showTypeSelection = domain.type === "both" && !selectedType;
+  const showTypeSelection = domain.type === "both" || !selectedType;
   const isNicheEdit = selectedType === "niche_edit" || domain.type === "niche_edit";
   const isGuestPost = selectedType === "guest_post" || domain.type === "guest_post";
   const price = isGuestPost ? domain.guestPostPrice : domain.nicheEditPrice;
-  const contentWritingPrice = getContentWritingPrice(domain);
   const turnaroundTime = getTurnaroundTime(domain, selectedType);
 
   return (
@@ -172,11 +159,11 @@ export default function NewOrder() {
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
-            onClick={() => setLocation("/domains")}
+            onClick={() => selectedType ? setSelectedType(null) : setLocation("/domains")}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Domains
+            {selectedType ? 'Back to Order Type' : 'Back to Domains'}
           </Button>
           <h2 className="text-3xl font-bold tracking-tight">New Order</h2>
         </div>
@@ -184,47 +171,44 @@ export default function NewOrder() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Order Details</CardTitle>
+          <CardTitle>{selectedType ? 'Order Details' : 'Select Order Type'}</CardTitle>
           <CardDescription>
-            Create a new order for {domain.websiteName}
-            {price && (
-              <div className="mt-2 text-lg font-semibold">
-                Price: ${price}
-                {isGuestPost && weWriteContent && contentWritingPrice > 0 && (
-                  <span> + ${contentWritingPrice} (content writing)</span>
-                )}
-              </div>
-            )}
+            Create a new order for {domain.websiteUrl}
           </CardDescription>
-          <div className="mt-2 text-sm text-muted-foreground">
-            * {isGuestPost ? "Guest Post" : "Niche Edit"} TAT: {turnaroundTime}
-            {isGuestPost && (
-              <div className="mt-1">
-                Note: Guest post title must be approved before proceeding with content creation.
-              </div>
-            )}
-          </div>
         </CardHeader>
         <CardContent>
           {showTypeSelection ? (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Select Order Type</h3>
               <RadioGroup
                 onValueChange={(value) => setSelectedType(value as OrderType)}
-                className="space-y-2"
+                className="space-y-4"
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="guest_post" id="guest_post" />
-                  <label htmlFor="guest_post">
-                    Guest Post (${domain.guestPostPrice})
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="niche_edit" id="niche_edit" />
-                  <label htmlFor="niche_edit">
-                    Niche Edit (${domain.nicheEditPrice})
-                  </label>
-                </div>
+                {(domain.type === "both" || domain.type === "guest_post") && (
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-accent">
+                    <RadioGroupItem value="guest_post" id="guest_post" />
+                    <div className="flex-1">
+                      <label htmlFor="guest_post" className="text-lg font-medium block">
+                        Guest Post
+                      </label>
+                      <span className="text-muted-foreground block">
+                        ${domain.guestPostPrice}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {(domain.type === "both" || domain.type === "niche_edit") && (
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-accent">
+                    <RadioGroupItem value="niche_edit" id="niche_edit" />
+                    <div className="flex-1">
+                      <label htmlFor="niche_edit" className="text-lg font-medium block">
+                        Niche Edit
+                      </label>
+                      <span className="text-muted-foreground block">
+                        ${domain.nicheEditPrice}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </RadioGroup>
             </div>
           ) : (

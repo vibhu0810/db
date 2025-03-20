@@ -64,13 +64,15 @@ export default function NewOrder() {
 
   const formSchema = z.object({
     sourceUrl: z.string()
+      .min(1, "Source URL is required")
       .url("Must be a valid URL")
       .refine(
         (url) => url.includes(domain?.websiteUrl || ''),
         `Source URL must be from ${domain?.websiteUrl}`
-      )
-      .min(1, "Source URL is required"),
-    targetUrl: z.string().url("Must be a valid URL").min(1, "Target URL is required"),
+      ),
+    targetUrl: z.string()
+      .min(1, "Target URL is required")
+      .url("Must be a valid URL"),
     anchorText: z.string().min(1, "Anchor text is required"),
     title: z.string().optional(),
     textEdit: z.string().optional(),

@@ -11,13 +11,14 @@ export const ourFileRouter = {
   profileImage: f({ image: { maxFileSize } })
     // Set permissions and file types for this FileRoute
     .middleware(async ({ req }) => {
-      // This code runs on your server before upload
-      if (!req.user) {
+      // For Express apps, user is added by passport to the req object
+      const user = (req as any).user;
+      if (!user) {
         throw new Error("Unauthorized");
       }
 
       // Whatever is returned here is accessible in onUploadComplete as `metadata`
-      return { userId: req.user.id };
+      return { userId: user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       // This code RUNS ON YOUR SERVER after upload
@@ -30,10 +31,11 @@ export const ourFileRouter = {
   // You can add more upload routes for different file types and purposes
   companyLogo: f({ image: { maxFileSize } })
     .middleware(async ({ req }) => {
-      if (!req.user) {
+      const user = (req as any).user;
+      if (!user) {
         throw new Error("Unauthorized");
       }
-      return { userId: req.user.id };
+      return { userId: user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log("Company logo upload complete for userId:", metadata.userId);
@@ -43,10 +45,11 @@ export const ourFileRouter = {
   // This route allows PDF uploads for documents
   document: f({ pdf: { maxFileSize: "16MB" } })
     .middleware(async ({ req }) => {
-      if (!req.user) {
+      const user = (req as any).user;
+      if (!user) {
         throw new Error("Unauthorized");
       }
-      return { userId: req.user.id };
+      return { userId: user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log("Document upload complete for userId:", metadata.userId);

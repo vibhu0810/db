@@ -11,6 +11,7 @@ import {
   sendStatusUpdateEmail,
   sendChatNotificationEmail
 } from "./email";
+import { uploadthingHandler } from "./uploadthingHandler";
 
 const typingUsers = new Map<number, { isTyping: boolean; timestamp: number }>();
 const onlineUsers = new Map<number, { lastActive: number }>();
@@ -834,6 +835,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to get typing status" });
     }
   });
+
+  // Configure UploadThing routes
+  app.use("/api/uploadthing", uploadthingHandler);
 
   const httpServer = createServer(app);
   return httpServer;

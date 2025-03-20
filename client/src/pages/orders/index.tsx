@@ -670,8 +670,26 @@ export default function Orders() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
+          <p className="text-muted-foreground">
+            Manage and track your orders
+          </p>
+        </div>
+        {!isAdmin && user?.companyLogo && (
+          <div className="hidden md:block">
+            <img 
+              src={user.companyLogo} 
+              alt={user.companyName || 'Company logo'} 
+              className="h-16 object-contain" 
+              onError={(e) => {
+                // Hide the image if it fails to load
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
         <div className="flex gap-2">
           {isAdmin && (
             <Sheet open={showCustomOrderSheet} onOpenChange={setShowCustomOrderSheet}>

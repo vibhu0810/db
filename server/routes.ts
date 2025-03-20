@@ -628,7 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.deleteOrder(orderId);
         } catch (error) {
           console.error(`Error deleting order ${orderId}:`, error);
-          throw error;
+          throw new Error(`Failed to delete order ${orderId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
 
@@ -641,6 +641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
 
 
   app.get("/api/seo-joke", async (_req, res) => {

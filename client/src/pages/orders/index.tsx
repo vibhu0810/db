@@ -484,12 +484,17 @@ export default function Orders() {
         throw new Error("No valid order IDs provided");
       }
 
-      const res = await apiRequest("DELETE", `/api/orders/bulk`, { 
-        body: JSON.stringify({ orderIds: validOrderIds }) 
+      // Make the request
+      const response = await fetch('/api/orders/bulk', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderIds: validOrderIds }),
       });
 
-      if (!res.ok) {
-        const error = await res.json();
+      if (!response.ok) {
+        const error = await response.json();
         throw new Error(error.error || "Failed to delete orders");
       }
     },
@@ -1018,7 +1023,7 @@ export default function Orders() {
               </TableHead>
               <TableHead>
                 <Resizable
-                                    width={columnWidths.targetUrl}
+                  width={columnWidths.targetUrl}
                   height={0}
                   onResize={onResize("targetUrl")}
                   handle={<div className="react-resizable-handle" />}

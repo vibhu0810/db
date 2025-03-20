@@ -76,7 +76,7 @@ import {
 import { User } from "@shared/schema";
 import { Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-
+import { z } from "zod";
 
 interface DateRange {
   from?: Date;
@@ -91,6 +91,26 @@ interface EditOrderFormData {
   notes: string;
   price: number;
 }
+
+interface CustomOrderFormData {
+  userId: number;
+  sourceUrl: string;
+  targetUrl: string;
+  anchorText: string;
+  textEdit: string;
+  notes: string;
+  price: number;
+}
+
+const customOrderSchema = z.object({
+  userId: z.number().min(1, "Please select a user"),
+  sourceUrl: z.string().min(1, "Source URL is required").url("Must be a valid URL"),
+  targetUrl: z.string().min(1, "Target URL is required").url("Must be a valid URL"),
+  anchorText: z.string().min(1, "Anchor text is required"),
+  textEdit: z.string().optional(),
+  notes: z.string().optional(),
+  price: z.number().min(0, "Price must be 0 or greater"),
+});
 
 function EditOrderSheet({
   order,
@@ -278,15 +298,6 @@ export default function Orders() {
   const [userFilter, setUserFilter] = useState<number | "all">("all");
   const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
 
-  interface CustomOrderFormData {
-    userId: number;
-    sourceUrl: string;
-    targetUrl: string;
-    anchorText: string;
-    textEdit: string;
-    notes: string;
-    price: number;
-  }
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -534,7 +545,7 @@ export default function Orders() {
   };
 
   const form = useForm<CustomOrderFormData>({
-    resolver: zodResolver,
+    resolver: zodResolver(customOrderSchema),
     defaultValues: {
       userId: 0,
       sourceUrl: "",
@@ -547,7 +558,13 @@ export default function Orders() {
   });
 
   const onSubmit = (data: CustomOrderFormData) => {
-    createCustomOrderMutation.mutate(data);
+    const orderData = {
+      ...data,
+      dateOrdered: new Date().toISOString(),
+      price: Number(data.price) || 0, // Ensure price is a number
+      userId: Number(data.userId) || 0, // Ensure userId is a number
+    };
+    createCustomOrderMutation.mutate(orderData);
   };
 
   useEffect(() => {
@@ -983,7 +1000,7 @@ export default function Orders() {
                 </TableCell>
                 <TableCell style={{ width: columnWidths.textEdit, maxWidth: '400px' }}>
                   <div className="flex items-center space-x-2">
-                    <span className="truncate">{order.textEdit}</span>
+                    <span classNamespan className="truncate">{order.textEdit}</span>
                     {order.textEdit && (
                       <Button
                         variant="ghost"

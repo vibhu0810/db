@@ -299,8 +299,8 @@ export default function Orders() {
   const [userFilter, setUserFilter] = useState<number | "all">("all");
   const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
-  // Remove bulk delete related state
-  //const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const [selectedType, setSelectedType] = useState<string>("all"); // Added state for order type
+
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -471,12 +471,6 @@ export default function Orders() {
     },
   });
 
-  // Remove bulk delete mutation
-  //const bulkDeleteOrdersMutation = useMutation({
-  //  mutationFn: async (orderIds: number[]) => {
-  //    // Remove this mutation
-  //  }
-  //});
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -921,7 +915,9 @@ export default function Orders() {
                   handle={<div className="react-resizable-handle" />}
                 >
                   <div style={{ width: columnWidths.sourceUrl }}>
-                    <SortableHeader field="sourceUrl">Source URL</SortableHeader>
+                    <SortableHeader field="sourceUrl">
+                      {selectedType === "guest_post" ? "Post Title" : "Source URL"}
+                    </SortableHeader>
                   </div>
                 </Resizable>
               </TableHead>
@@ -996,8 +992,7 @@ export default function Orders() {
                 )}
                 <TableCell style={{ width: columnWidths.sourceUrl, maxWidth: '400px' }}>
                   <div className="flex items-center space-x-2 max-w-[200px]">
-                    <div className="truncate">
-                      {order.type === "guest_post" ? (
+                    <div className="truncate">                      {order.type === "guest_post" ? (
                         <span>{order.title || 'Untitled Post'}</span>
                       ) : (
                         <span>{order.sourceUrl}</span>

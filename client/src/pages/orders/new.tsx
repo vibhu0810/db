@@ -156,24 +156,38 @@ export default function NewOrder() {
       return;
     }
 
-    if (selectedType === "guest_post") {
-      if (!data.title?.trim()) {
-        form.setError("title", { message: "Title is required for guest posts" });
-        return;
-      }
-
-      if (!weWriteContent && !data.content?.trim()) {
-        form.setError("content", { message: "Content URL is required when not using our writing service" });
-        return;
-      }
-    }
-
-    if (selectedType === "niche_edit" && !data.sourceUrl?.trim()) {
-      form.setError("sourceUrl", { message: "Source URL is required for niche edits" });
-      return;
-    }
-
     try {
+      // For guest posts, validate required fields
+      if (selectedType === "guest_post") {
+        if (!data.title?.trim()) {
+          toast({
+            title: "Error",
+            description: "Title is required for guest posts",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (!weWriteContent && !data.content?.trim()) {
+          toast({
+            title: "Error",
+            description: "Content URL is required when not using our writing service",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // For niche edits, validate source URL
+      if (selectedType === "niche_edit" && !data.sourceUrl?.trim()) {
+        toast({
+          title: "Error",
+          description: "Source URL is required for niche edits",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const orderData = await createOrderMutation.mutateAsync(data);
       console.log('Order created:', orderData);
     } catch (error) {

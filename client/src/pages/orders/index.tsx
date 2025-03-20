@@ -625,14 +625,6 @@ export default function Orders() {
     );
   };
 
-  // Remove the handleSelectAll and handleSelectOrder functions
-  //const handleSelectAll = (checked: boolean | string) => {
-  //  // Remove this function
-  //};
-
-  //const handleSelectOrder = (orderId: number, checked: boolean | string) => {
-  //  // Remove this function
-  //};
 
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
@@ -995,7 +987,7 @@ export default function Orders() {
                 {isAdmin && (
                   <TableCell>
                     {/*Removed Checkbox*/}
-                    </TableCell>
+                  </TableCell>
                 )}
                 {isAdmin && (
                   <TableCell className="max-w-[150px] truncate">
@@ -1003,13 +995,19 @@ export default function Orders() {
                   </TableCell>
                 )}
                 <TableCell style={{ width: columnWidths.sourceUrl, maxWidth: '400px' }}>
-                  <div className="flex items-center space-x-2">
-                    <span className="truncate">{order.sourceUrl}</span>
+                  <div className="flex items-center space-x-2 max-w-[200px]">
+                    <div className="truncate">
+                      {order.type === "guest_post" ? (
+                        <span>{order.title || 'No title provided'}</span>
+                      ) : (
+                        <span>{order.sourceUrl}</span>
+                      )}
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => copyToClipboard(order.sourceUrl)}
-                      className="h-8 w-8 shrink-0"
+                      className="h-8 w-8 p-0"
+                      onClick={() => copyToClipboard(order.type === "guest_post" ? order.title : order.sourceUrl)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>

@@ -402,6 +402,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const order = await storage.createOrder(orderData);
 
+      // Log the created order to verify status
+      console.log('Order created with status:', order.status);
+
       // Send email notification to admin
       try {
         const orderUser = userId === req.user.id ? req.user : await storage.getUser(userId);

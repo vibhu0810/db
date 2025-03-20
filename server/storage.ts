@@ -311,6 +311,15 @@ export class DatabaseStorage implements IStorage {
         createdAt: new Date(),
       })
       .returning();
+
+    // Create notification for the receiver
+    await this.createNotification({
+      userId: messageData.receiverId,
+      type: "message",
+      content: "You have a new message",
+      relatedId: message.id
+    });
+
     return message;
   }
 }

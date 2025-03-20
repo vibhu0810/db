@@ -29,7 +29,13 @@ export default function ChatPage() {
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/users");
       const allUsers = await res.json();
-      return allUsers;
+
+      // Filter users based on role:
+      // - Admins can see all non-admin users
+      // - Regular users can only see admin users
+      return allUsers.filter((chatUser: ChatUser) =>
+        isAdmin ? !chatUser.is_admin : chatUser.is_admin
+      );
     },
   });
 
@@ -87,45 +93,48 @@ export default function ChatPage() {
           </p>
         </div>
         <ScrollArea className="h-[calc(100%-6rem)]">
-          {users.map((chatUser) => (
-            <button
-              key={chatUser.id}
-              onClick={() => setSelectedUserId(chatUser.id)}
-              className={cn(
-                "w-full p-4 text-left hover:bg-accent transition-colors flex items-center gap-3",
-                selectedUserId === chatUser.id && "bg-accent"
-              )}
-            >
-              <Avatar>
-                {chatUser.profilePicture ? (
-                  <img src={chatUser.profilePicture} alt={chatUser.username} />
-                ) : (
-                  <div className="bg-primary/10 w-full h-full flex items-center justify-center text-primary font-semibold">
-                    {chatUser.username[0].toUpperCase()}
-                  </div>
+          {users.length > 0 ? (
+            users.map((chatUser) => (
+              <button
+                key={chatUser.id}
+                onClick={() => setSelectedUserId(chatUser.id)}
+                className={cn(
+                  "w-full p-4 text-left hover:bg-accent transition-colors flex items-center gap-3",
+                  selectedUserId === chatUser.id && "bg-accent"
                 )}
-              </Avatar>
-              <div>
-                <div className="font-medium">
-                  {chatUser.companyName || chatUser.username}
-                  {chatUser.is_admin && (
-                    <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                      Admin
-                    </span>
+              >
+                <Avatar>
+                  {chatUser.profilePicture ? (
+                    <img src={chatUser.profilePicture} alt={chatUser.username} />
+                  ) : (
+                    <div className="bg-primary/10 w-full h-full flex items-center justify-center text-primary font-semibold">
+                      {chatUser.username[0].toUpperCase()}
+                    </div>
                   )}
+                </Avatar>
+                <div>
+                  <div className="font-medium">
+                    {chatUser.companyName || chatUser.username}
+                    {chatUser.is_admin && (
+                      <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {chatUser.is_admin ? "Support Agent" : chatUser.email}
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {chatUser.is_admin ? "Support Agent" : chatUser.email}
-                </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            ))
+          ) : (
+            <div className="p-4 text-center text-muted-foreground">
+              {isAdmin
+                ? "No customers available"
+                : "No support agents available at the moment"}
+            </div>
+          )}
         </ScrollArea>
-        {!isAdmin && users.length === 0 && (
-          <div className="p-4 text-center text-muted-foreground">
-            No support agents available at the moment
-          </div>
-        )}
       </div>
 
       {/* Chat area */}

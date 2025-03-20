@@ -987,7 +987,7 @@ export default function Orders() {
                             variant="ghost"
                             size="icon"
                             className="flex-shrink-0"
-                            onClick={() => copyToClipboard(order.anchorText)}
+                            onClick={() =>copyToClipboard(order.anchorText)}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
@@ -1038,50 +1038,53 @@ export default function Orders() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSelectedOrderId(order.id)}
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                            {order.unreadComments > 0 && (
+                              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
+                                {order.unreadComments}
+                              </span>
+                            )}
+                          </Button>
                           {(!["Sent", "Cancelled"].includes(order.status) || isAdmin) && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setSelectedOrderId(order.id)}
-                              >
-                                <MessageSquare className="h-4 w-4" />
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  {isAdmin && (
-                                    <DropdownMenuItem onClick={() => setOrderToEdit(order)}>
-                                      <Pencil className="mr-2 h-4 w-4" />
-                                      Edit Order
-                                    </DropdownMenuItem>
-                                  )}
-                                  {order.status !== "Completed" && order.status !== "Cancelled" && (
-                                    <DropdownMenuItem
-                                      onClick={() => setOrderToCancel(order.id)}
-                                      className="text-destructive focus:text-destructive"
-                                    >
-                                      <X className="mr-2 h-4 w-4" />
-                                      Cancel Order
-                                    </DropdownMenuItem>
-                                  )}
-                                  {isAdmin && (
-                                    <DropdownMenuItem
-                                      onClick={() => setOrderToDelete(order.id)}
-                                      className="text-destructive focus:text-destructive"
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Delete Order
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                {isAdmin && (
+                                  <DropdownMenuItem onClick={() => setOrderToEdit(order)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit Order
+                                  </DropdownMenuItem>
+                                )}
+                                {order.status !== "Completed" && order.status !== "Cancelled" && (
+                                  <DropdownMenuItem
+                                    onClick={() => setOrderToCancel(order.id)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <X className="mr-2 h-4 w-4" />
+                                    Cancel Order
+                                  </DropdownMenuItem>
+                                )}
+                                {isAdmin && (
+                                  <DropdownMenuItem
+                                    onClick={() => setOrderToDelete(order.id)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete Order
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                       </TableCell>

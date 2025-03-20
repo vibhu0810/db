@@ -291,6 +291,7 @@ export default function Orders() {
     anchorText: 180,
     textEdit: 250,
     status: 180,
+    id: 100, // Added width for Order ID column
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -309,6 +310,7 @@ export default function Orders() {
       anchorText: 300,
       textEdit: 400,
       status: 300,
+      id: 150, // Added maxWidth for Order ID column
     };
 
     const newWidth = Math.min(size.width, maxWidths[column as keyof typeof maxWidths]);
@@ -545,6 +547,7 @@ export default function Orders() {
 
   const exportToCSV = () => {
     const headers = [
+      "Order ID", //Added Order ID to headers
       "Source URL",
       "Target URL",
       "Anchor Text",
@@ -554,6 +557,7 @@ export default function Orders() {
     ].join(",");
 
     const rows = filteredOrders.map((order) => [
+      order.id, //Added Order ID to rows
       order.sourceUrl,
       order.targetUrl,
       order.anchorText,
@@ -910,6 +914,9 @@ export default function Orders() {
                         <SortableHeader field="user.username">User</SortableHeader>
                       </TableHead>
                     )}
+                    <TableHead className="w-[100px]">
+                      <SortableHeader field="id">Order ID</SortableHeader>
+                    </TableHead>
                     <TableHead className="min-w-[200px] max-w-[300px]">
                       <SortableHeader field="sourceUrl">Source URL</SortableHeader>
                     </TableHead>
@@ -946,6 +953,7 @@ export default function Orders() {
                           <div className="truncate">{order.user?.companyName || order.user?.username}</div>
                         </TableCell>
                       )}
+                      <TableCell>#{order.id}</TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <div className="truncate max-w-[250px]">
@@ -966,8 +974,7 @@ export default function Orders() {
                           <div className="truncate max-w-[250px]">
                             {order.targetUrl}
                           </div>
-                          <Button
-                            variant="ghost"
+                          <Button                            variant="ghost"
                             size="icon"
                             className="flex-shrink-0"
                             onClick={() => copyToClipboard(order.targetUrl)}

@@ -67,7 +67,7 @@ export default function AuthPage() {
       <Card className="w-full max-w-sm relative hover:shadow-xl transition-all duration-500">
         <CardHeader className="space-y-4">
           <div className="flex justify-center mb-2 animate-in fade-in-50 duration-700">
-            <Logo size="lg" showText={true} />
+            <Logo size="lg" showText={true} showProduct={true} />
           </div>
           <h1 className="text-2xl font-bold animate-in slide-in-from-top duration-500 text-center">
             {displayText}

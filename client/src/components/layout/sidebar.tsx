@@ -51,7 +51,7 @@ export function Sidebar() {
           </div>
         ) : (
           <div className="flex items-center">
-            <Logo size="lg" showText={true} />
+            <Logo size="lg" showText={true} showProduct={true} />
             {isAdmin && (
               <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
                 Admin

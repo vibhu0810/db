@@ -1058,7 +1058,7 @@ export default function Orders() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuLabel>Comment</DropdownMenuLabel>
                                 {isAdmin && (
                                   <DropdownMenuItem onClick={() => setOrderToEdit(order)}>
                                     <Pencil className="mr-2 h-4 w-4" />

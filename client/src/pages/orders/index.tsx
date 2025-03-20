@@ -300,7 +300,6 @@ export default function Orders() {
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
 
 
-
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
       sourceUrl: 400,
@@ -593,7 +592,8 @@ export default function Orders() {
     createCustomOrderMutation.mutate(orderData);
   };
 
-  const statusSelectContent = (isGuestPost: boolean) => {
+  // Add this helper function to determine status options
+  const getStatusOptions = (isGuestPost: boolean) => {
     if (isGuestPost) {
       return (
         <>
@@ -606,17 +606,16 @@ export default function Orders() {
           <SelectItem value="Cancelled">Cancelled</SelectItem>
         </>
       );
-    } else {
-      return (
-        <>
-          <SelectItem value="In Progress">In Progress</SelectItem>
-          <SelectItem value="Sent">Sent</SelectItem>
-          <SelectItem value="Rejected">Rejected</SelectItem>
-          <SelectItem value="Cancelled">Cancelled</SelectItem>
-          <SelectItem value="Completed">Completed</SelectItem>
-        </>
-      );
     }
+    return (
+      <>
+        <SelectItem value="In Progress">In Progress</SelectItem>
+        <SelectItem value="Sent">Sent</SelectItem>
+        <SelectItem value="Rejected">Rejected</SelectItem>
+        <SelectItem value="Cancelled">Cancelled</SelectItem>
+        <SelectItem value="Completed">Completed</SelectItem>
+      </>
+    );
   };
 
   useEffect(() => {
@@ -843,6 +842,7 @@ export default function Orders() {
             {/* Niche Edit Statuses */}
             <SelectItem value="In Progress">In Progress</SelectItem>
             <SelectItem value="Sent">Sent</SelectItem>
+            <SelectItem value="Rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
         {isAdmin && (
@@ -997,7 +997,7 @@ export default function Orders() {
                   </div>
                 </TableCell>
                 <TableCell style={{ width: columnWidths.targetUrl, maxWidth: '400px' }}>
-                  <div className="flex itemscenter space-x-2">
+                  <div className="flexitemscenter space-x-2">
                     <div className="flex items-center space-x-2">
                     <span className="truncate">{order.targetUrl}</span>
                     <Button
@@ -1040,25 +1040,7 @@ export default function Orders() {
                         <SelectValue>{order.status}</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {order.title ? (
-                          <>
-                            <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
-                            <SelectItem value="Title Approved">Title Approved</SelectItem>
-                            <SelectItem value="Content Writing">Content Writing</SelectItem>
-                            <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
-                            <SelectItem value="Completed">Completed</SelectItem>
-                            <SelectItem value="Rejected">Rejected</SelectItem>
-                            <SelectItem value="Cancelled">Cancelled</SelectItem>
-                          </>
-                        ) : (
-                          <>
-                            <SelectItem value="In Progress">In Progress</SelectItem>
-                            <SelectItem value="Sent">Sent</SelectItem>
-                            <SelectItem value="Rejected">Rejected</SelectItem>
-                            <SelectItem value="Cancelled">Cancelled</SelectItem>
-                            <SelectItem value="Completed">Completed</SelectItem>
-                          </>
-                        )}
+                        {getStatusOptions(order.title !== null)}
                       </SelectContent>
                     </Select>
                   ) : (

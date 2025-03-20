@@ -17,7 +17,7 @@ function isEmailConfigured(): boolean {
 }
 
 // Generate HTML template for all emails
-function generateEmailTemplate(title: string, content: string, buttonText: string, buttonUrl: string) {
+function generateEmailTemplate(title: string, content: string, buttonText: string, buttonUrl: string, companyLogo?: string) {
   return `
 <!DOCTYPE html>
 <html>
@@ -47,6 +47,11 @@ function generateEmailTemplate(title: string, content: string, buttonText: strin
       padding: 20px;
       text-align: center;
       border-radius: 8px 8px 0 0;
+    }
+    .header img {
+      max-height: 60px;
+      max-width: 250px;
+      margin-bottom: 10px;
     }
     .header h1 {
       color: #ffffff;
@@ -98,6 +103,7 @@ function generateEmailTemplate(title: string, content: string, buttonText: strin
 <body>
   <div class="container">
     <div class="header">
+      ${companyLogo ? `<img src="${companyLogo}" alt="Company Logo" />` : ''}
       <h1>SaaS x Links</h1>
     </div>
     <div class="content">

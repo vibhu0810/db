@@ -166,15 +166,8 @@ export default function NewOrder() {
           });
           return;
         }
+        // Remove content validation since it's optional now
 
-        if (!weWriteContent && !data.content?.trim()) {
-          toast({
-            title: "Error",
-            description: "Content URL is required when not using our writing service",
-            variant: "destructive",
-          });
-          return;
-        }
       }
 
       if (selectedType === "niche_edit" && !data.sourceUrl?.trim()) {

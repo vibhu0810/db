@@ -998,7 +998,7 @@ export default function Orders() {
                   <div className="flex items-center space-x-2 max-w-[200px]">
                     <div className="truncate">
                       {order.type === "guest_post" ? (
-                        <span>{order.title || 'No title provided'}</span>
+                        <span>{order.title || 'Untitled Post'}</span>
                       ) : (
                         <span>{order.sourceUrl}</span>
                       )}
@@ -1007,7 +1007,7 @@ export default function Orders() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 p-0"
-                      onClick={() => copyToClipboard(order.type === "guest_post" ? order.title : order.sourceUrl)}
+                      onClick={() => copyToClipboard(order.type === "guest_post" ? (order.title || 'Untitled Post') : order.sourceUrl)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>

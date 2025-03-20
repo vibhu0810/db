@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { z } from "zod";
 import {
   Form,
   FormControl,
@@ -31,6 +32,13 @@ import { updateProfileSchema } from "@shared/schema";
 import { useUploadThing } from "@/utils/uploadthing";
 import { countries } from "@/lib/countries";
 
+// Extend the schema with stricter email validation
+const profileFormSchema = updateProfileSchema.extend({
+  email: z.string().email("Please enter a valid email address"),
+});
+
+type ProfileFormData = z.infer<typeof profileFormSchema>;
+
 export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -38,8 +46,8 @@ export default function ProfilePage() {
   const { startUpload } = useUploadThing("profileImage");
   const queryClient = useQueryClient();
 
-  const form = useForm<UpdateProfile>({
-    resolver: zodResolver(updateProfileSchema),
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(profileFormSchema),
     defaultValues: {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
@@ -54,7 +62,7 @@ export default function ProfilePage() {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: UpdateProfile) => {
+    mutationFn: async (data: ProfileFormData) => {
       const res = await apiRequest("PATCH", "/api/user/profile", data);
       if (!res.ok) {
         const error = await res.json();
@@ -79,7 +87,7 @@ export default function ProfilePage() {
     },
   });
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "profilePicture" | "companyLogo") => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: keyof ProfileFormData) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -104,7 +112,7 @@ export default function ProfilePage() {
     }
   };
 
-  const onSubmit = async (data: UpdateProfile) => {
+  const onSubmit = async (data: ProfileFormData) => {
     await updateProfileMutation.mutateAsync(data);
   };
 
@@ -223,7 +231,12 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>Email Address</FormLabel>
                       <FormControl>
-                        <Input type="email" {...field} disabled={updateProfileMutation.isPending} />
+                        <Input 
+                          type="email" 
+                          {...field} 
+                          disabled={updateProfileMutation.isPending}
+                          placeholder="you@example.com"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

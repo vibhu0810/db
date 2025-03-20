@@ -286,7 +286,7 @@ export class DatabaseStorage implements IStorage {
   // Message methods
   async getMessages(userId1: number, userId2: number): Promise<Message[]> {
     console.log('Fetching messages between users:', userId1, userId2);
-    const messages = await db
+    const messageResults = await db
       .select()
       .from(messages)
       .where(
@@ -303,8 +303,8 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(messages.createdAt);
 
-    console.log('Retrieved messages:', messages);
-    return messages;
+    console.log('Retrieved messages:', messageResults);
+    return messageResults;
   }
 
   async createMessage(messageData: InsertMessage): Promise<Message> {

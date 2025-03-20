@@ -1,17 +1,27 @@
 import { MailService } from '@sendgrid/mail';
 import { Order } from '@shared/schema';
 
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error("SENDGRID_API_KEY environment variable must be set");
-}
-
 const mailService = new MailService();
-mailService.setApiKey(process.env.SENDGRID_API_KEY);
+
+// Configure SendGrid if API key is available
+if (process.env.SENDGRID_API_KEY) {
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 const ADMIN_EMAIL = "info@digitalgratified.com";
 
+// Helper function to check if email service is configured
+function isEmailConfigured(): boolean {
+  return !!process.env.SENDGRID_API_KEY;
+}
+
 export async function sendOrderNotificationEmail(order: Order, user: any) {
-  const isNicheEdit = !order.domain; // If no domain, it's a niche edit
+  if (!isEmailConfigured()) {
+    console.warn('SendGrid API key not configured, skipping email notification');
+    return;
+  }
+
+  const isNicheEdit = !order.title; // If no title, it's a niche edit
 
   let emailContent = '';
   if (isNicheEdit) {
@@ -25,7 +35,7 @@ Price: $${order.price}
 `;
   } else {
     emailContent = `
-${order.domain}
+Guest Post: ${order.title}
 
 To: ${order.targetUrl}
 On: ${order.anchorText}
@@ -39,7 +49,7 @@ Price: $${order.price}
   try {
     await mailService.send({
       to: ADMIN_EMAIL,
-      from: ADMIN_EMAIL, // Must be verified sender
+      from: ADMIN_EMAIL,
       subject: `New Order #${order.id} from ${user.companyName || user.username}`,
       text: emailContent,
       trackingSettings: {
@@ -50,7 +60,7 @@ Price: $${order.price}
     });
   } catch (error) {
     console.error('Error sending order notification email:', error);
-    throw error;
+    // Don't throw error to prevent app disruption
   }
 }
 
@@ -60,6 +70,11 @@ export async function sendCommentNotificationEmail(
   sender: { username: string; companyName?: string; },
   recipient: { email: string; username: string; }
 ) {
+  if (!isEmailConfigured()) {
+    console.warn('SendGrid API key not configured, skipping email notification');
+    return;
+  }
+
   try {
     await mailService.send({
       to: recipient.email,
@@ -80,7 +95,7 @@ You can view and reply to this comment in your dashboard.
     });
   } catch (error) {
     console.error('Error sending comment notification email:', error);
-    throw error;
+    // Don't throw error to prevent app disruption
   }
 }
 
@@ -88,6 +103,11 @@ export async function sendStatusUpdateEmail(
   orderDetails: { id: number; status: string; },
   user: { email: string; username: string; }
 ) {
+  if (!isEmailConfigured()) {
+    console.warn('SendGrid API key not configured, skipping email notification');
+    return;
+  }
+
   try {
     await mailService.send({
       to: user.email,
@@ -106,6 +126,6 @@ You can view the details in your dashboard.
     });
   } catch (error) {
     console.error('Error sending status update email:', error);
-    throw error;
+    // Don't throw error to prevent app disruption
   }
 }

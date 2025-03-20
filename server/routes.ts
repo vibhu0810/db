@@ -16,10 +16,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add users route for admins
   app.get("/api/users", async (req, res) => {
     try {
-      if (!req.user?.is_admin) {
-        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      let users = await storage.getUsers();
+
+      // Filter users based on role
+      if (req.user.is_admin) {
+        // Admins see non-admin users
+        users = users.filter(user => !user.is_admin);
+      } else {
+        // Regular users only see admin users
+        users = users.filter(user => user.is_admin);
       }
-      const users = await storage.getUsers();
+
       const filteredUsers = users.map(user => ({
         id: user.id,
         username: user.username,
@@ -28,7 +37,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         companyName: user.companyName,
         country: user.country,
+        is_admin: user.is_admin
       }));
+
       res.json(filteredUsers);
     } catch (error) {
       console.error("Error fetching users:", error);

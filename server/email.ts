@@ -17,7 +17,7 @@ function isEmailConfigured(): boolean {
 }
 
 // Generate HTML template for all emails
-function generateEmailTemplate(title: string, content: string, buttonText: string, buttonUrl: string, companyLogo?: string) {
+function generateEmailTemplate(title: string, content: string, buttonText: string, buttonUrl: string, companyLogo?: string | null) {
   return `
 <!DOCTYPE html>
 <html>
@@ -188,7 +188,8 @@ export async function sendOrderNotificationEmail(order: Order, user: any) {
         `New ${isNicheEdit ? 'Niche Edit' : 'Guest Post'} Order #${order.id}`,
         adminEmailContent,
         'View Order Details',
-        orderURL
+        orderURL,
+        user.companyLogo
       ),
       trackingSettings: {
         clickTracking: {
@@ -206,7 +207,8 @@ export async function sendOrderNotificationEmail(order: Order, user: any) {
         'Order Confirmation',
         userEmailContent,
         'Track Your Order',
-        orderURL
+        orderURL,
+        user.companyLogo
       ),
       trackingSettings: {
         clickTracking: {
@@ -223,7 +225,7 @@ export async function sendOrderNotificationEmail(order: Order, user: any) {
 export async function sendCommentNotificationEmail(
   orderDetails: { id: number; },
   commentDetails: { message: string; },
-  sender: { username: string; companyName?: string; },
+  sender: { username: string; companyName?: string; companyLogo?: string | null; },
   recipient: { email: string; username: string; }
 ) {
   if (!isEmailConfigured()) {
@@ -253,7 +255,8 @@ export async function sendCommentNotificationEmail(
         'New Comment Notification',
         emailContent,
         'View & Reply',
-        orderURL
+        orderURL,
+        sender.companyLogo
       ),
       trackingSettings: {
         clickTracking: {
@@ -269,7 +272,7 @@ export async function sendCommentNotificationEmail(
 
 export async function sendStatusUpdateEmail(
   orderDetails: { id: number; status: string; },
-  user: { email: string; username: string; }
+  user: { email: string; username: string; companyLogo?: string | null; }
 ) {
   if (!isEmailConfigured()) {
     console.warn('SendGrid API key not configured, skipping email notification');
@@ -297,7 +300,8 @@ export async function sendStatusUpdateEmail(
         'Order Status Update',
         emailContent,
         'View Order Details',
-        orderURL
+        orderURL,
+        user.companyLogo
       ),
       trackingSettings: {
         clickTracking: {
@@ -313,8 +317,8 @@ export async function sendStatusUpdateEmail(
 
 export async function sendChatNotificationEmail(
   message: Message, 
-  sender: { username: string; companyName?: string; }, 
-  recipient: { email: string; username: string; id: number; }
+  sender: { username: string; companyName?: string; companyLogo?: string | null; }, 
+  recipient: { email: string; username: string; id: number; companyLogo?: string | null; }
 ) {
   if (!isEmailConfigured()) {
     console.warn('SendGrid API key not configured, skipping email notification');
@@ -343,7 +347,9 @@ export async function sendChatNotificationEmail(
         'New Message Notification',
         emailContent,
         'View & Reply',
-        chatURL
+        chatURL,
+        // Use recipient's logo for their email, so they see their own branding
+        recipient.companyLogo
       ),
       trackingSettings: {
         clickTracking: {

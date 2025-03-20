@@ -1,12 +1,12 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
-import { Loader2, Copy, MessageSquare } from "lucide-react";
+import { Loader2, Copy, MessageSquare, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 export default function OrderDetailsPage() {
@@ -65,20 +65,46 @@ export default function OrderDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-4">
+        <Link href="/orders">
+          <Button variant="outline" size="sm" className="flex items-center gap-1">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Orders
+          </Button>
+        </Link>
+        <div className="flex items-center justify-center h-[40vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   if (!order) {
-    return <div>Order not found</div>;
+    return (
+      <div className="space-y-4">
+        <Link href="/orders">
+          <Button variant="outline" size="sm" className="flex items-center gap-1">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Orders
+          </Button>
+        </Link>
+        <div className="text-xl font-medium">Order not found</div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Order #{id}</h2>
+        <div className="flex items-center gap-4">
+          <Link href="/orders">
+            <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Orders
+            </Button>
+          </Link>
+          <h2 className="text-3xl font-bold tracking-tight">Order #{id}</h2>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

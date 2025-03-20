@@ -336,6 +336,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get a single order by ID
+  app.get("/api/orders/:id", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const orderId = parseInt(req.params.id);
+      console.log("Fetching order by ID:", orderId);
+      
+      const order = await storage.getOrder(orderId);
+      
+      if (!order) {
+        console.log("Order not found:", orderId);
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      // Check if user is authorized to view this order
+      if (!req.user.is_admin && order.userId !== req.user.id) {
+        return res.status(403).json({ error: "Unauthorized: You don't have permission to view this order" });
+      }
+      
+      console.log("Order found:", order);
+      res.json(order);
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      res.status(500).json({ error: "Failed to fetch order" });
+    }
+  });
+
   // Add order comments routes
   app.get("/api/orders/:orderId/comments", async (req, res) => {
     try {

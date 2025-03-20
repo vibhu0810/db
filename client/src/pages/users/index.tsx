@@ -251,7 +251,7 @@ export default function UsersPage() {
           </TableHeader>
           <TableBody>
             {filteredUsers.map((user) => (
-              <React.Fragment key={user.id}>
+              <div key={user.id}>
                 <TableRow className="hover:bg-muted/50 cursor-pointer">
                   <TableCell className="w-[50px]">
                     <Button
@@ -350,7 +350,7 @@ export default function UsersPage() {
                     </TableCell>
                   </TableRow>
                 )}
-              </React.Fragment>
+              </div>
             ))}
           </TableBody>
         </Table>

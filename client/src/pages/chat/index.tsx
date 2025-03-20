@@ -35,11 +35,7 @@ export default function ChatPage() {
         return allUsers.filter((u: ChatUser) => !u.is_admin && u.id !== user?.id);
       } else {
         // Regular users only see admin users
-        const adminUsers = allUsers.filter((u: ChatUser) => u.is_admin);
-        if (adminUsers.length === 0) {
-          console.log("No admin users found");
-        }
-        return adminUsers;
+        return allUsers.filter((u: ChatUser) => u.is_admin);
       }
     },
   });

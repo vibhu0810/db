@@ -1185,13 +1185,40 @@ export default function Orders() {
                           </AlertDialogContent>
                         </AlertDialog>
                         {!isAdmin && order.type === "niche_edit" && order.status === "In Progress" && (
-                          <DropdownMenuItem
-                            onClick={() => setOrderToCancel(order.id)}
-                            className="text-destructive"
-                          >
-                            <X className="mr-2 h-4 w-4" />
-                            Cancel Order
-                          </DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setOrderToCancel(order.id);
+                                }}
+                                className="text-destructive"
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                Cancel Order
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to cancel this order? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>No, keep order</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => {
+                                    if (order.id) {
+                                      cancelOrderMutation.mutate(order.id);
+                                    }
+                                  }}
+                                >
+                                  Yes, cancel order
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>

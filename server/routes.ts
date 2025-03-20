@@ -412,36 +412,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
+      // Regular users can only cancel their own Niche Edit orders in "In Progress" status
       if (!req.user.is_admin) {
-        return res.status(403).json({ error: "Unauthorized: Only admins can update order status" });
-      }
+        if (order.userId !== req.user.id) {
+          return res.status(403).json({ error: "Unauthorized: You can only cancel your own orders" });
+        }
 
-      // Validate status based on order type
-      const guestPostStatuses = [
-        "Title Approval Pending",
-        "Title Approved",
-        "Content Writing",
-        "Sent To Editor",
-        "Completed",
-        "Rejected",
-        "Cancelled"
-      ];
+        if (status !== "Cancelled") {
+          return res.status(403).json({ error: "Unauthorized: Only admins can update order status" });
+        }
 
-      const nicheEditStatuses = [
-        "In Progress",
-        "Sent",
-        "Rejected",
-        "Cancelled",
-        "Completed"
-      ];
+        // Check if order is a Niche Edit order (no title means it's a niche edit)
+        if (order.title !== null) {
+          return res.status(400).json({ error: "Only Niche Edit orders can be cancelled" });
+        }
 
-      const isGuestPost = order.title !== null; // Guest posts have titles, niche edits don't
-      const validStatuses = isGuestPost ? guestPostStatuses : nicheEditStatuses;
+        if (order.status !== "In Progress") {
+          return res.status(400).json({ error: "Orders can only be cancelled while In Progress" });
+        }
+      } else {
+        // Admin status validation
+        const guestPostStatuses = [
+          "Title Approval Pending",
+          "Title Approved",
+          "Content Writing",
+          "Sent To Editor",
+          "Completed",
+          "Rejected",
+          "Cancelled"
+        ];
 
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({
-          error: `Invalid status. Valid statuses for ${isGuestPost ? 'guest post' : 'niche edit'} orders are: ${validStatuses.join(', ')}`
-        });
+        const nicheEditStatuses = [
+          "In Progress",
+          "Sent",
+          "Rejected",
+          "Cancelled",
+          "Completed"
+        ];
+
+        const isGuestPost = order.title !== null;
+        const validStatuses = isGuestPost ? guestPostStatuses : nicheEditStatuses;
+
+        if (!validStatuses.includes(status)) {
+          return res.status(400).json({
+            error: `Invalid status. Valid statuses for ${isGuestPost ? 'guest post' : 'niche edit'} orders are: ${validStatuses.join(', ')}`
+          });
+        }
       }
 
       const updatedOrder = await storage.updateOrder(orderId, {

@@ -17,27 +17,30 @@ export async function getDomainRating(domainUrl: string): Promise<AhrefsDRMetric
     const domain = domainUrl.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
     console.log(`Fetching Ahrefs DR for domain: ${domain}`);
 
-    const response = await fetch(`${AHREFS_API_ENDPOINT}/domain-rating`, {
-      method: 'POST',
+    const url = encodeURI(`${AHREFS_API_ENDPOINT}/domain-rating/live?target=${domain}`);
+    const response = await fetch(url, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'Authorization': `Bearer ${process.env.AHREFS_API_KEY}`
-      },
-      body: JSON.stringify({
-        target: domain,
-        limit: 1
-      })
+      }
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Ahrefs API error response:', errorText);
       throw new Error(`Ahrefs API error: ${response.statusText}`);
     }
 
     const data = await response.json();
     console.log(`Received Ahrefs data for ${domain}:`, data);
 
+    if (!data.domain_rating) {
+      throw new Error('Domain rating not found in response');
+    }
+
     return {
-      domainRating: data.domain_rating || 0,
+      domainRating: parseFloat(data.domain_rating) || 0,
       lastUpdated: new Date()
     };
   } catch (error) {

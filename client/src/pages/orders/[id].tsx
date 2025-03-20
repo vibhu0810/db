@@ -42,7 +42,7 @@ export default function OrderDetailsPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
       setNewComment("");
       toast({
-        title: "Comment added",
+        title: "Success",
         description: "Your comment has been added successfully.",
       });
     },
@@ -58,7 +58,7 @@ export default function OrderDetailsPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: "Copied to clipboard",
+      title: "Copied",
       description: "Text has been copied to your clipboard.",
     });
   };

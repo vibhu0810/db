@@ -78,6 +78,7 @@ import { Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Checkbox from "@/components/ui/checkbox";
+import { Link } from "wouter";
 
 interface DateRange {
   from?: Date;
@@ -291,7 +292,7 @@ export default function Orders() {
     anchorText: 180,
     textEdit: 250,
     status: 180,
-    id: 100, // Added width for Order ID column
+    id: 100,
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -310,7 +311,7 @@ export default function Orders() {
       anchorText: 300,
       textEdit: 400,
       status: 300,
-      id: 150, // Added maxWidth for Order ID column
+      id: 150,
     };
 
     const newWidth = Math.min(size.width, maxWidths[column as keyof typeof maxWidths]);
@@ -547,7 +548,7 @@ export default function Orders() {
 
   const exportToCSV = () => {
     const headers = [
-      "Order ID", //Added Order ID to headers
+      "Order ID",
       "Source URL",
       "Target URL",
       "Anchor Text",
@@ -557,7 +558,7 @@ export default function Orders() {
     ].join(",");
 
     const rows = filteredOrders.map((order) => [
-      order.id, //Added Order ID to rows
+      order.id,
       order.sourceUrl,
       order.targetUrl,
       order.anchorText,
@@ -953,7 +954,14 @@ export default function Orders() {
                           <div className="truncate">{order.user?.companyName || order.user?.username}</div>
                         </TableCell>
                       )}
-                      <TableCell>#{order.id}</TableCell>
+                      <TableCell>
+                        <Link 
+                          href={`/orders/${order.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          #{order.id}
+                        </Link>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <div className="truncate max-w-[250px]">

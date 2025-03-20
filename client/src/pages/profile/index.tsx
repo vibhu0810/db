@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { UpdateProfile } from "@shared/schema";
@@ -32,7 +32,7 @@ import { useUploadThing } from "@/utils/uploadthing";
 import { countries } from "@/lib/countries";
 
 export default function ProfilePage() {
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const { startUpload } = useUploadThing("profileImage");
@@ -41,33 +41,17 @@ export default function ProfilePage() {
   const form = useForm<UpdateProfile>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      companyName: "",
-      country: "",
-      billingAddress: "",
-      bio: "",
-      profilePicture: "",
-      companyLogo: "",
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      companyName: user?.companyName || "",
+      country: user?.country || "",
+      billingAddress: user?.billingAddress || "",
+      bio: user?.bio || "",
+      profilePicture: user?.profilePicture || "",
+      companyLogo: user?.companyLogo || "",
     },
   });
-
-  useEffect(() => {
-    if (user) {
-      form.reset({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        email: user.email || "",
-        companyName: user.companyName || "",
-        country: user.country || "",
-        billingAddress: user.billingAddress || "",
-        bio: user.bio || "",
-        profilePicture: user.profilePicture || "",
-        companyLogo: user.companyLogo || "",
-      });
-    }
-  }, [user, form]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: UpdateProfile) => {
@@ -79,9 +63,8 @@ export default function ProfilePage() {
       const updatedUser = await res.json();
       return updatedUser;
     },
-    onSuccess: async () => {
-      await refreshUser();
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(["/api/user"], updatedUser);
       toast({
         title: "Success",
         description: "Your profile has been updated successfully.",
@@ -103,7 +86,7 @@ export default function ProfilePage() {
     setIsUploading(true);
     try {
       const [res] = await startUpload([file]);
-      if (res) {
+      if (res?.url) {
         form.setValue(field, res.url);
         toast({
           title: "Image uploaded",
@@ -122,11 +105,7 @@ export default function ProfilePage() {
   };
 
   const onSubmit = async (data: UpdateProfile) => {
-    try {
-      await updateProfileMutation.mutateAsync(data);
-    } catch (error) {
-      console.error("Profile update error:", error);
-    }
+    await updateProfileMutation.mutateAsync(data);
   };
 
   return (

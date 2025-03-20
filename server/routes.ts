@@ -109,11 +109,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Unauthorized: Can only message support staff" });
       }
 
+      console.log('Fetching messages between users:', req.user.id, otherUserId);
       const messages = await storage.getMessages(req.user.id, otherUserId);
+      console.log('Retrieved messages:', messages);
 
-      // Mark messages as read when fetched
-      if (messages.length > 0) {
-        await storage.markMessagesAsRead(otherUserId, req.user.id);
+      // Try to mark messages as read, but don't fail if it errors
+      try {
+        const unreadMessages = messages.filter(m => 
+          m.receiverId === req.user?.id && !m.read
+        );
+
+        if (unreadMessages.length > 0) {
+          await Promise.all(
+            unreadMessages.map(msg => 
+              storage.updateMessage(msg.id, { ...msg, read: true })
+            )
+          );
+        }
+      } catch (error) {
+        console.error('Error marking messages as read:', error);
+        // Continue without failing the request
       }
 
       res.json(messages);

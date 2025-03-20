@@ -38,15 +38,20 @@ export default function ChatPage() {
   });
 
   // Get messages for selected conversation
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+  const { data: messages = [], isLoading: initialMessagesLoading } = useQuery({
     queryKey: ['/api/messages', selectedUserId],
     queryFn: async () => {
       if (!selectedUserId) return [];
       const res = await apiRequest("GET", `/api/messages/${selectedUserId}`);
+      if (!res.ok) throw new Error('Failed to fetch messages');
       return res.json();
     },
     enabled: !!selectedUserId,
-    refetchInterval: 1000, // Poll every second for new messages
+    refetchInterval: 3000, // Poll every 3 seconds
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    retry: 3,
+    staleTime: 1000, // Consider data fresh for 1 second
   });
 
   // Get typing status of selected user
@@ -58,7 +63,8 @@ export default function ChatPage() {
       return res.json();
     },
     enabled: !!selectedUserId,
-    refetchInterval: 1000, // Poll every second
+    refetchInterval: 2000, // Poll every 2 seconds
+    retry: false, // Don't retry on typing status errors
   });
 
   // Update typing status mutation
@@ -110,6 +116,7 @@ export default function ChatPage() {
         content: messageText,
         receiverId: selectedUserId,
       });
+      if (!res.ok) throw new Error('Failed to send message');
       return res.json();
     },
     onSuccess: () => {
@@ -207,7 +214,7 @@ export default function ChatPage() {
           <>
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
-              {messagesLoading ? (
+              {initialMessagesLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>

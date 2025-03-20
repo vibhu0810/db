@@ -11,7 +11,7 @@ export function Logo({ showText = true, size = "md", className, ...props }: Logo
   const sizes = {
     sm: { container: "h-7", logo: "h-6", text: "text-sm" },
     md: { container: "h-8", logo: "h-7", text: "text-base" },
-    lg: { container: "h-10", logo: "h-9", text: "text-lg" }
+    lg: { container: "h-12", logo: "h-10", text: "text-xl" }
   };
 
   return (
@@ -19,17 +19,18 @@ export function Logo({ showText = true, size = "md", className, ...props }: Logo
       <div className="flex items-center">
         {/* SVG Logo based on the provided Digital Gratified logo */}
         <svg 
-          viewBox="0 0 85 85" 
+          viewBox="0 0 500 500" 
           className={cn("text-primary", sizes[size].logo)} 
           fill="currentColor"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path d="M40 0H0V85h40C65.4 85 85 65.4 85 40S65.4 0 40 0zm0 65H20V20h20c13.8 0 25 11.2 25 25S53.8 65 40 65z" />
+          <path d="M371.5,0H0v500h371.5c93.1,0,128.5-111.9,128.5-250S464.6,0,371.5,0z M325,325H125V175h200
+          c47.2,0,75,32.8,75,75S372.2,325,325,325z" />
         </svg>
         
         {/* Company name */}
         {showText && (
-          <span className={cn("text-primary font-bold ml-1", sizes[size].text)}>
+          <span className={cn("text-primary font-bold ml-2", sizes[size].text)}>
             Gratified
           </span>
         )}

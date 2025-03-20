@@ -65,12 +65,15 @@ export default function AuthPage() {
       </div>
 
       <Card className="w-full max-w-sm relative hover:shadow-xl transition-all duration-500">
-        <CardHeader>
-          <h1 className="text-2xl font-bold animate-in slide-in-from-top duration-500">
+        <CardHeader className="space-y-4">
+          <div className="flex justify-center mb-2 animate-in fade-in-50 duration-700">
+            <Logo size="lg" showText={true} />
+          </div>
+          <h1 className="text-2xl font-bold animate-in slide-in-from-top duration-500 text-center">
             {displayText}
             {showCursor && <span className="animate-pulse">|</span>}
           </h1>
-          <p className="text-sm text-muted-foreground animate-in fade-in-50 duration-700 delay-500">
+          <p className="text-sm text-muted-foreground animate-in fade-in-50 duration-700 delay-500 text-center">
             Sign in to {" "}
             <span className={showAltText ? "" : "line-through"}>
               {showAltText ? "slay your competitors" : "scale your link building"}
@@ -120,7 +123,7 @@ export default function AuthPage() {
             </div>
             <Button 
               type="submit" 
-              className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] bg-primary text-black hover:bg-primary/90 font-semibold"
               disabled={loginMutation.isPending}
             >
               {loginMutation.isPending ? (
@@ -130,7 +133,7 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          {seoJokeData && (
+          {seoJokeData && seoJokeData.joke && (
             <div className="mt-6 p-4 bg-muted rounded-lg border animate-in fade-in-50 duration-700 delay-1000">
               <p className="text-sm text-muted-foreground italic">
                 "{seoJokeData.joke}"

@@ -43,8 +43,7 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
-  const { startUpload: startProfileImageUpload } = useUploadThing("profileImage");
-  const { startUpload: startCompanyLogoUpload } = useUploadThing("companyLogo");
+  // No need for useUploadThing hooks as we'll use the uploadFile utility directly
   const queryClient = useQueryClient();
 
   const form = useForm<ProfileFormData>({
@@ -94,15 +93,15 @@ export default function ProfilePage() {
 
     setIsUploading(true);
     try {
-      let result;
+      let url;
       if (field === "profilePicture") {
-        result = await startProfileImageUpload([file]);
+        url = await uploadFile(file, "profileImage");
       } else if (field === "companyLogo") {
-        result = await startCompanyLogoUpload([file]);
+        url = await uploadFile(file, "companyLogo");
       }
       
-      if (result && result[0]?.url) {
-        form.setValue(field, result[0].url);
+      if (url) {
+        form.setValue(field, url);
         toast({
           title: "Image uploaded",
           description: `Your ${field === "profilePicture" ? "profile picture" : "company logo"} has been uploaded successfully.`,

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { startMetricsUpdates } from "./services/domain-metrics";
 
 const app = express();
 app.use(express.json());
@@ -24,6 +25,15 @@ app.use((req, res, next) => {
   try {
     log("Initializing server...");
     const server = await registerRoutes(app);
+
+    // Start domain metrics update service
+    try {
+      startMetricsUpdates();
+      log("Domain metrics update service started");
+    } catch (error) {
+      console.error("Failed to start domain metrics service:", error);
+      // Continue server startup even if metrics service fails
+    }
 
     // Global error handler
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

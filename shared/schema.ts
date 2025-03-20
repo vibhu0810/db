@@ -82,6 +82,7 @@ export const domains = pgTable("domains", {
   guestPostPrice: decimal("guest_post_price"),
   nicheEditPrice: decimal("niche_edit_price"),
   guidelines: text("guidelines"),
+  lastMetricsUpdate: timestamp("last_metrics_update"), // New field for tracking Ahrefs updates
 });
 
 // Create insert schema for domains

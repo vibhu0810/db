@@ -56,6 +56,19 @@ type OrderStatus = GuestPostStatus | NicheEditStatus;
 // Clients connected to WebSocket
 const connectedClients = new Map<string, { userId: number, ws: WebSocket }>();
 
+// Function to broadcast messages to relevant users
+function broadcastToUsers(userIds: number[], data: any) {
+  for (const [sessionId, client] of connectedClients.entries()) {
+    if (userIds.includes(client.userId)) {
+      try {
+        client.ws.send(JSON.stringify(data));
+      } catch (error) {
+        console.error(`Error sending WebSocket message to user ${client.userId}:`, error);
+      }
+    }
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add JSON parsing middleware before routes
   app.use(express.json());
@@ -64,7 +77,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const server = createServer(app);
   
   // Create WebSocket server
-  const wss = new WebSocketServer({ server });
+  const wss = new WebSocketServer({ noServer: true });
+  
+  // Set up the WebSocket server to use the HTTP server's upgrade events
+  // but only for our specific /api/ws endpoint to avoid conflicts with Vite's WebSocket
+  server.on('upgrade', (request, socket, head) => {
+    // Make sure the URL is valid and fallback to empty string if undefined
+    const url = request.url || '';
+    const pathname = new URL(url, 'http://localhost').pathname;
+    
+    // Only handle WebSocket connections to our specific endpoint
+    if (pathname === '/api/ws') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+      });
+    } else {
+      // For other paths (like Vite's HMR), don't handle the upgrade
+      socket.destroy();
+    }
+  });
+  
+  // Add a specific route for WebSocket connections to avoid conflict with Vite
+  app.get('/api/ws', (req, res) => {
+    res.status(400).send('WebSocket endpoint - connect with WebSocket protocol');
+  });
   
   // Handle WebSocket connections
   wss.on('connection', (ws, req) => {
@@ -580,14 +616,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user details for response
       const user = await storage.getUser(req.user.id);
-      res.status(201).json({
+      const commentWithUser = {
         ...comment,
         user: {
           username: user?.username,
           companyName: user?.companyName,
           is_admin: user?.is_admin,
         }
+      };
+      
+      // Send WebSocket message to all relevant parties (admin users and order owner)
+      const relevantUserIds: number[] = [];
+      
+      // Add order owner
+      if (order.userId !== req.user.id) {
+        relevantUserIds.push(order.userId);
+      }
+      
+      // Add all admins for user comments, or all users for admin comments
+      if (req.user.is_admin) {
+        relevantUserIds.push(order.userId); // Notify order owner
+      } else {
+        // Add all admins for user comments
+        admins.forEach(admin => {
+          if (admin.id !== req.user.id) {
+            relevantUserIds.push(admin.id);
+          }
+        });
+      }
+      
+      // Broadcast the new comment to all relevant users
+      broadcastToUsers(relevantUserIds, {
+        type: 'new_comment',
+        orderId: orderId,
+        comment: commentWithUser
       });
+      
+      // Mark as read for the commenter
+      await storage.markCommentsAsRead(orderId, req.user.id);
+      
+      res.status(201).json(commentWithUser);
 
     } catch (error) {
       console.error("Error creating comment:", error);
@@ -832,6 +900,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
+  return server;
 }

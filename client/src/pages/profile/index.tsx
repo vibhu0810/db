@@ -43,7 +43,7 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
-  const { startUpload } = useUploadThing("profileImage");
+  const uploadThing = useUploadThing();
   const queryClient = useQueryClient();
 
   const form = useForm<ProfileFormData>({
@@ -93,9 +93,15 @@ export default function ProfilePage() {
 
     setIsUploading(true);
     try {
-      const [res] = await startUpload([file]);
-      if (res?.url) {
-        form.setValue(field, res.url);
+      let url;
+      if (field === "profilePicture") {
+        url = await uploadThing.uploadProfileImage(file);
+      } else if (field === "companyLogo") {
+        url = await uploadThing.uploadCompanyLogo(file);
+      }
+      
+      if (url) {
+        form.setValue(field, url);
         toast({
           title: "Image uploaded",
           description: `Your ${field === "profilePicture" ? "profile picture" : "company logo"} has been uploaded successfully.`,
@@ -107,6 +113,7 @@ export default function ProfilePage() {
         description: `Failed to upload ${field === "profilePicture" ? "profile picture" : "company logo"}. Please try again.`,
         variant: "destructive",
       });
+      console.error("Upload error:", error);
     } finally {
       setIsUploading(false);
     }

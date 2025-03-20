@@ -712,6 +712,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Link strategy advice endpoint
+  app.post("/api/link-strategy", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const { message } = req.body;
+      
+      // Generate response based on keywords in the message
+      let response = "";
+      const query = message.toLowerCase();
+      
+      if (query.includes("domain authority") || query.includes("da")) {
+        response = "Domain Authority (DA) is an important metric for link building. Higher DA sites typically provide more SEO value, but don't focus exclusively on DA. Relevance to your niche is equally important for effective link building.";
+      } else if (query.includes("anchor text")) {
+        response = "For anchor text strategy, I recommend using a diverse mix: about 20% exact match, 30% partial match, 30% branded, and 20% generic. This natural distribution helps avoid over-optimization penalties while still targeting your key terms.";
+      } else if (query.includes("guest post") || query.includes("niche edit")) {
+        response = "Both guest posts and niche edits have their place in a balanced link building strategy. Guest posts provide branding and referral traffic benefits along with links, while niche edits can target high-authority existing content. I'd recommend a mix of both.";
+      } else if (query.includes("competitor")) {
+        response = "Analyzing competitor backlinks is a smart approach! Look for domains linking to multiple competitors but not to you - these represent easy opportunities. Tools like Ahrefs or Semrush can help you identify these gap opportunities.";
+      } else if (query.includes("budget") || query.includes("cost")) {
+        response = "For link building budgets, quality over quantity is key. It's better to invest in 5 high-quality, relevant links than 20 low-quality ones. Consider allocating 30-40% of your SEO budget to link acquisition for a balanced approach.";
+      } else {
+        response = "That's a great question about link building strategy. The most effective approach is to focus on relevance and authority. Create link-worthy content assets, build relationships in your industry, and ensure your anchor text distribution looks natural. Would you like more specific advice on any aspect of your link building campaign?";
+      }
+      
+      res.json({ message: response });
+    } catch (error) {
+      console.error("Error generating link strategy advice:", error);
+      res.status(500).json({ error: "Failed to generate link building advice" });
+    }
+  });
+
   // Add domains routes with logging
   app.get("/api/domains", async (req, res) => {
     try {

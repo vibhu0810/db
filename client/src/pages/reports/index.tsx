@@ -192,16 +192,24 @@ export default function Reports() {
     
     try {
       // Call to backend AI endpoint
-      const response = await apiRequest('/api/link-strategy', {
+      const response = await fetch('/api/link-strategy', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ 
-          message: chatInput,
-          history: chatMessages
+          message: chatInput
         })
       });
       
-      if (response.message) {
-        setChatMessages(prev => [...prev, { role: "assistant", content: response.message }]);
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.message) {
+        setChatMessages(prev => [...prev, { role: "assistant", content: data.message }]);
       } else {
         throw new Error("No response from AI assistant");
       }

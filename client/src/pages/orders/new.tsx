@@ -63,12 +63,12 @@ export default function NewOrder() {
   const domain = domains.find(d => d.websiteUrl === domainUrl);
 
   const formSchema = z.object({
-    sourceUrl: z.string().min(1, "Source URL is required"),
-    targetUrl: z.string().min(1, "Target URL is required"),
+    sourceUrl: z.string().url("Must be a valid URL").min(1, "Source URL is required"),
+    targetUrl: z.string().url("Must be a valid URL").min(1, "Target URL is required"),
     anchorText: z.string().min(1, "Anchor text is required"),
     title: z.string().optional(),
     textEdit: z.string().optional(),
-    content: weWriteContent ? z.string().optional() : z.string(),
+    content: z.string().optional(),
     notes: z.string().optional(),
   });
 
@@ -90,22 +90,20 @@ export default function NewOrder() {
   const createOrderMutation = useMutation({
     mutationFn: async (formData: FormValues) => {
       if (!domain) throw new Error("Domain not found");
-      console.log("Form data being submitted:", formData);
+      if (!selectedType) throw new Error("Order type not selected");
 
       const orderData = {
         ...formData,
-        type: selectedType || domain.type,
+        type: selectedType,
         domainId: domain.id,
         weWriteContent,
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
-        status: "Sent",
+        status: selectedType === "guest_post" ? "Title Approval Pending" : "In Progress",
         dateOrdered: new Date().toISOString(),
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
       };
 
-      console.log("Processed order data:", orderData);
       const res = await apiRequest("POST", "/api/orders", orderData);
-
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to create order");
@@ -121,7 +119,6 @@ export default function NewOrder() {
       setLocation("/orders");
     },
     onError: (error: Error) => {
-      console.error("Order creation error:", error);
       toast({
         title: "Error creating order",
         description: error.message,
@@ -131,7 +128,6 @@ export default function NewOrder() {
   });
 
   const onSubmit = async (data: FormValues) => {
-    console.log("Form submitted with data:", data);
     try {
       await createOrderMutation.mutateAsync(data);
     } catch (error) {
@@ -147,7 +143,6 @@ export default function NewOrder() {
     );
   }
 
-  const showTypeSelection = domain.type === "both" || !selectedType;
   const isNicheEdit = selectedType === "niche_edit" || domain.type === "niche_edit";
   const isGuestPost = selectedType === "guest_post" || domain.type === "guest_post";
   const price = isGuestPost ? domain.guestPostPrice : domain.nicheEditPrice;
@@ -174,10 +169,21 @@ export default function NewOrder() {
           <CardTitle>{selectedType ? 'Order Details' : 'Select Order Type'}</CardTitle>
           <CardDescription>
             Create a new order for {domain.websiteUrl}
+            {selectedType && (
+              <div className="mt-2">
+                <p className="font-medium">Price: ${price}</p>
+                <p className="text-sm text-muted-foreground">
+                  TAT: {turnaroundTime}
+                  {isGuestPost && (
+                    <span className="block mt-1">Note: Guest post title must be approved before proceeding with content creation.</span>
+                  )}
+                </p>
+              </div>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {showTypeSelection ? (
+          {!selectedType ? (
             <div className="space-y-4">
               <RadioGroup
                 onValueChange={(value) => setSelectedType(value as OrderType)}
@@ -242,9 +248,9 @@ export default function NewOrder() {
                       name="title"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Post Title</FormLabel>
+                          <FormLabel>Post Title *</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} required />
                           </FormControl>
                           <FormDescription>
                             Enter the title for your guest post
@@ -254,31 +260,29 @@ export default function NewOrder() {
                       )}
                     />
 
-                    {contentWritingPrice > 0 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Content Source</h3>
-                        <RadioGroup
-                          value={weWriteContent ? "we_write" : "user_provides"}
-                          onValueChange={(value) =>
-                            setWeWriteContent(value === "we_write")
-                          }
-                          className="space-y-2"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="user_provides" id="user_provides" />
-                            <label htmlFor="user_provides">
-                              I'll provide the content (URL)
-                            </label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="we_write" id="we_write" />
-                            <label htmlFor="we_write">
-                              Write the content for me (${contentWritingPrice} for 1000 words)
-                            </label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-                    )}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Content Source</h3>
+                      <RadioGroup
+                        value={weWriteContent ? "we_write" : "user_provides"}
+                        onValueChange={(value) =>
+                          setWeWriteContent(value === "we_write")
+                        }
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="user_provides" id="user_provides" />
+                          <label htmlFor="user_provides">
+                            I'll provide the content (URL)
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="we_write" id="we_write" />
+                          <label htmlFor="we_write">
+                            Write the content for me ($80 for 1000 words)
+                          </label>
+                        </div>
+                      </RadioGroup>
+                    </div>
 
                     {!weWriteContent && (
                       <FormField
@@ -311,10 +315,11 @@ export default function NewOrder() {
                     name="sourceUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Link from URL</FormLabel>
+                        <FormLabel>Link from URL *</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
+                            required
                             placeholder={`https://${domain.websiteUrl}/blog/example`}
                           />
                         </FormControl>
@@ -333,9 +338,9 @@ export default function NewOrder() {
                   name="targetUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Link to URL</FormLabel>
+                      <FormLabel>Link to URL *</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} required type="url" />
                       </FormControl>
                       <FormDescription>
                         The URL you want to link to
@@ -350,9 +355,9 @@ export default function NewOrder() {
                   name="anchorText"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Anchor Text</FormLabel>
+                      <FormLabel>Anchor Text *</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} required />
                       </FormControl>
                       <FormDescription>
                         The text that will be linked
@@ -398,14 +403,13 @@ export default function NewOrder() {
                   )}
                 />
 
-
                 <div className="flex justify-end gap-4">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setLocation("/domains")}
+                    onClick={() => setSelectedType(null)}
                   >
-                    Cancel
+                    Back
                   </Button>
                   <Button
                     type="submit"

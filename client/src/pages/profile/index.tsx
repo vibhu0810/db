@@ -29,7 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { updateProfileSchema } from "@shared/schema";
-import { useUploadThing } from "@/utils/uploadthing";
+import { uploadFile } from "@/utils/uploadthing";
 import { countries } from "@/lib/countries";
 
 // Extend the schema with stricter email validation
@@ -43,7 +43,8 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
-  const uploadThing = useUploadThing();
+  const { startUpload: startProfileImageUpload } = useUploadThing("profileImage");
+  const { startUpload: startCompanyLogoUpload } = useUploadThing("companyLogo");
   const queryClient = useQueryClient();
 
   const form = useForm<ProfileFormData>({
@@ -93,15 +94,15 @@ export default function ProfilePage() {
 
     setIsUploading(true);
     try {
-      let url;
+      let result;
       if (field === "profilePicture") {
-        url = await uploadThing.uploadProfileImage(file);
+        result = await startProfileImageUpload([file]);
       } else if (field === "companyLogo") {
-        url = await uploadThing.uploadCompanyLogo(file);
+        result = await startCompanyLogoUpload([file]);
       }
       
-      if (url) {
-        form.setValue(field, url);
+      if (result && result[0]?.url) {
+        form.setValue(field, result[0].url);
         toast({
           title: "Image uploaded",
           description: `Your ${field === "profilePicture" ? "profile picture" : "company logo"} has been uploaded successfully.`,

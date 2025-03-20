@@ -1,51 +1,24 @@
-/**
- * This is a simple uploader utility for profile pictures and company logos
- * Uses fetch to communicate with our UploadThing endpoints
- */
+import { generateReactHelpers } from "@uploadthing/react";
+import type { OurFileRouter } from "../../../server/uploadthing";
 
-// Function to upload a file to the specified endpoint
-export async function uploadFile(file: File, endpoint: string) {
+// Create a ReactJS helper for UploadThing
+export const { useUploadThing, uploadFiles } = generateReactHelpers<OurFileRouter>();
+
+// Simple async function to upload a file for a specific endpoint type
+export async function uploadFile(file: File, fileType: keyof OurFileRouter) {
   try {
-    // Create a FormData object to send the file
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    // Send the file to the UploadThing endpoint
-    const response = await fetch(`/api/uploadthing/${endpoint}`, {
-      method: 'POST',
-      body: formData,
-      credentials: 'include' // Important for auth
+    // For single-use uploads, use the uploadFiles function with the correct format
+    const result = await uploadFiles(fileType, {
+      files: [file]
     });
     
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.statusText}`);
+    if (!result || result.length === 0) {
+      throw new Error("Upload failed - no result returned");
     }
     
-    const data = await response.json();
-    return data.url;
+    return result[0].url;
   } catch (error) {
-    console.error('Error uploading file:', error);
+    console.error(`Error uploading ${fileType}:`, error);
     throw error;
   }
-}
-
-// Custom hook to handle uploading profile images
-export function useUploadThing() {
-  const uploadProfileImage = async (file: File) => {
-    return uploadFile(file, 'profileImage');
-  };
-  
-  const uploadCompanyLogo = async (file: File) => {
-    return uploadFile(file, 'companyLogo');
-  };
-  
-  const uploadDocument = async (file: File) => {
-    return uploadFile(file, 'document');
-  };
-
-  return {
-    uploadProfileImage,
-    uploadCompanyLogo,
-    uploadDocument
-  };
 }

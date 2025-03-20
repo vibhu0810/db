@@ -133,12 +133,14 @@ export default function NewOrder() {
   });
 
   const onSubmit = async (data: FormValues) => {
-    console.log('Form submitted with values:', { 
-      ...data, 
-      selectedType,
-      weWriteContent,
-      selectedUserId 
-    });
+    if (!selectedType) {
+      toast({
+        title: "Error",
+        description: "Please select an order type",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Guest post validation
     if (selectedType === "guest_post") {
@@ -153,14 +155,19 @@ export default function NewOrder() {
       }
     }
 
-    // Niche edit validation
-    if (selectedType === "niche_edit" && !data.sourceUrl?.trim()) {
-      form.setError("sourceUrl", { message: "Source URL is required for niche edits" });
-      return;
-    }
+    const orderData = {
+      ...data,
+      type: selectedType,
+      domainId: domain.id,
+      weWriteContent,
+      price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
+      userId: isAdmin && selectedUserId ? selectedUserId : undefined,
+    };
+
+    console.log('Submitting order:', orderData);
 
     try {
-      await createOrderMutation.mutateAsync(data);
+      await createOrderMutation.mutateAsync(orderData);
     } catch (error) {
       console.error("Form submission error:", error);
     }

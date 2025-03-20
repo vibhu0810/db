@@ -947,7 +947,7 @@ export default function Orders() {
               <TableHead className="w-[100px]">
                 <SortableHeader field="price">Price</SortableHeader>
               </TableHead>
-              <TableHead className="w-[120px]">
+              <TableHead className="w-[200px]">
                 <SortableHeader field="status">Status</SortableHeader>
               </TableHead>
               <TableHead className="w-[120px]">

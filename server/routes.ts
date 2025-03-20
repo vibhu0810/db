@@ -9,7 +9,9 @@ import {
   sendCommentNotificationEmail,
   sendStatusUpdateEmail
 } from "./email";
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
+import { parse as cookieParse } from 'cookie';
+import { MemoryStore } from 'express-session';
 
 // Add this after imports at the top
 interface WebSocketClient {
@@ -595,29 +597,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   const httpServer = createServer(app);
-  const wss = new WebSocketServer({ 
-    server: httpServer, 
-    path: '/ws' 
+  const wss = new WebSocketServer({
+    server: httpServer,
+    path: '/ws',
+    verifyClient: async (info, done) => {
+      try {
+        // Get session ID from cookie
+        const cookies = cookieParse(info.req.headers.cookie || '');
+        const sid = cookies['connect.sid'];
+
+        if (!sid) {
+          console.log('WebSocket connection rejected: No session cookie');
+          done(false, 401, 'Unauthorized');
+          return;
+        }
+
+        // Get session store
+        const sessionStore = app.get('sessionStore') as MemoryStore;
+
+        if (!sessionStore) {
+          console.error('Session store not found');
+          done(false, 500, 'Server configuration error');
+          return;
+        }
+
+        // Log session ID format
+        console.log('Session ID format:', {
+          raw: sid,
+          parsed: sid.slice(2).split('.')[0]
+        });
+
+        // Verify session exists and contains user
+        sessionStore.get(sid.slice(2).split('.')[0], (err, session) => {
+          if (err) {
+            console.error('Session store error:', err);
+            done(false, 500, 'Internal Server Error');
+            return;
+          }
+
+          if (!session?.passport?.user) {
+            console.log('WebSocket connection rejected: Invalid session data', {
+              session: session ? 'exists' : 'missing',
+              passport: session?.passport ? 'exists' : 'missing',
+              user: session?.passport?.user
+            });
+            done(false, 401, 'Unauthorized');
+            return;
+          }
+
+          // Attach user to request for later use
+          info.req.session = session;
+          console.log('WebSocket connection authorized for user:', session.passport.user);
+          done(true);
+        });
+      } catch (error) {
+        console.error('Error verifying WebSocket client:', error);
+        done(false, 500, 'Internal Server Error');
+      }
+    }
   });
 
-  wss.on('connection', async (ws: any, req: any) => {
+  wss.on('connection', async (ws: WebSocket, req: any) => {
     console.log('New WebSocket connection');
 
-    // Get user from session
-    if (!req.session?.passport?.user) {
-      ws.close();
-      return;
-    }
-
     const userId = req.session.passport.user;
+    console.log('WebSocket client authenticated with user ID:', userId);
+
     wsClients.push({ ws, userId });
 
+    ws.on('message', async (message: string) => {
+      try {
+        const data = JSON.parse(message);
+
+        if (data.type === 'typing_status') {
+          // Find receiver's WebSocket connection
+          const receiverClient = wsClients.find(client => client.userId === data.receiverId);
+          if (receiverClient?.ws.readyState === WebSocket.OPEN) {
+            // Forward typing status to receiver
+            receiverClient.ws.send(JSON.stringify({
+              type: 'typing_status',
+              userId: userId,
+              isTyping: data.isTyping
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error);
+      }
+    });
+
     ws.on('close', () => {
-      console.log('Client disconnected');
+      console.log('Client disconnected:', userId);
       wsClients = wsClients.filter(client => client.ws !== ws);
     });
 
-    ws.on('error', console.error);
+    ws.on('error', (error) => {
+      console.error('WebSocket error for user', userId, ':', error);
+    });
   });
 
   return httpServer;

@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,50 @@ export default function ChatPage() {
   const { user, isAdmin } = useAuth();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<{[key: number]: boolean}>({});
   const socket = useWebSocket();
+
+  // Debounce function for typing status
+  const debounce = (func: Function, wait: number) => {
+    let timeout: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  };
+
+  // Send typing status
+  const sendTypingStatus = useCallback((isTyping: boolean) => {
+    if (socket && socket.readyState === WebSocket.OPEN && selectedUserId) {
+      socket.send(JSON.stringify({
+        type: 'typing_status',
+        receiverId: selectedUserId,
+        isTyping
+      }));
+    }
+  }, [socket, selectedUserId]);
+
+  // Debounced version of setIsTyping
+  const debouncedSetTyping = useCallback(
+    debounce((value: boolean) => {
+      setIsTyping(value);
+      sendTypingStatus(value);
+    }, 500),
+    [sendTypingStatus]
+  );
+
+  // Handle message input changes
+  const handleMessageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMessageInput(value);
+
+    if (value.length > 0 && !isTyping) {
+      debouncedSetTyping(true);
+    } else if (value.length === 0 && isTyping) {
+      debouncedSetTyping(false);
+    }
+  };
 
   // Get users based on role
   const { data: users = [], isLoading: usersLoading } = useQuery<ChatUser[]>({
@@ -68,6 +111,11 @@ export default function ChatPage() {
             // Invalidate and refetch messages
             queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
           }
+        } else if (data.type === 'typing_status') {
+          setTypingUsers(prev => ({
+            ...prev,
+            [data.userId]: data.isTyping
+          }));
         }
       } catch (error) {
         console.error('Error handling WebSocket message:', error);
@@ -95,6 +143,8 @@ export default function ChatPage() {
       // Invalidate and refetch messages
       queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
       setMessageInput("");
+      setIsTyping(false);
+      sendTypingStatus(false);
     },
   });
 
@@ -220,6 +270,17 @@ export default function ChatPage() {
                       No messages yet. Start the conversation!
                     </div>
                   )}
+                  {/* Typing indicator */}
+                  {typingUsers[selectedUserId] && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex gap-1">
+                        <span className="animate-bounce">.</span>
+                        <span className="animate-bounce delay-100">.</span>
+                        <span className="animate-bounce delay-200">.</span>
+                      </div>
+                      <span>Typing</span>
+                    </div>
+                  )}
                 </div>
               )}
             </ScrollArea>
@@ -229,7 +290,7 @@ export default function ChatPage() {
               <div className="flex gap-2">
                 <Input
                   value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
+                  onChange={handleMessageInputChange}
                   placeholder="Type a message..."
                   onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                 />

@@ -38,7 +38,7 @@ interface Domain {
   websiteUrl: string;
   domainRating: string;
   websiteTraffic: number;
-  type: string;
+  type: "guest_post" | "niche_edit" | "both";
   guidelines: string;
   guestPostPrice?: string;
   nicheEditPrice?: string;
@@ -46,7 +46,7 @@ interface Domain {
 
 export default function DomainsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "guest_post" | "niche_edit" | "both">("all");
   const [drRange, setDrRange] = useState("all");
   const [trafficRange, setTrafficRange] = useState("all");
   const [sortField, setSortField] = useState<string>("websiteUrl");
@@ -243,8 +243,11 @@ export default function DomainsPage() {
               <TableHead className="w-[150px]">
                 <SortableHeader field="type">Type</SortableHeader>
               </TableHead>
+              <TableHead className="w-[120px]">Guest Post Price</TableHead>
+              <TableHead className="w-[120px]">Niche Edit Price</TableHead>
+              <TableHead className="w-[120px]">TAT</TableHead>
               <TableHead className="min-w-[200px]">Guidelines</TableHead>
-              {!isAdmin && <TableHead className="w-[100px]">Actions</TableHead>}
+              {!isAdmin && <TableHead className="w-[100px]">Action</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -275,11 +278,14 @@ export default function DomainsPage() {
                 <TableCell>{Number(domain.websiteTraffic).toLocaleString()}</TableCell>
                 <TableCell>
                   {domain.type === "both"
-                    ? "Guest Post & Niche Edit"
+                    ? "Both"
                     : domain.type === "guest_post"
                       ? "Guest Post"
                       : "Niche Edit"}
                 </TableCell>
+                <TableCell>${domain.guestPostPrice}</TableCell>
+                <TableCell>${domain.nicheEditPrice}</TableCell>
+                <TableCell>{getTurnaroundTime(domain)}</TableCell>
                 <TableCell className="max-w-[200px]">
                   <span className="truncate block">{domain.guidelines}</span>
                 </TableCell>
@@ -350,4 +356,17 @@ export default function DomainsPage() {
       </div>
     </div>
   );
+}
+
+function getTurnaroundTime(domain: Domain): string {
+  if (domain.websiteUrl === "engagebay.com") {
+    return "3 working days";
+  } else if (domain.websiteUrl === "blog.powr.io") {
+    if (domain.type === "guest_post") {
+      return "10 working days post content approval";
+    } else {
+      return "3 working days";
+    }
+  }
+  return "7-14 business days";
 }

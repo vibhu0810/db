@@ -22,11 +22,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Filter users based on role
       if (req.user.is_admin) {
-        // Admins see non-admin users
-        users = users.filter(user => !user.is_admin);
+        // Admins see non-admin users (customers), excluding themselves
+        users = users.filter(user => !user.is_admin && user.id !== req.user.id);
       } else {
-        // Regular users only see admin users
-        users = users.filter(user => user.is_admin);
+        // Regular users only see admin users, excluding themselves
+        users = users.filter(user => user.is_admin && user.id !== req.user.id);
       }
 
       const filteredUsers = users.map(user => ({
@@ -37,7 +37,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         companyName: user.companyName,
         country: user.country,
-        is_admin: user.is_admin
+        is_admin: user.is_admin,
+        profilePicture: user.profilePicture
       }));
 
       res.json(filteredUsers);

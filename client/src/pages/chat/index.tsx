@@ -31,8 +31,8 @@ export default function ChatPage() {
       const allUsers = await res.json();
 
       if (isAdmin) {
-        // Admins only see non-admin users
-        return allUsers.filter((u: ChatUser) => !u.is_admin);
+        // Admins see all non-admin users (customers)
+        return allUsers.filter((u: ChatUser) => !u.is_admin && u.id !== user?.id);
       } else {
         // Regular users only see admin users
         const adminUsers = allUsers.filter((u: ChatUser) => u.is_admin);
@@ -92,7 +92,7 @@ export default function ChatPage() {
             {isAdmin ? "Customers" : "Support Team"}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {isAdmin 
+            {isAdmin
               ? "Select a customer to chat with"
               : "Our support team is here to help"}
           </p>

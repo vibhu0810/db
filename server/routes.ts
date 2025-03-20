@@ -82,18 +82,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up the WebSocket server to use the HTTP server's upgrade events
   // but only for our specific /api/ws endpoint to avoid conflicts with Vite's WebSocket
   server.on('upgrade', (request, socket, head) => {
-    // Make sure the URL is valid and fallback to empty string if undefined
-    const url = request.url || '';
-    const pathname = new URL(url, 'http://localhost').pathname;
-    
-    // Only handle WebSocket connections to our specific endpoint
-    if (pathname === '/api/ws') {
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit('connection', ws, request);
-      });
-    } else {
-      // For other paths (like Vite's HMR), don't handle the upgrade
-      socket.destroy();
+    try {
+      // Make sure the URL is valid and fallback to empty string if undefined
+      const url = request.url || '';
+      const pathname = new URL(url, 'http://localhost').pathname;
+      
+      // Only handle WebSocket connections to our specific endpoint
+      if (pathname === '/api/ws') {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+          wss.emit('connection', ws, request);
+        });
+      } else {
+        // Let other handlers (like Vite's HMR) handle the connection
+        // This prevents conflicts with Vite's WebSocket connections
+        socket.end();
+      }
+    } catch (error) {
+      console.error('Error in WebSocket upgrade handler:', error);
+      socket.end();
     }
   });
   

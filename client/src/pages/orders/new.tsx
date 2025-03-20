@@ -104,7 +104,7 @@ export default function NewOrder() {
         notes: data.notes,
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
-        // For guest posts, set title and content. For niche edits, set sourceUrl
+        // Add type-specific fields without setting status
         ...(selectedType === "guest_post"
           ? {
               sourceUrl: "not_applicable",

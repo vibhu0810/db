@@ -11,6 +11,7 @@ import NewOrderPage from "./pages/orders/new";
 import ProfilePage from "./pages/profile";
 import UsersPage from "./pages/users";
 import ChatPage from "./pages/chat";
+import ReportsPage from "./pages/reports";
 
 function App() {
   return (
@@ -63,6 +64,13 @@ function App() {
           <ProtectedRoute>
             <DashboardShell>
               <ProfilePage />
+            </DashboardShell>
+          </ProtectedRoute>
+        </Route>
+        <Route path="/reports">
+          <ProtectedRoute>
+            <DashboardShell>
+              <ReportsPage />
             </DashboardShell>
           </ProtectedRoute>
         </Route>

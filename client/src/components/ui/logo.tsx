@@ -39,7 +39,7 @@ export function Logo({
           {/* Company name */}
           {showText && (
             <span className={cn("text-primary font-bold ml-2", sizes[size].text)}>
-              Gratified
+              SaaSxLinks
             </span>
           )}
         </div>

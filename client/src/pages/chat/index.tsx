@@ -10,7 +10,6 @@ import { Avatar } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { User } from "@shared/schema";
-import { useWebSocket } from "@/hooks/use-websocket";
 
 interface ChatUser extends User {
   companyName: string;
@@ -24,49 +23,6 @@ export default function ChatPage() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [typingUsers, setTypingUsers] = useState<{[key: number]: boolean}>({});
-  const socket = useWebSocket();
-
-  // Debounce function for typing status
-  const debounce = (func: Function, wait: number) => {
-    let timeout: NodeJS.Timeout;
-    return (...args: any[]) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
-    };
-  };
-
-  // Send typing status
-  const sendTypingStatus = useCallback((isTyping: boolean) => {
-    if (socket && socket.readyState === WebSocket.OPEN && selectedUserId) {
-      socket.send(JSON.stringify({
-        type: 'typing_status',
-        receiverId: selectedUserId,
-        isTyping
-      }));
-    }
-  }, [socket, selectedUserId]);
-
-  // Debounced version of setIsTyping
-  const debouncedSetTyping = useCallback(
-    debounce((value: boolean) => {
-      setIsTyping(value);
-      sendTypingStatus(value);
-    }, 500),
-    [sendTypingStatus]
-  );
-
-  // Handle message input changes
-  const handleMessageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setMessageInput(value);
-
-    if (value.length > 0 && !isTyping) {
-      debouncedSetTyping(true);
-    } else if (value.length === 0 && isTyping) {
-      debouncedSetTyping(false);
-    }
-  };
 
   // Get users based on role
   const { data: users = [], isLoading: usersLoading } = useQuery<ChatUser[]>({
@@ -92,42 +48,58 @@ export default function ChatPage() {
     enabled: !!selectedUserId,
   });
 
-  // Handle incoming WebSocket messages
-  useEffect(() => {
-    if (!socket) return;
+  // Get typing status of selected user
+  const { data: typingStatus } = useQuery({
+    queryKey: ['/api/typing-status', selectedUserId],
+    queryFn: async () => {
+      if (!selectedUserId) return { isTyping: false };
+      const res = await apiRequest("GET", `/api/typing-status/${selectedUserId}`);
+      return res.json();
+    },
+    enabled: !!selectedUserId,
+    refetchInterval: 1000, // Poll every second
+  });
 
-    const handleMessage = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
+  // Update typing status mutation
+  const updateTypingStatus = useMutation({
+    mutationFn: async (isTyping: boolean) => {
+      if (!selectedUserId) return;
+      await apiRequest("POST", "/api/typing-status", {
+        receiverId: selectedUserId,
+        isTyping,
+      });
+    },
+  });
 
-        if (data.type === 'new_message') {
-          const message = data.message;
-
-          // If this message belongs to the current conversation, update the messages
-          if (
-            (message.senderId === selectedUserId && message.receiverId === user?.id) ||
-            (message.senderId === user?.id && message.receiverId === selectedUserId)
-          ) {
-            // Invalidate and refetch messages
-            queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
-          }
-        } else if (data.type === 'typing_status') {
-          setTypingUsers(prev => ({
-            ...prev,
-            [data.userId]: data.isTyping
-          }));
-        }
-      } catch (error) {
-        console.error('Error handling WebSocket message:', error);
-      }
+  // Debounce function for typing status
+  const debounce = (func: Function, wait: number) => {
+    let timeout: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
     };
+  };
 
-    socket.addEventListener('message', handleMessage);
+  // Debounced version of updateTypingStatus
+  const debouncedUpdateTyping = useCallback(
+    debounce((value: boolean) => {
+      setIsTyping(value);
+      updateTypingStatus.mutate(value);
+    }, 500),
+    [updateTypingStatus]
+  );
 
-    return () => {
-      socket.removeEventListener('message', handleMessage);
-    };
-  }, [socket, selectedUserId, user?.id]);
+  // Handle message input changes
+  const handleMessageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMessageInput(value);
+
+    if (value.length > 0 && !isTyping) {
+      debouncedUpdateTyping(true);
+    } else if (value.length === 0 && isTyping) {
+      debouncedUpdateTyping(false);
+    }
+  };
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -140,11 +112,10 @@ export default function ChatPage() {
       return res.json();
     },
     onSuccess: () => {
-      // Invalidate and refetch messages
       queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
       setMessageInput("");
       setIsTyping(false);
-      sendTypingStatus(false);
+      updateTypingStatus.mutate(false);
     },
   });
 
@@ -152,6 +123,15 @@ export default function ChatPage() {
     if (!messageInput.trim()) return;
     sendMessageMutation.mutate(messageInput);
   };
+
+  // Clear typing status when component unmounts or user changes
+  useEffect(() => {
+    return () => {
+      if (isTyping) {
+        updateTypingStatus.mutate(false);
+      }
+    };
+  }, [selectedUserId, isTyping]);
 
   if (usersLoading) {
     return (
@@ -271,7 +251,7 @@ export default function ChatPage() {
                     </div>
                   )}
                   {/* Typing indicator */}
-                  {typingUsers[selectedUserId] && (
+                  {typingStatus?.isTyping && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <div className="flex gap-1">
                         <span className="animate-bounce">.</span>

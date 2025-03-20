@@ -9,17 +9,12 @@ import {
   sendCommentNotificationEmail,
   sendStatusUpdateEmail
 } from "./email";
-import { WebSocketServer, WebSocket } from 'ws';
-import { parse as cookieParse } from 'cookie';
-import { MemoryStore } from 'express-session';
+//import { WebSocketServer, WebSocket } from 'ws'; // Removed WebSocket imports
+//import { parse as cookieParse } from 'cookie'; // Removed cookie parsing imports
+//import { MemoryStore } from 'express-session'; //Removed session store imports
 
-// Add this after imports at the top
-interface WebSocketClient {
-  ws: WebSocket;
-  userId: number;
-}
-
-let wsClients: WebSocketClient[] = [];
+// Add this near the top with other imports
+const typingUsers = new Map<number, { isTyping: boolean; timestamp: number }>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -152,17 +147,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const message = await storage.createMessage(messageData);
 
-      // Send real-time notification to the receiver
-      const receiverClient = wsClients.find(client => client.userId === receiverId);
-      if (receiverClient?.ws.readyState === WebSocket.OPEN) {
-        receiverClient.ws.send(JSON.stringify({
-          type: 'new_message',
-          message: {
-            ...message,
-            senderName: req.user.username
-          }
-        }));
-      }
 
       res.status(201).json(message);
     } catch (error) {
@@ -596,105 +580,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  const httpServer = createServer(app);
-  const wss = new WebSocketServer({
-    server: httpServer,
-    path: '/ws',
-    verifyClient: async (info, done) => {
-      try {
-        // Get session ID from cookie
-        const cookies = cookieParse(info.req.headers.cookie || '');
-        const sid = cookies['connect.sid'];
+  // Add these new routes before the httpServer creation
+  app.post("/api/typing-status", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
-        if (!sid) {
-          console.log('WebSocket connection rejected: No session cookie');
-          done(false, 401, 'Unauthorized');
-          return;
-        }
+      const { receiverId, isTyping } = req.body;
 
-        // Get session store
-        const sessionStore = app.get('sessionStore') as MemoryStore;
-
-        if (!sessionStore) {
-          console.error('Session store not found');
-          done(false, 500, 'Server configuration error');
-          return;
-        }
-
-        // Log session ID format
-        console.log('Session ID format:', {
-          raw: sid,
-          parsed: sid.slice(2).split('.')[0]
+      if (isTyping) {
+        typingUsers.set(req.user.id, {
+          isTyping: true,
+          timestamp: Date.now()
         });
-
-        // Verify session exists and contains user
-        sessionStore.get(sid.slice(2).split('.')[0], (err, session) => {
-          if (err) {
-            console.error('Session store error:', err);
-            done(false, 500, 'Internal Server Error');
-            return;
-          }
-
-          if (!session?.passport?.user) {
-            console.log('WebSocket connection rejected: Invalid session data', {
-              session: session ? 'exists' : 'missing',
-              passport: session?.passport ? 'exists' : 'missing',
-              user: session?.passport?.user
-            });
-            done(false, 401, 'Unauthorized');
-            return;
-          }
-
-          // Attach user to request for later use
-          info.req.session = session;
-          console.log('WebSocket connection authorized for user:', session.passport.user);
-          done(true);
-        });
-      } catch (error) {
-        console.error('Error verifying WebSocket client:', error);
-        done(false, 500, 'Internal Server Error');
+      } else {
+        typingUsers.delete(req.user.id);
       }
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error updating typing status:", error);
+      res.status(500).json({ error: "Failed to update typing status" });
     }
   });
 
-  wss.on('connection', async (ws: WebSocket, req: any) => {
-    console.log('New WebSocket connection');
+  app.get("/api/typing-status/:userId", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
-    const userId = req.session.passport.user;
-    console.log('WebSocket client authenticated with user ID:', userId);
+      const userId = parseInt(req.params.userId);
+      const status = typingUsers.get(userId);
 
-    wsClients.push({ ws, userId });
-
-    ws.on('message', async (message: string) => {
-      try {
-        const data = JSON.parse(message);
-
-        if (data.type === 'typing_status') {
-          // Find receiver's WebSocket connection
-          const receiverClient = wsClients.find(client => client.userId === data.receiverId);
-          if (receiverClient?.ws.readyState === WebSocket.OPEN) {
-            // Forward typing status to receiver
-            receiverClient.ws.send(JSON.stringify({
-              type: 'typing_status',
-              userId: userId,
-              isTyping: data.isTyping
-            }));
-          }
-        }
-      } catch (error) {
-        console.error('Error handling WebSocket message:', error);
+      // Clear old typing status (older than 5 seconds)
+      if (status && Date.now() - status.timestamp > 5000) {
+        typingUsers.delete(userId);
+        return res.json({ isTyping: false });
       }
-    });
 
-    ws.on('close', () => {
-      console.log('Client disconnected:', userId);
-      wsClients = wsClients.filter(client => client.ws !== ws);
-    });
-
-    ws.on('error', (error) => {
-      console.error('WebSocket error for user', userId, ':', error);
-    });
+      res.json({ isTyping: !!status?.isTyping });
+    } catch (error) {
+      console.error("Error getting typing status:", error);
+      res.status(500).json({ error: "Failed to get typing status" });
+    }
   });
 
+  const httpServer = createServer(app);
   return httpServer;
 }

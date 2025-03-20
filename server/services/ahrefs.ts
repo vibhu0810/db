@@ -17,7 +17,10 @@ export async function getDomainRating(domainUrl: string): Promise<AhrefsDRMetric
     const domain = domainUrl.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
     console.log(`Fetching Ahrefs DR for domain: ${domain}`);
 
-    const url = encodeURI(`${AHREFS_API_ENDPOINT}/domain-rating/live?target=${domain}`);
+    // Get current date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+
+    const url = encodeURI(`${AHREFS_API_ENDPOINT}/site-explorer/domain-rating?date=${today}&target=${domain}`);
     const response = await fetch(url, {
       method: 'GET',
       headers: {

@@ -96,19 +96,30 @@ export default function NewOrder() {
       if (!domain) throw new Error("Domain not found");
       if (!selectedType) throw new Error("Order type not selected");
 
+      // Base order data for both types
       const orderData = {
-        ...data,
         type: selectedType,
         domainId: domain.id,
-        weWriteContent: selectedType === "guest_post" ? weWriteContent : undefined,
-        price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
+        targetUrl: data.targetUrl,
+        anchorText: data.anchorText,
+        notes: data.notes,
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
-        sourceUrl: selectedType === "niche_edit" ? data.sourceUrl : undefined,
-        title: selectedType === "guest_post" ? data.title : undefined,
-        content: selectedType === "guest_post" && !weWriteContent ? data.content : undefined,
+        price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
       };
 
-      console.log('Submitting order with data:', orderData);
+      // Add type-specific fields
+      if (selectedType === "guest_post") {
+        Object.assign(orderData, {
+          title: data.title,
+          weWriteContent,
+          content: !weWriteContent ? data.content : undefined,
+        });
+      } else {
+        Object.assign(orderData, {
+          sourceUrl: data.sourceUrl,
+          textEdit: data.textEdit,
+        });
+      }
 
       const res = await apiRequest("POST", "/api/orders", orderData);
       if (!res.ok) {
@@ -157,8 +168,14 @@ export default function NewOrder() {
       }
     }
 
+    if (selectedType === "niche_edit" && !data.sourceUrl?.trim()) {
+      form.setError("sourceUrl", { message: "Source URL is required for niche edits" });
+      return;
+    }
+
     try {
-      await createOrderMutation.mutateAsync(data);
+      const orderData = await createOrderMutation.mutateAsync(data);
+      console.log('Order created:', orderData);
     } catch (error) {
       console.error("Form submission error:", error);
     }

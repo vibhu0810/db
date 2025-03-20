@@ -598,6 +598,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add bulk delete endpoint before the httpServer creation
+  app.delete("/api/orders/bulk", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+
+      const { orderIds } = req.body;
+      if (!Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).json({ error: "Invalid order IDs provided" });
+      }
+
+      // Delete each order in the array
+      await Promise.all(orderIds.map(orderId => storage.deleteOrder(orderId)));
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error bulk deleting orders:", error);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : "Failed to delete orders",
+        details: error instanceof Error ? error.stack : undefined
+      });
+    }
+  });
+
+
   app.get("/api/seo-joke", async (_req, res) => {
     try {
       const joke = await generateSEOJoke();
@@ -653,6 +679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch domain" });
     }
   });
+
 
 
   // Add these new routes before the httpServer creation

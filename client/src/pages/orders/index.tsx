@@ -77,6 +77,7 @@ import { User } from "@shared/schema";
 import { Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import Checkbox from "@/components/ui/checkbox";
 
 interface DateRange {
   from?: Date;
@@ -298,7 +299,7 @@ export default function Orders() {
   const [userFilter, setUserFilter] = useState<number | "all">("all");
   const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
-
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -469,6 +470,31 @@ export default function Orders() {
     },
   });
 
+  const bulkDeleteOrdersMutation = useMutation({
+    mutationFn: async (orderIds: number[]) => {
+      const res = await apiRequest("DELETE", `/api/orders/bulk`, { orderIds });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete orders");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "Orders deleted",
+        description: "Selected orders have been deleted successfully.",
+      });
+      setSelectedOrders([]); // Clear selection after delete
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -615,6 +641,24 @@ export default function Orders() {
         <SelectItem value="Completed">Completed</SelectItem>
       </>
     );
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedOrders(paginatedOrders.map(order => order.id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  const handleSelectOrder = (orderId: number) => {
+    setSelectedOrders(prev => {
+      if (prev.includes(orderId)) {
+        return prev.filter(id => id !== orderId);
+      } else {
+        return [...prev, orderId];
+      }
+    });
   };
 
   useEffect(() => {
@@ -807,6 +851,33 @@ export default function Orders() {
               </SheetContent>
             </Sheet>
           )}
+          {isAdmin && selectedOrders.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  Delete Selected ({selectedOrders.length})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the selected orders
+                    and remove their data from the server.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => bulkDeleteOrdersMutation.mutate(selectedOrders)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete Orders
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <Button onClick={exportToCSV}>
             <FileDown className="mr-2 h-4 w-4" />
             Export CSV
@@ -900,6 +971,14 @@ export default function Orders() {
           <TableHeader>
             <TableRow>
               {isAdmin && (
+                <TableHead className="w-[50px]">
+                  <Checkbox
+                    checked={paginatedOrders.length > 0 && selectedOrders.length === paginatedOrders.length}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
+              )}
+              {isAdmin && (
                 <TableHead className="w-[150px]">
                   <SortableHeader field="user.username">User</SortableHeader>
                 </TableHead>
@@ -976,6 +1055,14 @@ export default function Orders() {
                 )}
               >
                 {isAdmin && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedOrders.includes(order.id)}
+                      onCheckedChange={() => handleSelectOrder(order.id)}
+                    />
+                  </TableCell>
+                )}
+                {isAdmin && (
                   <TableCell className="max-w-[150px] truncate">
                     {order.user?.companyName || order.user?.username}
                   </TableCell>
@@ -996,7 +1083,7 @@ export default function Orders() {
                 <TableCell style={{ width: columnWidths.targetUrl, maxWidth: '400px' }}>
                   <span className="truncate">{order.targetUrl}</span>
                   <Button
-                                        variant="ghost"
+                    variant="ghost"
                     size="icon"
                     onClick={() => copyToClipboard(order.targetUrl)}
                     className="h-8 w-8 shrink-0"

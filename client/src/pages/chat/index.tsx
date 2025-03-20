@@ -69,10 +69,15 @@ export default function ChatPage() {
       <div className="w-64 border rounded-lg overflow-hidden">
         <div className="p-4 border-b bg-muted">
           <h2 className="font-semibold">
-            {isAdmin ? "Customers" : "Support"}
+            {isAdmin ? "Customers" : "Support Team"}
           </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isAdmin 
+              ? "Select a customer to chat with"
+              : "Our support team is here to help"}
+          </p>
         </div>
-        <ScrollArea className="h-[calc(100%-4rem)]">
+        <ScrollArea className="h-[calc(100%-6rem)]">
           {users.map((chatUser: any) => (
             <button
               key={chatUser.id}
@@ -92,12 +97,26 @@ export default function ChatPage() {
                 )}
               </Avatar>
               <div>
-                <div className="font-medium">{chatUser.username}</div>
-                <div className="text-sm text-muted-foreground">{chatUser.companyName}</div>
+                <div className="font-medium">
+                  {chatUser.companyName || chatUser.username}
+                  {chatUser.is_admin && (
+                    <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                      Admin
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {chatUser.is_admin ? "Support Agent" : chatUser.email}
+                </div>
               </div>
             </button>
           ))}
         </ScrollArea>
+        {!isAdmin && users.length === 0 && (
+          <div className="p-4 text-center text-muted-foreground">
+            No support agents available at the moment
+          </div>
+        )}
       </div>
 
       {/* Chat area */}
@@ -144,6 +163,11 @@ export default function ChatPage() {
                       </div>
                     </div>
                   ))}
+                  {messages.length === 0 && (
+                    <div className="text-center text-muted-foreground">
+                      No messages yet. Start the conversation!
+                    </div>
+                  )}
                 </div>
               )}
             </ScrollArea>

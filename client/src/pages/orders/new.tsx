@@ -41,7 +41,6 @@ function getTurnaroundTime(domain: Domain, orderType: OrderType | null) {
   }
 }
 
-// Update the form schema to properly handle guest post fields
 const formSchema = z.object({
   sourceUrl: z.string()
     .min(1, "Source URL is required")
@@ -106,6 +105,8 @@ export default function NewOrder() {
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
       };
 
+      console.log('Submitting order with data:', orderData);
+
       const res = await apiRequest("POST", "/api/orders", orderData);
       if (!res.ok) {
         const error = await res.json();
@@ -122,6 +123,7 @@ export default function NewOrder() {
       setLocation("/orders");
     },
     onError: (error: Error) => {
+      console.error('Order creation error:', error);
       toast({
         title: "Error creating order",
         description: error.message,
@@ -131,6 +133,14 @@ export default function NewOrder() {
   });
 
   const onSubmit = async (data: FormValues) => {
+    console.log('Form submitted with values:', { 
+      ...data, 
+      selectedType,
+      weWriteContent,
+      selectedUserId 
+    });
+
+    // Guest post validation
     if (selectedType === "guest_post") {
       if (!data.title?.trim()) {
         form.setError("title", { message: "Title is required for guest posts" });
@@ -143,7 +153,17 @@ export default function NewOrder() {
       }
     }
 
-    createOrderMutation.mutate(data);
+    // Niche edit validation
+    if (selectedType === "niche_edit" && !data.sourceUrl?.trim()) {
+      form.setError("sourceUrl", { message: "Source URL is required for niche edits" });
+      return;
+    }
+
+    try {
+      await createOrderMutation.mutateAsync(data);
+    } catch (error) {
+      console.error("Form submission error:", error);
+    }
   };
 
   if (!domain) {
@@ -253,7 +273,7 @@ export default function NewOrder() {
                   </div>
                 )}
 
-                {isGuestPost && (
+                {selectedType === "guest_post" && (
                   <>
                     <FormField
                       control={form.control}
@@ -262,7 +282,7 @@ export default function NewOrder() {
                         <FormItem>
                           <FormLabel>Post Title *</FormLabel>
                           <FormControl>
-                            <Input {...field} required />
+                            <Input {...field} />
                           </FormControl>
                           <FormDescription>
                             Enter the title for your guest post
@@ -321,7 +341,7 @@ export default function NewOrder() {
                   </>
                 )}
 
-                {isNicheEdit && (
+                {selectedType === "niche_edit" && (
                   <FormField
                     control={form.control}
                     name="sourceUrl"
@@ -333,10 +353,6 @@ export default function NewOrder() {
                             {...field}
                             required
                             placeholder={`https://${domain.websiteUrl}/blog/example`}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              form.trigger("sourceUrl"); // Trigger validation on change
-                            }}
                           />
                         </FormControl>
                         <FormDescription>
@@ -360,10 +376,6 @@ export default function NewOrder() {
                           {...field}
                           required
                           type="url"
-                          onChange={(e) => {
-                            field.onChange(e);
-                            form.trigger("targetUrl"); // Trigger validation on change
-                          }}
                         />
                       </FormControl>
                       <FormDescription>
@@ -391,7 +403,7 @@ export default function NewOrder() {
                   )}
                 />
 
-                {isNicheEdit && (
+                {selectedType === "niche_edit" && (
                   <FormField
                     control={form.control}
                     name="textEdit"

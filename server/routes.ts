@@ -422,7 +422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({ error: "Unauthorized: Only admins can update order status" });
         }
 
-        // Check if order is a Niche Edit order (no title means it's a niche edit)
+        // Check if order is a niche edit order (no title means it's a niche edit)
         if (order.title !== null) {
           return res.status(400).json({ error: "Only Niche Edit orders can be cancelled" });
         }
@@ -430,8 +430,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (order.status !== "In Progress") {
           return res.status(400).json({ error: "Orders can only be cancelled while In Progress" });
         }
-      } else {
-        // Admin status validation
+      }
+
+      // For admin updates, validate status based on order type
+      if (req.user.is_admin) {
         const guestPostStatuses = [
           "Title Approval Pending",
           "Title Approved",

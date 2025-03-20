@@ -300,6 +300,7 @@ export default function Orders() {
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
 
 
+
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
       sourceUrl: 400,
@@ -592,6 +593,32 @@ export default function Orders() {
     createCustomOrderMutation.mutate(orderData);
   };
 
+  const statusSelectContent = (isGuestPost: boolean) => {
+    if (isGuestPost) {
+      return (
+        <>
+          <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
+          <SelectItem value="Title Approved">Title Approved</SelectItem>
+          <SelectItem value="Content Writing">Content Writing</SelectItem>
+          <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
+          <SelectItem value="Completed">Completed</SelectItem>
+          <SelectItem value="Rejected">Rejected</SelectItem>
+          <SelectItem value="Cancelled">Cancelled</SelectItem>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <SelectItem value="In Progress">In Progress</SelectItem>
+          <SelectItem value="Sent">Sent</SelectItem>
+          <SelectItem value="Rejected">Rejected</SelectItem>
+          <SelectItem value="Cancelled">Cancelled</SelectItem>
+          <SelectItem value="Completed">Completed</SelectItem>
+        </>
+      );
+    }
+  };
+
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
       const notificationDataStr = sessionStorage.getItem('notificationData');
@@ -796,7 +823,6 @@ export default function Orders() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="max-w-sm"
         />
-        {/* Updated status filter */}
         <Select
           value={statusFilter}
           onValueChange={setStatusFilter}
@@ -806,6 +832,7 @@ export default function Orders() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
+            {/* Guest Post Statuses */}
             <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
             <SelectItem value="Title Approved">Title Approved</SelectItem>
             <SelectItem value="Content Writing">Content Writing</SelectItem>
@@ -813,6 +840,7 @@ export default function Orders() {
             <SelectItem value="Completed">Completed</SelectItem>
             <SelectItem value="Rejected">Rejected</SelectItem>
             <SelectItem value="Cancelled">Cancelled</SelectItem>
+            {/* Niche Edit Statuses */}
             <SelectItem value="In Progress">In Progress</SelectItem>
             <SelectItem value="Sent">Sent</SelectItem>
           </SelectContent>
@@ -969,7 +997,8 @@ export default function Orders() {
                   </div>
                 </TableCell>
                 <TableCell style={{ width: columnWidths.targetUrl, maxWidth: '400px' }}>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex itemscenter space-x-2">
+                    <div className="flex items-center space-x-2">
                     <span className="truncate">{order.targetUrl}</span>
                     <Button
                       variant="ghost"
@@ -979,6 +1008,7 @@ export default function Orders() {
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
+                  </div>
                   </div>
                 </TableCell>
                 <TableCell style={{ width: columnWidths.anchorText, maxWidth: '300px' }}>
@@ -999,31 +1029,51 @@ export default function Orders() {
                   {isAdmin ? (
                     <Select
                       value={order.status}
-                      onValueChange={(newStatus) =>
+                      onValueChange={(newStatus) => {
                         updateOrderStatusMutation.mutate({
                           orderId: order.id,
-                          status: newStatus,
-                        })
-                      }
+                          status: newStatus
+                        });
+                      }}
                     >
-                      <SelectTrigger className="w-[130px]">
-                        <SelectValue />
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue>{order.status}</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Sent">Sent</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                        <SelectItem value="Rejected">Rejected</SelectItem>
-                        <SelectItem value="Revision">Revision</SelectItem>
-                        <SelectItem value="Cancelled">Cancelled</SelectItem>
-                        <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
-                        <SelectItem value="Title Approved">Title Approved</SelectItem>
-                        <SelectItem value="Content Writing">Content Writing</SelectItem>
-                        <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        {order.title ? (
+                          <>
+                            <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
+                            <SelectItem value="Title Approved">Title Approved</SelectItem>
+                            <SelectItem value="Content Writing">Content Writing</SelectItem>
+                            <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                            <SelectItem value="Rejected">Rejected</SelectItem>
+                            <SelectItem value="Cancelled">Cancelled</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="In Progress">In Progress</SelectItem>
+                            <SelectItem value="Sent">Sent</SelectItem>
+                            <SelectItem value="Rejected">Rejected</SelectItem>
+                            <SelectItem value="Cancelled">Cancelled</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   ) : (
-                    order.status
+                    <div className="flex items-center gap-2">
+                      <span>{order.status}</span>
+                      {!order.title && order.status === "In Progress" && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setOrderToCancel(order.id)}
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </TableCell>
                 <TableCell>
@@ -1120,7 +1170,6 @@ export default function Orders() {
                 </TableCell>
                 {isAdmin && (
                   <TableCell>
-                    {/* Updated dropdown menu */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -1188,7 +1237,7 @@ export default function Orders() {
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>No, keep order</AlertDialogCancel>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => {
                                       if (order.id) {
@@ -1196,7 +1245,7 @@ export default function Orders() {
                                       }
                                     }}
                                   >
-                                    Yes, cancel order
+                                    Confirm
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>

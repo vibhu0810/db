@@ -14,6 +14,7 @@ export async function getDomainMetrics(domain: string): Promise<AhrefsMetrics> {
   }
 
   try {
+    console.log(`Fetching Ahrefs metrics for domain: ${domain}`);
     const response = await fetch(`${AHREFS_API_ENDPOINT}/metrics`, {
       method: 'POST',
       headers: {
@@ -32,7 +33,8 @@ export async function getDomainMetrics(domain: string): Promise<AhrefsMetrics> {
     }
 
     const data = await response.json();
-    
+    console.log(`Received Ahrefs data for ${domain}:`, data);
+
     return {
       domainRating: data.domain_rating || 0,
       traffic: data.organic_traffic || 0,

@@ -24,6 +24,7 @@ export interface IStorage {
   getDomains(): Promise<Domain[]>;
   getDomain(id: number): Promise<Domain | undefined>;
   createDomain(domain: InsertDomain): Promise<Domain>;
+  updateDomain(id: number, domain: Partial<Domain>): Promise<Domain>;
 
   // Order operations
   getOrder(id: number): Promise<Order | undefined>;
@@ -104,6 +105,15 @@ export class DatabaseStorage implements IStorage {
 
   async createDomain(domainData: InsertDomain): Promise<Domain> {
     const [domain] = await db.insert(domains).values(domainData).returning();
+    return domain;
+  }
+
+  async updateDomain(id: number, updates: Partial<Domain>): Promise<Domain> {
+    const [domain] = await db
+      .update(domains)
+      .set(updates)
+      .where(eq(domains.id, id))
+      .returning();
     return domain;
   }
 

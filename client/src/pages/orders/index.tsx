@@ -290,6 +290,7 @@ export default function Orders() {
     targetUrl: 200,
     anchorText: 150,
     textEdit: 200,
+    status: 200, // Add status column width
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -308,6 +309,7 @@ export default function Orders() {
       targetUrl: 400,
       anchorText: 300,
       textEdit: 400,
+      status: 300, // Add maximum width for status column
     };
 
     const newWidth = Math.min(size.width, maxWidths[column as keyof typeof maxWidths]);
@@ -947,8 +949,17 @@ export default function Orders() {
               <TableHead className="w-[100px]">
                 <SortableHeader field="price">Price</SortableHeader>
               </TableHead>
-              <TableHead className="w-[200px]">
-                <SortableHeader field="status">Status</SortableHeader>
+              <TableHead>
+                <Resizable
+                  width={columnWidths.status}
+                  height={0}
+                  onResize={onResize("status")}
+                  handle={<div className="react-resizable-handle" />}
+                >
+                  <div style={{ width: columnWidths.status }}>
+                    <SortableHeader field="status">Status</SortableHeader>
+                  </div>
+                </Resizable>
               </TableHead>
               <TableHead className="w-[120px]">
                 <SortableHeader field="dateOrdered">Date Ordered</SortableHeader>

@@ -176,18 +176,20 @@ export default function NewOrder() {
       <Card>
         <CardHeader>
           <CardTitle>{selectedType ? 'Order Details' : 'Select Order Type'}</CardTitle>
-          <CardDescription>
-            Create a new order for {domain.websiteUrl}
-            {selectedType && (
-              <div className="mt-2">
-                <p className="text-sm text-muted-foreground">
-                  TAT: {turnaroundTime}
-                  {isGuestPost && (
-                    <span className="block mt-1">Note: Guest post title must be approved before proceeding with content creation.</span>
-                  )}
-                </p>
-              </div>
-            )}
+          <CardDescription asChild>
+            <div>
+              Create a new order for {domain.websiteUrl}
+              {selectedType && (
+                <div className="mt-2">
+                  <span className="text-sm text-muted-foreground">
+                    TAT: {turnaroundTime}
+                    {isGuestPost && (
+                      <span className="block mt-1">Note: Guest post title must be approved before proceeding with content creation.</span>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
           </CardDescription>
         </CardHeader>
         <CardContent>

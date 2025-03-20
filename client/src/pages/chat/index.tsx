@@ -166,7 +166,7 @@ export default function ChatPage() {
                         )}
                       >
                         <p className="whitespace-pre-wrap break-words">
-                          {message.content}
+                          {message.message}
                         </p>
                         <div
                           className={cn(

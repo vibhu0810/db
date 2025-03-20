@@ -811,11 +811,17 @@ export default function Orders() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Sent">Sent</SelectItem>
+            {/* Guest Post Statuses */}
+            <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
+            <SelectItem value="Title Approved">Title Approved</SelectItem>
+            <SelectItem value="Content Writing">Content Writing</SelectItem>
+            <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
             <SelectItem value="Completed">Completed</SelectItem>
             <SelectItem value="Rejected">Rejected</SelectItem>
             <SelectItem value="Cancelled">Cancelled</SelectItem>
-            <SelectItem value="Revision">Revision</SelectItem>
+            {/* Niche Edit Statuses */}
+            <SelectItem value="In Progress">In Progress</SelectItem>
+            <SelectItem value="Sent">Sent</SelectItem>
           </SelectContent>
         </Select>
         {isAdmin && (
@@ -983,7 +989,7 @@ export default function Orders() {
                   </div>
                 </TableCell>
                 <TableCell style={{ width: columnWidths.anchorText, maxWidth: '300px' }}>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center spacex-2">
                     <span className="truncate">{order.anchorText}</span>
                     <Button
                       variant="ghost"
@@ -1016,6 +1022,11 @@ export default function Orders() {
                         <SelectItem value="Rejected">Rejected</SelectItem>
                         <SelectItem value="Revision">Revision</SelectItem>
                         <SelectItem value="Cancelled">Cancelled</SelectItem>
+                        <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
+                        <SelectItem value="Title Approved">Title Approved</SelectItem>
+                        <SelectItem value="Content Writing">Content Writing</SelectItem>
+                        <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (

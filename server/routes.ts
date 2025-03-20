@@ -412,28 +412,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      // For regular users, only allow cancellation of their own Niche Edit orders in "In Progress" status
       if (!req.user.is_admin) {
-        if (status !== "Cancelled") {
-          return res.status(403).json({ error: "Unauthorized: Only admins can update order status" });
-        }
+        return res.status(403).json({ error: "Unauthorized: Only admins can update order status" });
+      }
 
-        if (order.userId !== req.user.id) {
-          return res.status(403).json({ error: "Unauthorized: You can only cancel your own orders" });
-        }
+      // Validate status based on order type
+      const guestPostStatuses = [
+        "Title Approval Pending",
+        "Title Approved",
+        "Content Writing",
+        "Sent To Editor",
+        "Completed",
+        "Rejected",
+        "Cancelled"
+      ];
 
-        if (order.type !== "niche_edit") {
-          return res.status(400).json({ error: "Only Niche Edit orders can be cancelled" });
-        }
+      const nicheEditStatuses = [
+        "In Progress",
+        "Sent",
+        "Rejected",
+        "Cancelled",
+        "Completed"
+      ];
 
-        if (order.status !== "In Progress") {
-          return res.status(400).json({ error: "Only orders in 'In Progress' status can be cancelled" });
-        }
-      } else {
-        // Validate status for admin users
-        if (!["Sent", "Completed", "Rejected", "Revision", "Cancelled"].includes(status)) {
-          return res.status(400).json({ error: "Invalid status" });
-        }
+      const isGuestPost = order.title !== null; // Guest posts have titles, niche edits don't
+      const validStatuses = isGuestPost ? guestPostStatuses : nicheEditStatuses;
+
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          error: `Invalid status. Valid statuses for ${isGuestPost ? 'guest post' : 'niche edit'} orders are: ${validStatuses.join(', ')}`
+        });
       }
 
       const updatedOrder = await storage.updateOrder(orderId, {

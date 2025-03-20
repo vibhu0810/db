@@ -10,21 +10,21 @@ export async function generateWelcomeMessage(username: string, companyName?: str
       messages: [
         {
           role: "system",
-          content: "You are a professional digital marketing assistant. Generate a short, friendly, and personalized welcome message. Make it concise (max 2 sentences) and engaging."
+          content: "You are a professional digital marketing assistant. Generate an extremely brief welcome message. MUST be 5 words or less, no punctuation except exclamation points."
         },
         {
           role: "user",
-          content: `Generate a welcome message for a user named ${username}${companyName ? ` from ${companyName}` : ''}. They are logging into a digital marketing platform called SaaS x Links focused on link building and content placement.`
+          content: `Generate a very short welcome message (5 words or less) for a user named ${username}${companyName ? ` from ${companyName}` : ''}. They are logging into a digital marketing platform called SaaS x Links.`
         }
       ],
-      max_tokens: 100,
+      max_tokens: 20,
       temperature: 0.7,
     });
 
-    return response.choices[0].message.content || "Welcome to SaaS x Links!";
+    return response.choices[0].message.content || "Welcome back!";
   } catch (error) {
     console.error("Error generating welcome message:", error);
-    return "Welcome to SaaS x Links!";
+    return "Welcome back!";
   }
 }
 

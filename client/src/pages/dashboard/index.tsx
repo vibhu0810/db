@@ -111,18 +111,33 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">
-          {welcomeLoading || !welcomeData?.message
-            ? `Welcome back, ${user?.firstName || user?.username}!`
-            : welcomeData.message}
-        </h2>
-        <p className="text-muted-foreground mt-2">
-          {isAdmin 
-            ? "Here's an overview of order fulfillment in the last 30 days"
-            : "Here's what's happening with your orders in the last 30 days"
-          }
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">
+            {welcomeLoading || !welcomeData?.message
+              ? `Welcome back, ${user?.firstName || user?.username}!`
+              : welcomeData.message}
+          </h2>
+          <p className="text-muted-foreground mt-2">
+            {isAdmin 
+              ? "Here's an overview of order fulfillment in the last 30 days"
+              : "Here's what's happening with your orders in the last 30 days"
+            }
+          </p>
+        </div>
+        {!isAdmin && user?.companyLogo && (
+          <div className="hidden md:block">
+            <img 
+              src={user.companyLogo} 
+              alt={user.companyName || 'Company logo'} 
+              className="h-16 object-contain" 
+              onError={(e) => {
+                // Hide the image if it fails to load
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

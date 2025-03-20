@@ -125,13 +125,28 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">Profile Settings</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">Profile Settings</h2>
+        <div className="hidden md:block">
+          <img 
+            src={user?.companyLogo || ''} 
+            alt={user?.companyName || 'Company logo'} 
+            className="h-12 object-contain"
+            onError={(e) => {
+              // Hide the image if it fails to load
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Profile</CardTitle>
+      <Card className="border-primary/10">
+        <CardHeader className="bg-muted/30">
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-primary">Edit Profile</span>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
@@ -328,7 +343,7 @@ export default function ProfilePage() {
               <Button
                 type="submit"
                 disabled={updateProfileMutation.isPending || isUploading}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto bg-primary text-black hover:bg-primary/90 font-semibold"
               >
                 {(updateProfileMutation.isPending || isUploading) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

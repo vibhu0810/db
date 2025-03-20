@@ -285,7 +285,8 @@ export class DatabaseStorage implements IStorage {
 
   // Message methods
   async getMessages(userId1: number, userId2: number): Promise<Message[]> {
-    return await db
+    console.log('Fetching messages between users:', userId1, userId2);
+    const messages = await db
       .select()
       .from(messages)
       .where(
@@ -301,9 +302,13 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(messages.createdAt);
+
+    console.log('Retrieved messages:', messages);
+    return messages;
   }
 
   async createMessage(messageData: InsertMessage): Promise<Message> {
+    console.log('Creating message:', messageData);
     const [message] = await db
       .insert(messages)
       .values({
@@ -312,11 +317,14 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
 
+    console.log('Created message:', message);
+
     // Create notification for the receiver
     await this.createNotification({
       userId: messageData.receiverId,
       type: "message",
       message: "You have a new message",
+      createdAt: new Date(),
     });
 
     return message;

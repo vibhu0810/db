@@ -50,16 +50,18 @@ export default function ChatPage() {
     enabled: !!selectedUserId,
   });
 
+  // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       if (!selectedUserId) throw new Error("No recipient selected");
       const res = await apiRequest("POST", "/api/messages", {
-        message: content, // Changed from content to message to match schema
+        message: content,
         receiverId: selectedUserId,
       });
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate and refetch messages
       queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
       setMessageInput("");
     },
@@ -149,39 +151,40 @@ export default function ChatPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {messages.map((message: any) => (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        "flex gap-2",
-                        message.senderId === user?.id && "justify-end"
-                      )}
-                    >
+                  {messages.length > 0 ? (
+                    messages.map((message) => (
                       <div
+                        key={message.id}
                         className={cn(
-                          "max-w-[70%] rounded-lg p-3",
-                          message.senderId === user?.id
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                          "flex gap-2",
+                          message.senderId === user?.id && "justify-end"
                         )}
                       >
-                        <p className="whitespace-pre-wrap break-words">
-                          {message.message}
-                        </p>
                         <div
                           className={cn(
-                            "text-xs mt-1",
+                            "max-w-[70%] rounded-lg p-3",
                             message.senderId === user?.id
-                              ? "text-primary-foreground/70"
-                              : "text-muted-foreground"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
                           )}
                         >
-                          {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                          <p className="whitespace-pre-wrap break-words">
+                            {message.message}
+                          </p>
+                          <div
+                            className={cn(
+                              "text-xs mt-1",
+                              message.senderId === user?.id
+                                ? "text-primary-foreground/70"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                  {messages.length === 0 && (
+                    ))
+                  ) : (
                     <div className="text-center text-muted-foreground">
                       No messages yet. Start the conversation!
                     </div>

@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { FileDown, Loader2, MessageSquare, Copy, ChevronDown } from "lucide-react";
+import { FileDown, Loader2, MessageSquare, Copy, ChevronDown, X } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { useAuth } from "@/hooks/use-auth";
 import { Resizable } from "react-resizable";
@@ -297,6 +297,7 @@ export default function Orders() {
   const [orderToEdit, setOrderToEdit] = useState<any>(null);
   const [userFilter, setUserFilter] = useState<number | "all">("all");
   const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<number | null>(null); // New state for order cancellation
 
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
@@ -433,6 +434,31 @@ export default function Orders() {
         description: "Order has been created successfully.",
       });
       setShowCustomOrderSheet(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const cancelOrderMutation = useMutation({ // New mutation for cancelling orders
+    mutationFn: async (orderId: number) => {
+      const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: "Cancelled" });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to cancel order");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "Order cancelled",
+        description: "The order has been cancelled successfully.",
+      });
+      setOrderToCancel(null); //added this line
     },
     onError: (error: Error) => {
       toast({
@@ -989,6 +1015,7 @@ export default function Orders() {
                         <SelectItem value="Completed">Completed</SelectItem>
                         <SelectItem value="Rejected">Rejected</SelectItem>
                         <SelectItem value="Revision">Revision</SelectItem>
+                        <SelectItem value="Cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
@@ -1000,7 +1027,7 @@ export default function Orders() {
                 </TableCell>
                 <TableCell style={{ width: columnWidths.textEdit, maxWidth: '400px' }}>
                   <div className="flex items-center space-x-2">
-                    <span classNamespan className="truncate">{order.textEdit}</span>
+                    <span className="truncate">{order.textEdit}</span>
                     {order.textEdit && (
                       <Button
                         variant="ghost"
@@ -1104,19 +1131,18 @@ export default function Orders() {
                           }}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
-                          Edit order
+                          Edit
                         </DropdownMenuItem>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
+                              onClick={() => {
                                 setOrderToDelete(order.id);
                               }}
                               className="text-destructive"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Delete order
+                              Delete
                             </DropdownMenuItem>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -1147,6 +1173,15 @@ export default function Orders() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+                        {!isAdmin && order.type === "niche_edit" && order.status === "In Progress" && (
+                          <DropdownMenuItem
+                            onClick={() => setOrderToCancel(order.id)}
+                            className="text-destructive"
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            Cancel Order
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -1212,6 +1247,29 @@ export default function Orders() {
           isOpen={!!orderToEdit}
           onOpenChange={(open) => !open && setOrderToEdit(null)}
         />
+      )}
+      {orderToCancel && ( // Add AlertDialog for cancel confirmation
+        <AlertDialog open={true} onOpenChange={() => setOrderToCancel(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to cancel this order? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  cancelOrderMutation.mutate(orderToCancel);
+                  setOrderToCancel(null);
+                }}
+              >
+                Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );

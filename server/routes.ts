@@ -398,26 +398,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update order status
   app.patch("/api/orders/:orderId/status", async (req, res) => {
     try {
-      if (!req.user?.is_admin) {
-        return res.status(403).json({ error: "Unauthorized: Admin access required" });
-      }
-
       const orderId = parseInt(req.params.orderId);
       const { status } = req.body;
 
-      // Validate status
-      if (!["Sent", "Completed", "Rejected", "Revision"].includes(status)) {
-        return res.status(400).json({ error: "Invalid status" });
-      }
-
-      const order = await storage.updateOrder(orderId, {
-        status,
-        dateCompleted: status === "Completed" ? new Date() : null
-      });
-
+      // Get the order first
+      const order = await storage.getOrder(orderId);
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
       }
+
+      // Check permissions
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // For regular users, only allow cancellation of their own Niche Edit orders in "In Progress" status
+      if (!req.user.is_admin) {
+        if (status !== "Cancelled") {
+          return res.status(403).json({ error: "Unauthorized: Only admins can update order status" });
+        }
+
+        if (order.userId !== req.user.id) {
+          return res.status(403).json({ error: "Unauthorized: You can only cancel your own orders" });
+        }
+
+        if (order.type !== "niche_edit") {
+          return res.status(400).json({ error: "Only Niche Edit orders can be cancelled" });
+        }
+
+        if (order.status !== "In Progress") {
+          return res.status(400).json({ error: "Only orders in 'In Progress' status can be cancelled" });
+        }
+      } else {
+        // Validate status for admin users
+        if (!["Sent", "Completed", "Rejected", "Revision", "Cancelled"].includes(status)) {
+          return res.status(400).json({ error: "Invalid status" });
+        }
+      }
+
+      const updatedOrder = await storage.updateOrder(orderId, {
+        status,
+        dateCompleted: status === "Completed" ? new Date() : null
+      });
 
       // Get order owner and send email
       const orderOwner = await storage.getUser(order.userId);
@@ -438,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderId,
       });
 
-      res.json(order);
+      res.json(updatedOrder);
     } catch (error) {
       console.error("Error updating order status:", error);
       res.status(500).json({ error: "Failed to update order status" });

@@ -54,6 +54,9 @@ export interface IStorage {
 
   // Session store
   sessionStore: session.Store;
+  // Add new methods for order deletion
+  deleteOrderComments(orderId: number): Promise<void>;
+  deleteOrderNotifications(orderId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -145,11 +148,34 @@ export class DatabaseStorage implements IStorage {
     return order;
   }
 
+  async deleteOrderComments(orderId: number): Promise<void> {
+    try {
+      await db.delete(orderComments).where(eq(orderComments.orderId, orderId));
+    } catch (error) {
+      console.error('Error deleting order comments:', error);
+      throw new Error('Failed to delete order comments');
+    }
+  }
+
+  async deleteOrderNotifications(orderId: number): Promise<void> {
+    try {
+      // Delete notifications related to the order
+      await db.delete(notifications).where(eq(notifications.orderId, orderId));
+    } catch (error) {
+      console.error('Error deleting order notifications:', error);
+      throw new Error('Failed to delete order notifications');
+    }
+  }
+
   async deleteOrder(id: number): Promise<void> {
     try {
-      // First delete any associated comments to maintain referential integrity
-      await db.delete(orderComments).where(eq(orderComments.orderId, id));
-      // Then delete the order
+      // First delete any associated comments
+      await this.deleteOrderComments(id);
+
+      // Then delete notifications
+      await this.deleteOrderNotifications(id);
+
+      // Finally delete the order
       await db.delete(orders).where(eq(orders.id, id));
     } catch (error) {
       console.error('Error deleting order:', error);

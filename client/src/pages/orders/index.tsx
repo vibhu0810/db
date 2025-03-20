@@ -994,30 +994,26 @@ export default function Orders() {
                   </div>
                 </TableCell>
                 <TableCell style={{ width: columnWidths.targetUrl, maxWidth: '400px' }}>
-                  <div className="flex items-center space-x-2">
-                    <span className="truncate">{order.targetUrl}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => copyToClipboard(order.targetUrl)}
-                      className="h-8 w-8 shrink-0"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <span className="truncate">{order.targetUrl}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => copyToClipboard(order.targetUrl)}
+                    className="h-8 w-8 shrink-0"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                 </TableCell>
                 <TableCell style={{ width: columnWidths.anchorText, maxWidth: '300px' }}>
-                  <div className="flex items-center space-x-2">
-                    <span className="truncate">{order.anchorText}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => copyToClipboard(order.anchorText)}
-                      className="h-8 w-8 shrink-0"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <span className="truncate">{order.anchorText}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => copyToClipboard(order.anchorText)}
+                    className="h-8 w-8 shrink-0"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                 </TableCell>
                 <TableCell>${Number(order.price).toFixed(2)}</TableCell>
                 <TableCell>

@@ -352,7 +352,15 @@ export default function NewOrder() {
                     <FormItem>
                       <FormLabel>Target URL *</FormLabel>
                       <FormControl>
-                        <Input {...field} required type="url" />
+                        <Input
+                          {...field}
+                          required
+                          type="url"
+                          onChange={(e) => {
+                            field.onChange(e);
+                            form.trigger("targetUrl"); // Trigger validation on change
+                          }}
+                        />
                       </FormControl>
                       <FormDescription>
                         The URL you want to link to

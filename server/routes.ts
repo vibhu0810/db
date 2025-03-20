@@ -386,6 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId,
         status: initialStatus,
+        dateOrdered: new Date(),
       };
 
       const order = await storage.createOrder(orderData);
@@ -406,7 +407,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: admin.id,
           message: `New order #${order.id} placed by ${req.user?.username}`,
           type: "order",
-          orderId: order.id,
+          createdAt: new Date(),
+          read: false,
         })
       ));
 

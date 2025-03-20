@@ -128,6 +128,7 @@ export const insertOrderCommentSchema = createInsertSchema(orderComments).omit({
 export type InsertOrderComment = z.infer<typeof insertOrderCommentSchema>;
 export type OrderComment = typeof orderComments.$inferSelect;
 
+// Update the order schema section
 export const insertOrderSchema = createInsertSchema(orders)
   .omit({
     id: true,
@@ -140,18 +141,43 @@ export const insertOrderSchema = createInsertSchema(orders)
     weWriteContent: z.boolean().optional(),
   });
 
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type Order = typeof orders.$inferSelect;
+
+// Add the status type constants
+export const GUEST_POST_STATUSES = [
+  "Title Approval Pending",
+  "Title Approved",
+  "Content Writing",
+  "Sent To Editor",
+  "Completed",
+  "Rejected",
+  "Cancelled"
+] as const;
+
+export const NICHE_EDIT_STATUSES = [
+  "In Progress",
+  "Sent",
+  "Rejected",
+  "Cancelled",
+  "Completed"
+] as const;
+
+export type GuestPostStatus = typeof GUEST_POST_STATUSES[number];
+export type NicheEditStatus = typeof NICHE_EDIT_STATUSES[number];
+export type OrderStatus = GuestPostStatus | NicheEditStatus;
+
 export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true });
 
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true });
 
 // Types
-export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
-export type Order = typeof orders.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+
 
 // Update the messages table definition
 export const messages = pgTable("messages", {

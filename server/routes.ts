@@ -134,8 +134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const messageData = insertMessageSchema.parse({
-        ...req.body,
+        content: req.body.content,
         senderId: req.user.id,
+        receiverId: receiverId,
       });
 
       const message = await storage.createMessage(messageData);

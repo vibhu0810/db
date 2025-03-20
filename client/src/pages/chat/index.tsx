@@ -52,10 +52,10 @@ export default function ChatPage() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async (messageText: string) => {
       if (!selectedUserId) throw new Error("No recipient selected");
       const res = await apiRequest("POST", "/api/messages", {
-        message: content,
+        content: messageText,
         receiverId: selectedUserId,
       });
       return res.json();
@@ -169,7 +169,7 @@ export default function ChatPage() {
                           )}
                         >
                           <p className="whitespace-pre-wrap break-words">
-                            {message.message}
+                            {message.content}
                           </p>
                           <div
                             className={cn(

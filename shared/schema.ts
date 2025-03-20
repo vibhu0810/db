@@ -153,23 +153,25 @@ export type Order = typeof orders.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 
+// Update the messages table definition
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   senderId: integer("sender_id").notNull(),
   receiverId: integer("receiver_id").notNull(),
-  content: text("content"),
+  content: text("content").notNull(), // This is the message content
   attachmentUrl: text("attachment_url"),
   attachmentType: text("attachment_type"), // 'image', 'video', 'document'
   read: boolean("read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Create insert schema for messages
+// Update insert schema for messages
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   createdAt: true,
+  read: true,
 });
 
-// Types
+// Types remain the same
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;

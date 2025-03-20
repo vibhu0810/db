@@ -286,11 +286,11 @@ export default function Orders() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const { toast } = useToast();
   const [columnWidths, setColumnWidths] = useState({
-    sourceUrl: 200,
-    targetUrl: 200,
-    anchorText: 150,
-    textEdit: 200,
-    status: 200,
+    sourceUrl: 250,
+    targetUrl: 250,
+    anchorText: 180,
+    textEdit: 250,
+    status: 180,
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -531,7 +531,7 @@ export default function Orders() {
     <Button
       variant="ghost"
       onClick={() => handleSort(field)}
-      className="h-8 flex items-center gap-1 hover:bg-transparent"
+      className="h-8 flex items-center gap-1 hover:bg-transparent px-0"
     >
       {children}
       {sortField === field && (
@@ -926,11 +926,9 @@ export default function Orders() {
                       <SortableHeader field="status">Status</SortableHeader>
                     </TableHead>
                     <TableHead className="w-[120px]">
-                      <SortableHeader field="dateOrdered">Date Ordered</SortableHeader>
+                      <SortableHeader field="dateOrdered">Date</SortableHeader>
                     </TableHead>
-                    <TableHead className="min-w-[200px] max-w-[300px]">
-                      Text Edit/Article
-                    </TableHead>
+                    <TableHead className="min-w-[200px] max-w-[300px]">Text Edit/Article</TableHead>
                     <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
                 </TableHeader>

@@ -13,15 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DateRange } from "react-day-picker";
-import { addDays, format } from "date-fns";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface UserWithStats {
@@ -43,10 +34,6 @@ interface UserWithStats {
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedUsers, setExpandedUsers] = useState<number[]>([]);
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -30),
-    to: new Date(),
-  });
   const [sortField, setSortField] = useState<string>("orders.total");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
@@ -109,7 +96,7 @@ export default function UsersPage() {
     );
   }
 
-  const SortButton = ({ field, children }: { field: string, children: React.ReactNode }) => (
+  const SortButton = ({ field, children }: { field: string; children: React.ReactNode }) => (
     <Button
       variant="ghost"
       onClick={() => handleSort(field)}
@@ -131,41 +118,6 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Users</h2>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "justify-start text-left font-normal",
-                !date && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {date?.from ? (
-                date.to ? (
-                  <>
-                    {format(date.from, "LLL dd, y")} -{" "}
-                    {format(date.to, "LLL dd, y")}
-                  </>
-                ) : (
-                  format(date.from, "LLL dd, y")
-                )
-              ) : (
-                <span>Pick a date range</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar
-              initialFocus
-              mode="range"
-              defaultMonth={date?.from}
-              selected={date}
-              onSelect={setDate}
-              numberOfMonths={2}
-            />
-          </PopoverContent>
-        </Popover>
       </div>
 
       <div className="flex gap-4">
@@ -193,7 +145,7 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.filter(u => u.orders.total > 0).length}
+              {users.filter((u) => u.orders.total > 0).length}
             </div>
           </CardContent>
         </Card>
@@ -254,7 +206,7 @@ export default function UsersPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.map((user) => (
-                    <div key={user.id}>
+                    <React.Fragment key={user.id}>
                       <TableRow className="hover:bg-muted/50 cursor-pointer">
                         <TableCell className="w-[50px]">
                           <Button
@@ -359,7 +311,7 @@ export default function UsersPage() {
                           </TableCell>
                         </TableRow>
                       )}
-                    </div>
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>

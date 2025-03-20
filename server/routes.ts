@@ -4,10 +4,10 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSEOJoke } from "./openai";
 import { insertMessageSchema, insertDomainSchema } from "@shared/schema";
-import { 
-  sendOrderNotificationEmail, 
-  sendCommentNotificationEmail, 
-  sendStatusUpdateEmail 
+import {
+  sendOrderNotificationEmail,
+  sendCommentNotificationEmail,
+  sendStatusUpdateEmail
 } from "./email";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -20,8 +20,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let users = await storage.getUsers();
 
-      console.log("All users before filtering:", 
-        users.map(u => ({id: u.id, username: u.username, is_admin: u.is_admin})));
+      console.log("All users before filtering:",
+        users.map(u => ({ id: u.id, username: u.username, is_admin: u.is_admin })));
 
       // Filter users based on role
       if (req.user.is_admin) {
@@ -32,8 +32,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         users = users.filter(u => u.is_admin);
       }
 
-      console.log("Filtered users for", req.user.is_admin ? "admin" : "user", ":", 
-        users.map(u => ({id: u.id, username: u.username, is_admin: u.is_admin})));
+      console.log("Filtered users for", req.user.is_admin ? "admin" : "user", ":",
+        users.map(u => ({ id: u.id, username: u.username, is_admin: u.is_admin })));
 
       const filteredUsers = users.map(user => ({
         id: user.id,
@@ -412,7 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      // Regular users can only cancel their own Niche Edit orders in "In Progress" status
+      // Only admins can update order status (except for cancellation)
       if (!req.user.is_admin) {
         if (order.userId !== req.user.id) {
           return res.status(403).json({ error: "Unauthorized: You can only modify your own orders" });
@@ -490,6 +490,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating order status:", error);
       res.status(500).json({ error: "Failed to update order status" });
+    }
+  });
+
+  // Delete order (admin only)
+  app.delete("/api/orders/:orderId", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+
+      // First delete associated comments
+      await storage.deleteOrderComments(orderId);
+
+      // Then delete notifications related to this order
+      await storage.deleteOrderNotifications(orderId);
+
+      // Finally delete the order
+      await storage.deleteOrder(orderId);
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      res.status(500).json({ error: "Failed to delete order" });
     }
   });
 

@@ -125,19 +125,74 @@ export default function Dashboard() {
             }
           </p>
         </div>
-        {!isAdmin && user?.companyLogo && (
-          <div className="hidden md:block">
-            <img 
-              src={user.companyLogo} 
-              alt={user.companyName || 'Company logo'} 
-              className="h-16 object-contain" 
-              onError={(e) => {
-                // Hide the image if it fails to load
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
+        <div className="hidden md:block">
+          <div className="animated-character-container h-24 w-24 relative">
+            {/* Animated Character - SVG with animation */}
+            <svg 
+              viewBox="0 0 300 300" 
+              className="w-full h-full"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Character Body */}
+              <circle 
+                cx="150" 
+                cy="150" 
+                r="80" 
+                fill="hsl(var(--primary))" 
+                className="animate-pulse"
+                style={{ animationDuration: '3s' }}
+              />
+              
+              {/* Character Eyes */}
+              <circle 
+                cx="125" 
+                cy="130" 
+                r="15" 
+                fill="white" 
+                className="animate-pulse"
+                style={{ animationDuration: '1.5s' }}
+              />
+              <circle 
+                cx="175" 
+                cy="130" 
+                r="15" 
+                fill="white" 
+                className="animate-pulse"
+                style={{ animationDuration: '1.5s' }}
+              />
+              <circle cx="125" cy="130" r="7" fill="black" />
+              <circle cx="175" cy="130" r="7" fill="black" />
+              
+              {/* Character Mouth - Smiling */}
+              <path 
+                d="M110,170 Q150,210 190,170" 
+                stroke="white" 
+                strokeWidth="5" 
+                fill="transparent"
+                className="animate-bounce"
+                style={{ animationDuration: '2s' }}
+              />
+              
+              {/* Character Arms */}
+              <path 
+                d="M70,150 Q50,180 70,210" 
+                stroke="hsl(var(--primary-foreground))" 
+                strokeWidth="10" 
+                fill="transparent"
+                className="animate-pulse origin-top"
+                style={{ animationDuration: '4s' }}
+              />
+              <path 
+                d="M230,150 Q250,180 230,210" 
+                stroke="hsl(var(--primary-foreground))" 
+                strokeWidth="10" 
+                fill="transparent"
+                className="animate-pulse origin-top"
+                style={{ animationDuration: '4s', animationDelay: '1s' }}
+              />
+            </svg>
           </div>
-        )}
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

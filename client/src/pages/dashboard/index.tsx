@@ -136,9 +136,9 @@ export default function Dashboard() {
           <Link href="/domains">
             <div className="cursor-pointer hover:opacity-80 transition-opacity" title="Start a new link building campaign">
               <img 
-                src="/images/link-building-icon.jpg" 
+                src="/images/link-building-icon.svg" 
                 alt="Link Building" 
-                className="h-16 w-16 object-contain rounded-full" 
+                className="h-16 w-16 object-contain drop-shadow-md hover:drop-shadow-lg transition-all" 
               />
             </div>
           </Link>

@@ -116,7 +116,45 @@ export default function Dashboard() {
           <h2 className="text-3xl font-bold tracking-tight">
             {welcomeLoading || !welcomeData?.message
               ? `Welcome back, ${user?.firstName || user?.username}!`
-              : welcomeData.message}
+              : (
+                <span className="inline-flex items-center animate-fadeIn">
+                  {/* First part with floating animation */}
+                  <span className="inline-block animate-float" style={{ animationDelay: '0.1s' }}>
+                    {welcomeData.message.split(" to ")[0]}
+                  </span>
+                  
+                  {/* Static "to" part */}
+                  <span className="mx-2">to</span>
+                  
+                  {/* Animated SaaSxLinks with special effects */}
+                  <span className="animated-text relative inline-flex items-center overflow-hidden">
+                    {/* Each letter with staggered animations */}
+                    {'SaaSxLinks!'.split('').map((letter, index) => (
+                      <span 
+                        key={index} 
+                        className="text-primary inline-block animate-scaleUp"
+                        style={{ 
+                          animationDelay: `${index * 0.05}s`,
+                          animationDuration: '0.5s'
+                        }}
+                      >
+                        {letter}
+                      </span>
+                    ))}
+                    
+                    {/* Ninja emoji with bounce animation */}
+                    <span className="inline-block animate-bounce ml-1" style={{ animationDuration: '1s' }}>
+                      🥷
+                    </span>
+                    
+                    {/* Shining effect overlay */}
+                    <span 
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent animate-shine"
+                      style={{ animationDuration: '2.5s' }}
+                    />
+                  </span>
+                </span>
+              )}
           </h2>
           <p className="text-muted-foreground mt-2">
             {isAdmin 

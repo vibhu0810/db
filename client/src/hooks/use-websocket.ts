@@ -4,10 +4,14 @@ import { useToast } from './use-toast';
 
 interface WebSocketMessage {
   type: string;
-  message: any;
+  payload?: any;
+  message?: any;
 }
 
-export function useWebSocket() {
+export function useWebSocket(options?: {
+  onOrderUpdate?: (orderId: number, status: string) => void;
+  onNewComment?: (orderId: number, comment: any) => void;
+}) {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -16,12 +20,24 @@ export function useWebSocket() {
     if (!user) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const wsUrl = `${protocol}//${window.location.host}/api/ws`;
     
+    console.log('Connecting to WebSocket at:', wsUrl);
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       console.log('WebSocket connected');
+      // Send authentication message
+      if (user) {
+        ws.send(JSON.stringify({
+          type: 'auth',
+          payload: {
+            userId: user.id,
+            isAdmin: user.is_admin
+          }
+        }));
+        console.log('Sent WebSocket authentication for user:', user.id);
+      }
     };
 
     ws.onclose = () => {
@@ -37,12 +53,35 @@ export function useWebSocket() {
     ws.onmessage = (event) => {
       try {
         const data: WebSocketMessage = JSON.parse(event.data);
+        console.log('Received WebSocket message:', data);
         
         if (data.type === 'new_message') {
           toast({
             title: 'New Message',
             description: `New message from ${data.message.senderName}`,
           });
+        } 
+        else if (data.type === 'order_status_update') {
+          toast({
+            title: 'Order Status Updated',
+            description: `Order #${data.payload?.orderId} status updated to ${data.payload?.status}`,
+          });
+          
+          // Call the onOrderUpdate callback if provided
+          if (options?.onOrderUpdate && data.payload) {
+            options.onOrderUpdate(data.payload.orderId, data.payload.status);
+          }
+        }
+        else if (data.type === 'new_comment') {
+          toast({
+            title: 'New Comment',
+            description: `New comment on Order #${data.payload?.orderId}`,
+          });
+          
+          // Call the onNewComment callback if provided
+          if (options?.onNewComment && data.payload) {
+            options.onNewComment(data.payload.orderId, data.payload.comment);
+          }
         }
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
@@ -54,7 +93,7 @@ export function useWebSocket() {
     return () => {
       ws.close();
     };
-  }, [user, toast]);
+  }, [user, toast, options]);
 
   useEffect(() => {
     const cleanup = connect();

@@ -12,6 +12,7 @@ import {
   sendChatNotificationEmail
 } from "./email";
 import { uploadthingHandler } from "./uploadthingHandler";
+import { notifyOrderStatusUpdate, notifyNewComment } from "./websocket";
 
 const typingUsers = new Map<number, { isTyping: boolean; timestamp: number }>();
 const onlineUsers = new Map<number, { lastActive: number }>();
@@ -656,13 +657,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: new Date(),
       });
 
-      // TODO: Implement WebSocket notification for real-time updates
-      // When WebSocket is fixed, this can be uncommented
-      // try {
-      //   notifyOrderStatusUpdate(orderId, status, order.userId);
-      // } catch (error) {
-      //   console.error("Failed to send WebSocket notification:", error);
-      // }
+      // Send real-time notification via WebSocket
+      try {
+        notifyOrderStatusUpdate(orderId, status, order.userId);
+      } catch (error) {
+        console.error("Failed to send WebSocket notification:", error);
+        // Continue even if notification fails
+      }
 
       res.json(updatedOrder);
     } catch (error) {

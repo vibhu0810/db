@@ -28,9 +28,8 @@ app.use((req, res, next) => {
     const server = await registerRoutes(app);
 
     // Setup WebSocket server for real-time updates
-    // TODO: Fix WebSocket implementation
-    // setupWebsocketServer(server);
-    log("WebSocket initialization skipped for now");
+    setupWebsocketServer(server);
+    log("WebSocket server initialized");
 
     // Start domain metrics update service
     try {

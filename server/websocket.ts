@@ -1,5 +1,6 @@
 import { Server } from 'http';
 import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import { User } from '@shared/schema';
 
 // Type definitions
@@ -18,13 +19,15 @@ type ClientConnection = {
 const clients = new Map<WebSocket, ClientConnection>();
 
 export function setupWebsocketServer(server: Server) {
-  // Create WebSocket server using the correct export
-  const WebSocketServer = WebSocket.Server;
-  const wss = new WebSocketServer({ server });
+  // Create WebSocket server with a specific path to avoid conflicts with Vite
+  const wss = new WebSocketServer({ 
+    server, 
+    path: '/api/ws'  // Use a specific path for our WebSocket server
+  });
   
   // Connection handler
   wss.on('connection', (ws: WebSocket) => {
-    console.log('WebSocket connection established');
+    console.log('API WebSocket connection established');
 
     // Setup ping interval for keepalive
     const pingInterval = setInterval(() => {

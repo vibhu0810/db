@@ -232,6 +232,24 @@ export default function NewOrder() {
                     {isGuestPost && (
                       <span className="block mt-1">Note: Guest post title must be approved before proceeding with content creation.</span>
                     )}
+                    {domain.guidelines && (
+                      <div className="flex items-center mt-1">
+                        <span className="mr-1">Guidelines:</span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="inline-flex items-center cursor-help">
+                                <span className="truncate max-w-[250px]">{domain.guidelines}</span>
+                                <AlertCircle className="h-4 w-4 ml-1 text-amber-500" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p>{domain.guidelines}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    )}
                   </span>
                 </div>
               )}

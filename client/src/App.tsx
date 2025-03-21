@@ -12,6 +12,7 @@ import ProfilePage from "./pages/profile";
 import UsersPage from "./pages/users";
 import ChatPage from "./pages/chat";
 import ReportsPage from "./pages/reports";
+import KanbanPage from "./pages/kanban";
 
 function App() {
   return (
@@ -71,6 +72,13 @@ function App() {
           <ProtectedRoute>
             <DashboardShell>
               <ReportsPage />
+            </DashboardShell>
+          </ProtectedRoute>
+        </Route>
+        <Route path="/kanban">
+          <ProtectedRoute>
+            <DashboardShell>
+              <KanbanPage />
             </DashboardShell>
           </ProtectedRoute>
         </Route>

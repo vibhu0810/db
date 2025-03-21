@@ -1,28 +1,27 @@
 import { Sidebar } from "./sidebar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
-import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { useState } from "react";
 import { NotificationsDropdown } from "@/components/ui/notifications";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { user, logoutMutation } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div className="flex h-screen bg-background">
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}>
-        <Sidebar />
-      </div>
+      {/* Fixed compact sidebar always visible */}
+      <Sidebar />
+      
+      {/* Main content area */}
       <div className="flex-1 flex flex-col">
         <header className="h-14 border-b flex items-center justify-between px-6">
+          {/* Left side of header - now empty where the toggle button was */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <Menu className="h-5 w-5" />
-            </Button>
+            {/* Empty space where sidebar toggle was */}
           </div>
+          
+          {/* Right side of header with user info */}
           <div className="flex items-center gap-4">
             <NotificationsDropdown />
             <Separator orientation="vertical" className="h-6" />
@@ -32,7 +31,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   <img
                     src={user.companyLogo}
                     alt={`${user.companyName || user.username} logo`}
-                    className="h-8 w-8 object-contain"
+                    className="h-8 w-8 object-contain rounded"
                   />
                 )}
                 <Button variant="ghost" className="text-sm">
@@ -49,6 +48,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
+        
+        {/* Main content with more padding on left to account for compact sidebar */}
         <main className="flex-1 overflow-auto p-6">
           {children}
         </main>

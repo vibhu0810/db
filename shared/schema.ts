@@ -30,6 +30,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   billingAddress: true,
   bio: true,
   profilePicture: true,
+  companyLogo: true,
   is_admin: true,
 });
 

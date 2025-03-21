@@ -125,19 +125,17 @@ export default function Dashboard() {
             }
           </p>
         </div>
-        {!isAdmin && user?.companyLogo && (
-          <div className="hidden md:block">
-            <img 
-              src={user.companyLogo} 
-              alt={user.companyName || 'Company logo'} 
-              className="h-16 object-contain" 
-              onError={(e) => {
-                // Hide the image if it fails to load
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          </div>
-        )}
+        <div className="hidden md:block">
+          <Link href="/domains">
+            <div className="cursor-pointer hover:opacity-80 transition-opacity" title="Start a new link building campaign">
+              <img 
+                src="/images/link-building-icon.jpg" 
+                alt="Link Building" 
+                className="h-16 w-16 object-contain rounded-full" 
+              />
+            </div>
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

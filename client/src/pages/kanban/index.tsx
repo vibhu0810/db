@@ -120,7 +120,7 @@ export default function KanbanPage() {
 
   const updateTaskMutation = useMutation({
     mutationFn: async (task: Task) => {
-      return apiRequest<Task>({
+      return apiRequest({
         url: `/api/tasks/${task.id}`,
         method: 'PATCH',
         data: task

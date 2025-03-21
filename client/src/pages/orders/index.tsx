@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useWebSocket } from "@/hooks/use-websocket";
 import {
   Table,
   TableBody,
@@ -303,6 +304,25 @@ export default function Orders() {
   const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
+  
+  // Setup WebSocket for real-time updates
+  useWebSocket({
+    onOrderUpdate: (orderId, status) => {
+      // When an order status changes, refresh the orders list
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      // If we're viewing comments for this order, highlight it briefly
+      if (orderId === selectedOrderId) {
+        setHighlightedOrderId(orderId);
+        setTimeout(() => setHighlightedOrderId(null), 2000);
+      }
+    },
+    onNewComment: (orderId) => {
+      // If we're viewing comments for this order, refresh them
+      if (orderId === selectedOrderId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrderId, 'comments'] });
+      }
+    }
+  });
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {

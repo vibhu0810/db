@@ -3,18 +3,35 @@ import { useParams, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Loader2, Copy, MessageSquare, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
   const [newComment, setNewComment] = useState("");
+  
+  // Setup WebSocket to listen for real-time updates
+  useWebSocket({
+    onOrderUpdate: (orderId: number, status: string) => {
+      // Only update if this is the order we're viewing
+      if (orderId === parseInt(id as string)) {
+        queryClient.invalidateQueries({ queryKey: ['/api/orders', id] });
+      }
+    },
+    onNewComment: (orderId: number) => {
+      // Only update if this is the order we're viewing
+      if (orderId === parseInt(id as string)) {
+        queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
+      }
+    }
+  });
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['/api/orders', id],

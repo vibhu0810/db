@@ -126,70 +126,123 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="hidden md:block">
-          <div className="animated-character-container h-24 w-24 relative">
-            {/* Animated Character - SVG with animation */}
+          <div className="animated-character-container h-32 w-40 relative">
+            {/* Waving Guy Character SVG */}
             <svg 
-              viewBox="0 0 300 300" 
+              viewBox="0 0 400 400" 
               className="w-full h-full"
               xmlns="http://www.w3.org/2000/svg"
             >
+              {/* Speech Bubble */}
+              <g className="speech-bubble">
+                <ellipse 
+                  cx="320" 
+                  cy="120" 
+                  rx="60" 
+                  ry="35" 
+                  fill="white" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth="3"
+                />
+                <path 
+                  d="M270,135 L250,165 L280,130" 
+                  fill="white" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth="3"
+                />
+                <text 
+                  x="320" 
+                  y="128" 
+                  fontFamily="Arial" 
+                  fontSize="24" 
+                  fontWeight="bold"
+                  fill="hsl(var(--primary))" 
+                  textAnchor="middle"
+                >Hi!</text>
+              </g>
+
+              {/* Character Head */}
+              <circle 
+                cx="180" 
+                cy="140" 
+                r="60" 
+                fill="hsl(var(--muted-foreground)/0.3)" 
+              />
+              
+              {/* Character Face */}
+              <circle cx="160" cy="130" r="8" fill="black" /> {/* Left eye */}
+              <circle cx="200" cy="130" r="8" fill="black" /> {/* Right eye */}
+              <path 
+                d="M160,160 Q180,180 200,160" 
+                stroke="black" 
+                strokeWidth="3" 
+                fill="transparent"
+              /> {/* Smile */}
+              
               {/* Character Body */}
-              <circle 
-                cx="150" 
-                cy="150" 
-                r="80" 
+              <rect 
+                x="140" 
+                y="200" 
+                width="80" 
+                height="100" 
+                rx="20" 
                 fill="hsl(var(--primary))" 
-                className="animate-pulse"
-                style={{ animationDuration: '3s' }}
               />
               
-              {/* Character Eyes */}
-              <circle 
-                cx="125" 
-                cy="130" 
-                r="15" 
-                fill="white" 
-                className="animate-pulse"
-                style={{ animationDuration: '1.5s' }}
-              />
-              <circle 
-                cx="175" 
-                cy="130" 
-                r="15" 
-                fill="white" 
-                className="animate-pulse"
-                style={{ animationDuration: '1.5s' }}
-              />
-              <circle cx="125" cy="130" r="7" fill="black" />
-              <circle cx="175" cy="130" r="7" fill="black" />
-              
-              {/* Character Mouth - Smiling */}
-              <path 
-                d="M110,170 Q150,210 190,170" 
-                stroke="white" 
-                strokeWidth="5" 
-                fill="transparent"
-                className="animate-bounce"
-                style={{ animationDuration: '2s' }}
+              {/* Character Neck */}
+              <rect 
+                x="170" 
+                y="180" 
+                width="20" 
+                height="30" 
+                fill="hsl(var(--muted-foreground)/0.3)" 
               />
               
-              {/* Character Arms */}
+              {/* Left Arm (static) */}
               <path 
-                d="M70,150 Q50,180 70,210" 
-                stroke="hsl(var(--primary-foreground))" 
-                strokeWidth="10" 
+                d="M140,220 L80,240" 
+                stroke="hsl(var(--primary))" 
+                strokeWidth="20" 
+                strokeLinecap="round"
                 fill="transparent"
-                className="animate-pulse origin-top"
-                style={{ animationDuration: '4s' }}
               />
+              
+              {/* Right Arm (waving) */}
               <path 
-                d="M230,150 Q250,180 230,210" 
-                stroke="hsl(var(--primary-foreground))" 
-                strokeWidth="10" 
+                d="M220,220 L280,180" 
+                stroke="hsl(var(--primary))" 
+                strokeWidth="20" 
+                strokeLinecap="round"
                 fill="transparent"
-                className="animate-pulse origin-top"
-                style={{ animationDuration: '4s', animationDelay: '1s' }}
+                className="origin-[220px_220px] animate-[wave_1.5s_ease-in-out_infinite]"
               />
+              <style>
+                {`
+                @keyframes wave {
+                  0% { transform: rotate(0deg); }
+                  25% { transform: rotate(-20deg); }
+                  50% { transform: rotate(0deg); }
+                  75% { transform: rotate(-20deg); }
+                  100% { transform: rotate(0deg); }
+                }
+                `}
+              </style>
+              
+              {/* Legs */}
+              <rect 
+                x="150" 
+                y="300" 
+                width="20" 
+                height="60" 
+                fill="hsl(var(--muted))" 
+              /> {/* Left leg */}
+              <rect 
+                x="190" 
+                y="300" 
+                width="20" 
+                height="60" 
+                fill="hsl(var(--muted))" 
+              /> {/* Right leg */}
             </svg>
           </div>
         </div>

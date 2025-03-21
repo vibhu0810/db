@@ -89,7 +89,8 @@ export default function KanbanPage() {
       return apiRequest({
         url: '/api/tasks',
         method: 'POST',
-        data: task
+        data: task,
+        on401: 'throw'
       });
     },
     onSuccess: () => {
@@ -121,7 +122,8 @@ export default function KanbanPage() {
       return apiRequest({
         url: `/api/tasks/${task.id}`,
         method: 'PATCH',
-        data: task
+        data: task,
+        on401: 'throw'
       });
     },
     onSuccess: () => {
@@ -146,7 +148,8 @@ export default function KanbanPage() {
     mutationFn: async (taskId: string) => {
       return apiRequest({
         url: `/api/tasks/${taskId}`,
-        method: 'DELETE'
+        method: 'DELETE',
+        on401: 'throw'
       });
     },
     onSuccess: () => {

@@ -19,7 +19,7 @@ const userNavigation = [
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Reports", href: "/reports", icon: BarChart },
-  { name: "Kanban Tasks", href: "/kanban", icon: Kanban },
+  { name: "Kanban Board", href: "/kanban", icon: Kanban },
   { name: "Invoice", href: "/invoice", icon: FileText },
   { name: "Chat with Support", href: "/chat", icon: MessageSquare },
   { name: "Profile", href: "/profile", icon: User },
@@ -30,7 +30,7 @@ const adminNavigation = [
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Reports", href: "/reports", icon: BarChart },
-  { name: "Kanban Tasks", href: "/kanban", icon: Kanban },
+  { name: "Kanban Board", href: "/kanban", icon: Kanban },
   { name: "Users", href: "/users", icon: Users },
   { name: "Chat Support", href: "/chat", icon: MessageSquare },
 ];

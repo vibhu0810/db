@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -16,13 +17,30 @@ export default function OrderDetailsPage() {
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
   const [newComment, setNewComment] = useState("");
+  const [statusHighlight, setStatusHighlight] = useState(false);
+  const [previousStatus, setPreviousStatus] = useState<string | null>(null);
   
   // Setup WebSocket to listen for real-time updates
   useWebSocket({
     onOrderUpdate: (orderId: number, status: string) => {
       // Only update if this is the order we're viewing
       if (orderId === parseInt(id as string)) {
+        // Save the current status before the update
+        if (order) {
+          setPreviousStatus(order.status);
+        }
+        
+        // Update the order data
         queryClient.invalidateQueries({ queryKey: ['/api/orders', id] });
+        
+        // Activate highlight effect
+        setStatusHighlight(true);
+        
+        // Notify about status change
+        toast({
+          title: "Order Status Updated",
+          description: `Order status updated to ${status}`,
+        });
       }
     },
     onNewComment: (orderId: number) => {
@@ -74,6 +92,19 @@ export default function OrderDetailsPage() {
     },
   });
 
+  // Effect to reset highlight after animation
+  useEffect(() => {
+    if (statusHighlight) {
+      // Reset highlight after animation completes (3 seconds)
+      const timer = setTimeout(() => {
+        setStatusHighlight(false);
+        setPreviousStatus(null);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [statusHighlight]);
+  
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -210,7 +241,19 @@ export default function OrderDetailsPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
-                <div className="mt-1">{order.status}</div>
+                <div className="mt-1 font-medium">
+                  <span className={cn(
+                    "inline-flex items-center px-2.5 py-0.5 rounded-full text-sm",
+                    statusHighlight
+                      ? "bg-primary/20 text-primary animate-pulse shadow-lg"
+                      : "bg-primary/10 text-primary",
+                  )}>
+                    {order.status}
+                    {previousStatus && statusHighlight && (
+                      <span className="ml-2 text-xs text-muted-foreground">(was: {previousStatus})</span>
+                    )}
+                  </span>
+                </div>
               </div>
             </div>
 

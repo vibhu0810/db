@@ -984,7 +984,7 @@ export default function Orders() {
                       key={order.id}
                       id={`order-${order.id}`}
                       className={cn(
-                        highlightedOrderId === order.id && "bg-muted transition-colors duration-500"
+                        highlightedOrderId === order.id && "bg-primary/10 transition-colors duration-500 animate-pulse"
                       )}
                     >
                       {isAdmin && (

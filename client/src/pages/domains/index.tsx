@@ -24,6 +24,12 @@ import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -307,7 +313,20 @@ export default function DomainsPage() {
                 <TableCell>{getGuestPostTAT(domain)}</TableCell>
                 <TableCell>{getNicheEditTAT(domain)}</TableCell>
                 <TableCell className="max-w-[200px]">
-                  <span className="truncate block">{domain.guidelines}</span>
+                  {domain.guidelines ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="truncate block cursor-help">{domain.guidelines}</span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>{domain.guidelines}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <span className="text-muted-foreground italic">No guidelines</span>
+                  )}
                 </TableCell>
                 {!isAdmin && (
                   <TableCell>

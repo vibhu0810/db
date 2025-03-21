@@ -656,6 +656,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: new Date(),
       });
 
+      // TODO: Implement WebSocket notification for real-time updates
+      // When WebSocket is fixed, this can be uncommented
+      // try {
+      //   notifyOrderStatusUpdate(orderId, status, order.userId);
+      // } catch (error) {
+      //   console.error("Failed to send WebSocket notification:", error);
+      // }
+
       res.json(updatedOrder);
     } catch (error) {
       console.error("Error updating order status:", error);

@@ -90,31 +90,10 @@ export default {
             animationTimingFunction: "cubic-bezier(0, 0, 0.2, 1)",
           },
         },
-        shine: {
-          "0%": { left: "-100%", opacity: "0" },
-          "50%": { opacity: "0.5" },
-          "100%": { left: "100%", opacity: "0" },
-        },
-        float: {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-10px)" },
-        },
-        fadeIn: {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
-        },
-        scaleUp: {
-          "0%": { transform: "scale(0.8)", opacity: "0" },
-          "100%": { transform: "scale(1)", opacity: "1" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "shine": "shine 3s ease-in-out infinite",
-        "float": "float 3s ease-in-out infinite",
-        "fadeIn": "fadeIn 0.5s ease-in-out",
-        "scaleUp": "scaleUp 0.5s ease-in-out",
       },
     },
   },

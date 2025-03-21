@@ -116,45 +116,7 @@ export default function Dashboard() {
           <h2 className="text-3xl font-bold tracking-tight">
             {welcomeLoading || !welcomeData?.message
               ? `Welcome back, ${user?.firstName || user?.username}!`
-              : (
-                <span className="inline-flex items-center animate-fadeIn">
-                  {/* First part with floating animation */}
-                  <span className="inline-block animate-float" style={{ animationDelay: '0.1s' }}>
-                    {welcomeData.message.split(" to ")[0]}
-                  </span>
-                  
-                  {/* Static "to" part */}
-                  <span className="mx-2">to</span>
-                  
-                  {/* Animated SaaSxLinks with special effects */}
-                  <span className="animated-text relative inline-flex items-center overflow-hidden">
-                    {/* Each letter with staggered animations */}
-                    {'SaaSxLinks!'.split('').map((letter, index) => (
-                      <span 
-                        key={index} 
-                        className="text-primary inline-block animate-scaleUp"
-                        style={{ 
-                          animationDelay: `${index * 0.05}s`,
-                          animationDuration: '0.5s'
-                        }}
-                      >
-                        {letter}
-                      </span>
-                    ))}
-                    
-                    {/* Ninja emoji with bounce animation */}
-                    <span className="inline-block animate-bounce ml-1" style={{ animationDuration: '1s' }}>
-                      🥷
-                    </span>
-                    
-                    {/* Shining effect overlay */}
-                    <span 
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent animate-shine"
-                      style={{ animationDuration: '2.5s' }}
-                    />
-                  </span>
-                </span>
-              )}
+              : welcomeData.message}
           </h2>
           <p className="text-muted-foreground mt-2">
             {isAdmin 
@@ -163,127 +125,19 @@ export default function Dashboard() {
             }
           </p>
         </div>
-        <div className="hidden md:block">
-          <div className="animated-character-container h-32 w-40 relative">
-            {/* Waving Guy Character SVG */}
-            <svg 
-              viewBox="0 0 400 400" 
-              className="w-full h-full"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* Speech Bubble */}
-              <g className="speech-bubble">
-                <ellipse 
-                  cx="320" 
-                  cy="120" 
-                  rx="60" 
-                  ry="35" 
-                  fill="white" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth="3"
-                />
-                <path 
-                  d="M270,135 L250,165 L280,130" 
-                  fill="white" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth="3"
-                />
-                <text 
-                  x="320" 
-                  y="128" 
-                  fontFamily="Arial" 
-                  fontSize="24" 
-                  fontWeight="bold"
-                  fill="hsl(var(--primary))" 
-                  textAnchor="middle"
-                >Hi!</text>
-              </g>
-
-              {/* Character Head */}
-              <circle 
-                cx="180" 
-                cy="140" 
-                r="60" 
-                fill="hsl(var(--muted-foreground)/0.3)" 
-              />
-              
-              {/* Character Face */}
-              <circle cx="160" cy="130" r="8" fill="black" /> {/* Left eye */}
-              <circle cx="200" cy="130" r="8" fill="black" /> {/* Right eye */}
-              <path 
-                d="M160,160 Q180,180 200,160" 
-                stroke="black" 
-                strokeWidth="3" 
-                fill="transparent"
-              /> {/* Smile */}
-              
-              {/* Character Body */}
-              <rect 
-                x="140" 
-                y="200" 
-                width="80" 
-                height="100" 
-                rx="20" 
-                fill="hsl(var(--primary))" 
-              />
-              
-              {/* Character Neck */}
-              <rect 
-                x="170" 
-                y="180" 
-                width="20" 
-                height="30" 
-                fill="hsl(var(--muted-foreground)/0.3)" 
-              />
-              
-              {/* Left Arm (static) */}
-              <path 
-                d="M140,220 L80,240" 
-                stroke="hsl(var(--primary))" 
-                strokeWidth="20" 
-                strokeLinecap="round"
-                fill="transparent"
-              />
-              
-              {/* Right Arm (waving) */}
-              <path 
-                d="M220,220 L280,180" 
-                stroke="hsl(var(--primary))" 
-                strokeWidth="20" 
-                strokeLinecap="round"
-                fill="transparent"
-                className="origin-[220px_220px] animate-[wave_1.5s_ease-in-out_infinite]"
-              />
-              <style>
-                {`
-                @keyframes wave {
-                  0% { transform: rotate(0deg); }
-                  25% { transform: rotate(-20deg); }
-                  50% { transform: rotate(0deg); }
-                  75% { transform: rotate(-20deg); }
-                  100% { transform: rotate(0deg); }
-                }
-                `}
-              </style>
-              
-              {/* Legs */}
-              <rect 
-                x="150" 
-                y="300" 
-                width="20" 
-                height="60" 
-                fill="hsl(var(--muted))" 
-              /> {/* Left leg */}
-              <rect 
-                x="190" 
-                y="300" 
-                width="20" 
-                height="60" 
-                fill="hsl(var(--muted))" 
-              /> {/* Right leg */}
-            </svg>
+        {!isAdmin && user?.companyLogo && (
+          <div className="hidden md:block">
+            <img 
+              src={user.companyLogo} 
+              alt={user.companyName || 'Company logo'} 
+              className="h-16 object-contain" 
+              onError={(e) => {
+                // Hide the image if it fails to load
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
           </div>
-        </div>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

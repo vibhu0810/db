@@ -114,9 +114,16 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
-            {welcomeLoading || !welcomeData?.message
-              ? `Welcome back, ${user?.firstName || user?.username}!`
-              : welcomeData.message}
+            {welcomeLoading || !welcomeData?.message ? (
+              `Welcome back, ${user?.firstName || user?.username}!`
+            ) : (
+              <span dangerouslySetInnerHTML={{
+                __html: welcomeData.message.replace(
+                  /<saasxlinks>(.*?)<\/saasxlinks>/g,
+                  '<span class="text-primary font-extrabold" style="background: linear-gradient(90deg, hsl(var(--primary)) 0%, #4a6cf7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">$1</span>'
+                )
+              }} />
+            )}
           </h2>
           <p className="text-muted-foreground mt-2">
             {isAdmin 

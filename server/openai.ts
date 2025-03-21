@@ -8,11 +8,11 @@ export async function generateWelcomeMessage(username: string, companyName?: str
     // Extract first name from username if it contains spaces
     const firstName = username.includes(' ') ? username.split(' ')[0] : username;
     
-    // Return fixed format message
-    return `Welcome ${firstName} to SaaS x Links! 🥷`;
+    // Return fixed format message with special formatting that will be interpreted on the frontend
+    return `Welcome ${firstName} to <saasxlinks>SaaS×Links!</saasxlinks> 🥷`;
   } catch (error) {
     console.error("Error generating welcome message:", error);
-    return "Welcome to SaaS x Links! 🥷";
+    return "Welcome to <saasxlinks>SaaS×Links!</saasxlinks> 🥷";
   }
 }
 

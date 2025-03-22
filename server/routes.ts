@@ -1013,33 +1013,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get a single invoice
-  app.get("/api/invoices/:id", async (req, res) => {
+  // Admin route to get all invoices
+  app.get("/api/invoices/all", async (req, res) => {
     try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      console.log("Accessing /api/invoices/all route, user:", req.user?.id);
+      console.log("User object:", req.user);
+      console.log("Session ID:", req.sessionID);
+      console.log("Session:", req.session);
       
-      const invoiceId = parseInt(req.params.id);
-      if (isNaN(invoiceId)) {
-        return res.status(400).json({ error: "Invalid invoice ID" });
-      }
-      const invoice = await storage.getInvoice(invoiceId);
-      
-      if (!invoice) {
-        return res.status(404).json({ error: "Invoice not found" });
-      }
-      
-      // Check if user is authorized to view this invoice
-      if (!req.user.is_admin && invoice.userId !== req.user.id) {
-        return res.status(403).json({ error: "Unauthorized: You don't have permission to view this invoice" });
+      // First check if user is authenticated
+      if (!req.user) {
+        console.log("No authenticated user found");
+        return res.status(401).json({ error: "Unauthorized" });
       }
       
-      res.json(invoice);
+      // Then check if they're an admin
+      if (!req.user.is_admin) {
+        console.log("User is not admin, access denied");
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      console.log("User is admin, proceeding with invoice fetching");
+      
+      try {
+        console.log("Fetching all invoices");
+        const invoices = await storage.getAllInvoices();
+        console.log("Invoices fetched successfully:", invoices.length);
+        
+        console.log("Fetching users");
+        const users = await storage.getUsers();
+        console.log("Users fetched successfully:", users.length);
+        
+        // Join invoices with user data
+        const invoicesWithUserDetails = invoices.map(invoice => {
+          const user = users.find(u => u.id === invoice.userId);
+          return {
+            ...invoice,
+            user: user ? {
+              username: user.username,
+              companyName: user.companyName,
+              email: user.email
+            } : null
+          };
+        });
+        
+        console.log("Successfully processed invoices with user details");
+        res.json(invoicesWithUserDetails);
+      } catch (innerError) {
+        console.error("Error in data processing:", innerError);
+        res.status(500).json({ error: "Failed to process invoice data" });
+      }
     } catch (error) {
-      console.error("Error fetching invoice:", error);
-      res.status(500).json({ error: "Failed to fetch invoice" });
+      console.error("Error fetching all invoices:", error);
+      res.status(500).json({ error: "Failed to fetch invoices" });
     }
   });
-
+  
   // Get completed orders that have not been invoiced (admin only)
   app.get("/api/orders/completed-not-invoiced", async (req, res) => {
     try {
@@ -1139,6 +1168,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching all invoices:", error);
       res.status(500).json({ error: "Failed to fetch invoices" });
+    }
+  });
+  
+  // Get a single invoice
+  app.get("/api/invoices/:id", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ error: "Invalid invoice ID" });
+      }
+      const invoice = await storage.getInvoice(invoiceId);
+      
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      
+      // Check if user is authorized to view this invoice
+      if (!req.user.is_admin && invoice.userId !== req.user.id) {
+        return res.status(403).json({ error: "Unauthorized: You don't have permission to view this invoice" });
+      }
+      
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).json({ error: "Failed to fetch invoice" });
     }
   });
 

@@ -326,6 +326,13 @@ export default function Orders() {
   // Track manual status updates with timestamps to know which ones were user-initiated
   const [recentStatusUpdates, setRecentStatusUpdates] = useState<Record<number, number>>({});
   const [isActionInProgress, setIsActionInProgress] = useState<boolean>(false);
+  
+  // Additional action tracking for specific operations
+  const [isAddingComment, setIsAddingComment] = useState<boolean>(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+  const [isDeletingOrder, setIsDeletingOrder] = useState<boolean>(false);
+  const [isCancellingOrder, setIsCancellingOrder] = useState<boolean>(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState<boolean>(false);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -1228,7 +1235,9 @@ export default function Orders() {
                           <Select
                             value={order.status}
                             onValueChange={(newStatus) => {
-                              if (!isActionInProgress) {
+                              if (!isActionInProgress && !isUpdatingStatus) {
+                                setIsUpdatingStatus(true);
+                                setIsActionInProgress(true);
                                 updateOrderStatusMutation.mutate({
                                   orderId: order.id,
                                   status: newStatus
@@ -1305,7 +1314,7 @@ export default function Orders() {
                                 {isAdmin && (
                                   <DropdownMenuItem 
                                     onClick={() => {
-                                      if (!isActionInProgress) {
+                                      if (!isActionInProgress && !isUpdatingStatus) {
                                         setOrderToEdit(order);
                                       }
                                     }}
@@ -1318,7 +1327,7 @@ export default function Orders() {
                                 {order.status !== "Completed" && order.status !== "Cancelled" && (
                                   <DropdownMenuItem
                                     onClick={() => {
-                                      if (!isActionInProgress) {
+                                      if (!isActionInProgress && !isCancellingOrder) {
                                         setOrderToCancel(order.id);
                                       }
                                     }}
@@ -1332,7 +1341,7 @@ export default function Orders() {
                                 {isAdmin && (
                                   <DropdownMenuItem
                                     onClick={() => {
-                                      if (!isActionInProgress) {
+                                      if (!isActionInProgress && !isDeletingOrder) {
                                         setOrderToDelete(order.id);
                                       }
                                     }}

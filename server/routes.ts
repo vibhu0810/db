@@ -4,7 +4,12 @@ import express from "express";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSEOJoke, generateWelcomeMessage } from "./openai";
-import { insertMessageSchema, insertDomainSchema, updateProfileSchema } from "@shared/schema";
+import { 
+  insertMessageSchema, 
+  insertDomainSchema, 
+  updateProfileSchema,
+  insertInvoiceSchema
+} from "@shared/schema";
 import {
   sendOrderNotificationEmail,
   sendCommentNotificationEmail,
@@ -927,6 +932,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting typing status:", error);
       res.status(500).json({ error: "Failed to get typing status" });
+    }
+  });
+
+  // Invoice routes
+  // Get all invoices for the current user
+  app.get("/api/invoices", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const invoices = await storage.getInvoices(req.user.id);
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).json({ error: "Failed to fetch invoices" });
+    }
+  });
+
+  // Get invoices with amount filter
+  app.get("/api/invoices/filter/amount", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const minAmount = parseInt(req.query.min as string) || 0;
+      const maxAmount = parseInt(req.query.max as string) || Number.MAX_SAFE_INTEGER;
+      
+      const invoices = await storage.getInvoicesByAmount(req.user.id, minAmount, maxAmount);
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching invoices by amount:", error);
+      res.status(500).json({ error: "Failed to fetch invoices by amount" });
+    }
+  });
+
+  // Get invoices with date filter
+  app.get("/api/invoices/filter/date", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const startDate = req.query.start ? new Date(req.query.start as string) : new Date(0);
+      const endDate = req.query.end ? new Date(req.query.end as string) : new Date();
+      
+      const invoices = await storage.getInvoicesByDateRange(req.user.id, startDate, endDate);
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching invoices by date:", error);
+      res.status(500).json({ error: "Failed to fetch invoices by date" });
+    }
+  });
+
+  // Get a single invoice
+  app.get("/api/invoices/:id", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const invoiceId = parseInt(req.params.id);
+      const invoice = await storage.getInvoice(invoiceId);
+      
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      
+      // Check if user is authorized to view this invoice
+      if (!req.user.is_admin && invoice.userId !== req.user.id) {
+        return res.status(403).json({ error: "Unauthorized: You don't have permission to view this invoice" });
+      }
+      
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).json({ error: "Failed to fetch invoice" });
+    }
+  });
+
+  // Admin route to get all invoices
+  app.get("/api/invoices/all", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const invoices = await storage.getAllInvoices();
+      const users = await storage.getUsers();
+      
+      // Join invoices with user data
+      const invoicesWithUserDetails = invoices.map(invoice => {
+        const user = users.find(u => u.id === invoice.userId);
+        return {
+          ...invoice,
+          user: user ? {
+            username: user.username,
+            companyName: user.companyName,
+            email: user.email
+          } : null
+        };
+      });
+      
+      res.json(invoicesWithUserDetails);
+    } catch (error) {
+      console.error("Error fetching all invoices:", error);
+      res.status(500).json({ error: "Failed to fetch invoices" });
+    }
+  });
+
+  // Create a new invoice (admin only)
+  app.post("/api/invoices", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const invoiceData = insertInvoiceSchema.parse(req.body);
+      const invoice = await storage.createInvoice(invoiceData);
+      
+      res.status(201).json(invoice);
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      res.status(500).json({ error: "Failed to create invoice" });
+    }
+  });
+
+  // Mark an invoice as paid (admin only)
+  app.patch("/api/invoices/:id/paid", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const invoiceId = parseInt(req.params.id);
+      const invoice = await storage.markInvoiceAsPaid(invoiceId);
+      
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error marking invoice as paid:", error);
+      res.status(500).json({ error: "Failed to mark invoice as paid" });
+    }
+  });
+
+  // Update an invoice (admin only)
+  app.patch("/api/invoices/:id", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const invoiceId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const invoice = await storage.updateInvoice(invoiceId, updates);
+      
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      res.status(500).json({ error: "Failed to update invoice" });
     }
   });
 

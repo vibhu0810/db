@@ -529,8 +529,8 @@ export default function ReportsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {filteredOrders.length >= 5 ? (
-                // Only show suggestions when there are at least 5 orders for reliable data
+              {filteredOrders.length >= 100 ? (
+                // Only show suggestions when there are at least 100 orders for reliable data
                 suggestions.map(suggestion => (
                   <Card key={suggestion.id} className="overflow-hidden">
                     <CardHeader className="py-3 bg-muted/50">
@@ -539,8 +539,7 @@ export default function ReportsPage() {
                     <CardContent className="py-4">
                       <p>{suggestion.description}</p>
                     </CardContent>
-                    <CardFooter className="border-t py-3 bg-muted/30 flex justify-end">
-                      <Button variant="outline" size="sm">Implement</Button>
+                    <CardFooter className="border-t py-3 bg-muted/30">
                     </CardFooter>
                   </Card>
                 ))
@@ -550,7 +549,7 @@ export default function ReportsPage() {
                   <h3 className="text-xl font-medium mb-2">Not Enough Campaign Data</h3>
                   <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                     We need more campaign data to generate accurate personalized suggestions. 
-                    Complete at least 5 campaigns to unlock AI-powered recommendations tailored to your link-building strategy.
+                    Complete at least 100 campaigns to unlock AI-powered recommendations tailored to your link-building strategy.
                   </p>
                   <Button size="sm" asChild>
                     <a href="/domains">Browse Domain Inventory</a>

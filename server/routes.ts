@@ -287,34 +287,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add notifications routes
   app.get("/api/notifications", async (req, res) => {
     try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      if (!req.user) {
+        console.warn("Unauthorized access to /api/notifications");
+        return res.status(401).json({ notifications: [], error: "Unauthorized" });
+      }
+      
       const userNotifications = await storage.getNotifications(req.user.id);
-      res.json(userNotifications);
+      
+      // Return a consistent object format with a notifications array
+      res.json({ notifications: userNotifications });
     } catch (error) {
       console.error("Error fetching notifications:", error);
-      res.status(500).json({ error: "Failed to fetch notifications" });
+      res.status(500).json({ notifications: [], error: "Failed to fetch notifications" });
     }
   });
 
   app.patch("/api/notifications/:id/read", async (req, res) => {
     try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      if (!req.user) return res.status(401).json({ notification: null, error: "Unauthorized" });
       const notification = await storage.markNotificationAsRead(parseInt(req.params.id));
-      res.json(notification);
+      
+      // Return consistent format
+      res.json({ notification });
     } catch (error) {
       console.error("Error marking notification as read:", error);
-      res.status(500).json({ error: "Failed to mark notification as read" });
+      res.status(500).json({ notification: null, error: "Failed to mark notification as read" });
     }
   });
 
   app.post("/api/notifications/mark-all-read", async (req, res) => {
     try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      if (!req.user) return res.status(401).json({ notifications: [], error: "Unauthorized" });
       await storage.markAllNotificationsAsRead(req.user.id);
-      res.sendStatus(200);
+      
+      // Return empty notifications array after marking all as read
+      res.json({ notifications: [] });
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
-      res.status(500).json({ error: "Failed to mark all notifications as read" });
+      res.status(500).json({ notifications: [], error: "Failed to mark all notifications as read" });
     }
   });
 

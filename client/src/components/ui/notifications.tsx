@@ -21,31 +21,54 @@ export function NotificationsDropdown() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: notifications = [], isError } = useQuery({
+  const { data: notificationsData = { notifications: [] }, isError } = useQuery({
     queryKey: ['/api/notifications'],
-    queryFn: () => apiRequest("GET", "/api/notifications").then(res => res.json()),
+    queryFn: async () => {
+      try {
+        const res = await apiRequest("GET", "/api/notifications");
+        if (res.status === 401) {
+          // Return empty array for unauthorized
+          return { notifications: [] };
+        }
+        const data = await res.json();
+        // Ensure we return an object with a notifications array
+        return Array.isArray(data) ? { notifications: data } : 
+               (data && typeof data === 'object' && Array.isArray(data.notifications)) ? data : 
+               { notifications: [] };
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        return { notifications: [] };
+      }
+    },
     refetchInterval: 5000, // Refetch every 5 seconds
   });
+  
+  // Extract the notifications array from the data
+  const notifications = notificationsData?.notifications || [];
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("PATCH", `/api/notifications/${id}/read`);
-      if (!res.ok) throw new Error("Failed to mark notification as read");
-      return res.json();
+      try {
+        const res = await apiRequest("PATCH", `/api/notifications/${id}/read`);
+        if (!res.ok) throw new Error("Failed to mark notification as read");
+        return res.json();
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
     },
+    onError: (error) => {
+      console.error("Mutation error marking notification as read:", error);
+    }
   });
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const unreadNotifications = notifications.filter((n: any) => !n.read);
-      await Promise.all(
-        unreadNotifications.map((notification: any) =>
-          apiRequest("PATCH", `/api/notifications/${notification.id}/read`)
-        )
-      );
+      // Use the bulk mark as read endpoint
+      await apiRequest("POST", "/api/notifications/mark-all-read");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });

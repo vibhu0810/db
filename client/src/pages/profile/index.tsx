@@ -32,9 +32,16 @@ import { updateProfileSchema } from "@shared/schema";
 import { uploadFile } from "@/utils/uploadthing";
 import { countries } from "@/lib/countries";
 
-// Extend the schema with stricter email validation
+// Extend the schema with stricter validation
 const profileFormSchema = updateProfileSchema.extend({
   email: z.string().email("Please enter a valid email address"),
+  bio: z.string().min(20, "Bio must be at least 20 characters long").max(500, "Bio must not exceed 500 characters"),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  phoneNumber: z.string().min(5, "Phone number is required").max(20, "Phone number is too long"),
+  linkedinUrl: z.string().min(1, "LinkedIn URL is required")
+    .url("Please enter a valid LinkedIn URL")
+    .includes("linkedin.com", { message: "URL must be from LinkedIn" }),
+  instagramProfile: z.string().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileFormSchema>;
@@ -222,6 +229,17 @@ export default function ProfilePage() {
                               disabled={isUploading || updateProfileMutation.isPending}
                             />
                           </div>
+                          {field.value && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => form.setValue("companyLogo", "")}
+                              disabled={updateProfileMutation.isPending}
+                            >
+                              Remove
+                            </Button>
+                          )}
                         </div>
                       </FormControl>
                       <FormDescription>
@@ -309,9 +327,32 @@ export default function ProfilePage() {
                             <SelectValue placeholder="Select your country" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="max-h-[300px]">
+                          <div className="px-2 pb-2">
+                            <Input
+                              placeholder="Search countries..."
+                              className="my-2"
+                              onChange={(e) => {
+                                // Create a search filter on Select content
+                                const value = e.target.value.toLowerCase();
+                                const items = document.querySelectorAll('[data-country-item]');
+                                items.forEach((item) => {
+                                  const text = item.textContent?.toLowerCase() || '';
+                                  if (text.includes(value)) {
+                                    (item as HTMLElement).style.display = 'block';
+                                  } else {
+                                    (item as HTMLElement).style.display = 'none';
+                                  }
+                                });
+                              }}
+                            />
+                          </div>
                           {countries.map((country) => (
-                            <SelectItem key={country.value} value={country.value}>
+                            <SelectItem 
+                              key={country.value} 
+                              value={country.value}
+                              data-country-item
+                            >
                               {country.label}
                             </SelectItem>
                           ))}
@@ -391,7 +432,7 @@ export default function ProfilePage() {
                         <Textarea {...field} disabled={updateProfileMutation.isPending} />
                       </FormControl>
                       <FormDescription>
-                        Tell us a bit about yourself or your company (optional)
+                        Tell us about your experience and requirements for link building campaigns
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

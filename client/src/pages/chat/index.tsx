@@ -181,19 +181,47 @@ export default function ChatPage() {
         setUploadingAttachment(true);
         
         if (imageAttachment) {
-          const uploadUrl = await uploadFile(imageAttachment, "chatImage");
-          await sendMessageMutation.mutateAsync({ 
-            messageText: messageInput.trim() || "📷 Image", 
-            attachmentUrl: uploadUrl, 
-            attachmentType: "image" 
-          });
+          try {
+            const uploadUrl = await uploadFile(imageAttachment, "chatImage");
+            await sendMessageMutation.mutateAsync({ 
+              messageText: messageInput.trim() || "📷 Image", 
+              attachmentUrl: uploadUrl, 
+              attachmentType: "image" 
+            });
+            toast({
+              title: "Image sent",
+              description: "Your image has been successfully sent.",
+              variant: "default",
+            });
+          } catch (uploadError) {
+            toast({
+              title: "Failed to upload image",
+              description: "There was a problem uploading your image. Please try again.",
+              variant: "destructive",
+            });
+            console.error("Image upload error:", uploadError);
+          }
         } else if (audioAttachment) {
-          const uploadUrl = await uploadFile(audioAttachment, "chatAudio");
-          await sendMessageMutation.mutateAsync({ 
-            messageText: messageInput.trim() || "🎤 Voice message", 
-            attachmentUrl: uploadUrl, 
-            attachmentType: "audio" 
-          });
+          try {
+            const uploadUrl = await uploadFile(audioAttachment, "chatAudio");
+            await sendMessageMutation.mutateAsync({ 
+              messageText: messageInput.trim() || "🎤 Voice message", 
+              attachmentUrl: uploadUrl, 
+              attachmentType: "audio" 
+            });
+            toast({
+              title: "Voice message sent",
+              description: "Your voice message has been successfully sent.",
+              variant: "default",
+            });
+          } catch (uploadError) {
+            toast({
+              title: "Failed to upload voice message",
+              description: "There was a problem uploading your voice message. Please try again.",
+              variant: "destructive",
+            });
+            console.error("Audio upload error:", uploadError);
+          }
         }
         
         setUploadingAttachment(false);
@@ -202,8 +230,13 @@ export default function ChatPage() {
         await sendMessageMutation.mutateAsync({ messageText: messageInput });
       }
     } catch (error) {
-      console.error("Failed to send message with attachment:", error);
+      console.error("Failed to send message:", error);
       setUploadingAttachment(false);
+      toast({
+        title: "Message not sent",
+        description: "There was a problem sending your message. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

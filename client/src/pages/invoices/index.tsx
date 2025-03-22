@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
@@ -62,6 +64,8 @@ function CreateInvoiceDialog() {
   const [dueDate, setDueDate] = useState("");
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const [totalSelectedAmount, setTotalSelectedAmount] = useState(0);
 
   // Query for users to select client
   const usersQuery = useQuery({
@@ -80,7 +84,7 @@ function CreateInvoiceDialog() {
 
   // Query for completed orders that haven't been billed yet
   const completedOrdersQuery = useQuery({
-    queryKey: ['/api/orders/completed-unbilled'],
+    queryKey: ['/api/orders/completed-unbilled', selectedUser],
     queryFn: async () => {
       if (!selectedUser) return [];
       const res = await apiRequest("GET", `/api/orders/completed-unbilled/${selectedUser}`);
@@ -93,6 +97,61 @@ function CreateInvoiceDialog() {
     enabled: !!selectedUser,
     initialData: [],
   });
+
+  // Generate invoice description based on order type
+  const generateInvoiceDescription = (order: any) => {
+    const orderId = order.id;
+    const price = order.price;
+    
+    // Check if it's a guest post
+    if (order.status === "guest_post_published" || 
+        (order.type === "guest_post" && order.status === "completed")) {
+      return `Link Building Services - #${orderId} - ${order.sourceUrl} (${order.title || 'Guest Post'}) - $${price}`;
+    } 
+    // Otherwise it's a niche edit
+    else {
+      return `Link Building Services - #${orderId} - ${order.sourceUrl} - $${price}`;
+    }
+  };
+
+  // Generate complete invoice description from selected orders
+  const generateFullDescription = () => {
+    if (!selectedOrders.length) return "";
+
+    const selectedOrderObjects = completedOrdersQuery.data.filter((order: any) => 
+      selectedOrders.includes(order.id)
+    );
+
+    if (selectedOrderObjects.length === 1) {
+      return generateInvoiceDescription(selectedOrderObjects[0]);
+    } else {
+      const descriptions = selectedOrderObjects.map((order: any, index: number) => 
+        `${index + 1}. ${generateInvoiceDescription(order)}`
+      );
+      return descriptions.join('\n');
+    }
+  };
+  
+  // Update total amount when orders are selected
+  useEffect(() => {
+    if (!completedOrdersQuery.data || !selectedOrders.length) {
+      setTotalSelectedAmount(0);
+      return;
+    }
+    
+    const total = completedOrdersQuery.data
+      .filter((order: any) => selectedOrders.includes(order.id))
+      .reduce((sum: number, order: any) => {
+        const price = parseFloat(order.price);
+        return sum + (isNaN(price) ? 0 : price);
+      }, 0);
+    
+    setTotalSelectedAmount(total);
+    setAmount(total.toFixed(2));
+    
+    // Generate and set description based on selected orders
+    setDescription(generateFullDescription());
+  }, [selectedOrders, completedOrdersQuery.data]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -151,6 +210,8 @@ function CreateInvoiceDialog() {
     setDescription("");
     setDueDate("");
     setFileUrl(null);
+    setSelectedOrders([]);
+    setTotalSelectedAmount(0);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -178,6 +239,28 @@ function CreateInvoiceDialog() {
     createInvoiceMutation.mutate(invoiceData);
   };
 
+  // Toggle order selection
+  const toggleOrderSelection = (orderId: number) => {
+    if (selectedOrders.includes(orderId)) {
+      setSelectedOrders(selectedOrders.filter(id => id !== orderId));
+    } else {
+      setSelectedOrders([...selectedOrders, orderId]);
+    }
+  };
+
+  // Select all orders
+  const selectAllOrders = () => {
+    if (!completedOrdersQuery.data) return;
+    
+    const allOrderIds = completedOrdersQuery.data.map((order: any) => order.id);
+    setSelectedOrders(allOrderIds);
+  };
+
+  // Deselect all orders
+  const deselectAllOrders = () => {
+    setSelectedOrders([]);
+  };
+
   if (!user?.is_admin) return null;
 
   return (
@@ -188,7 +271,7 @@ function CreateInvoiceDialog() {
           Create Invoice
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create New Invoice</DialogTitle>
           <DialogDescription>
@@ -199,7 +282,7 @@ function CreateInvoiceDialog() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="client" className="text-right">
-                Client
+                Client <span className="text-red-500">*</span>
               </Label>
               <div className="col-span-3">
                 <select
@@ -218,9 +301,73 @@ function CreateInvoiceDialog() {
                 </select>
               </div>
             </div>
+            
+            {selectedUser && completedOrdersQuery.data.length > 0 && (
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label className="text-right mt-2">
+                  Orders to Bill
+                </Label>
+                <div className="col-span-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-muted-foreground">
+                      {selectedOrders.length} of {completedOrdersQuery.data.length} orders selected
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={selectAllOrders}
+                      >
+                        Select All
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={deselectAllOrders}
+                      >
+                        Deselect All
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="border rounded-md max-h-40 overflow-y-auto">
+                    {completedOrdersQuery.data.map((order: any) => (
+                      <div 
+                        key={order.id}
+                        className={`flex items-center justify-between p-2 border-b last:border-0 hover:bg-muted/50 ${
+                          selectedOrders.includes(order.id) ? 'bg-muted' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Checkbox 
+                            id={`order-${order.id}`}
+                            checked={selectedOrders.includes(order.id)}
+                            onCheckedChange={() => toggleOrderSelection(order.id)}
+                          />
+                          <Label htmlFor={`order-${order.id}`} className="cursor-pointer">
+                            #{order.id} - {order.sourceUrl.substring(0, 30)}...
+                          </Label>
+                        </div>
+                        <div className="text-sm font-medium">
+                          ${parseFloat(order.price).toFixed(2)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {selectedUser && completedOrdersQuery.data.length === 0 && (
+              <div className="col-span-4 text-center my-2">
+                <p className="text-muted-foreground">No completed unbilled orders found for this client</p>
+              </div>
+            )}
+            
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="amount" className="text-right">
-                Amount (USD)
+                Amount (USD) <span className="text-red-500">*</span>
               </Label>
               <div className="col-span-3">
                 <Input
@@ -233,24 +380,37 @@ function CreateInvoiceDialog() {
                   placeholder="0.00"
                   required
                 />
+                {totalSelectedAmount > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total from selected orders: ${totalSelectedAmount.toFixed(2)}
+                  </p>
+                )}
               </div>
             </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
                 Description
               </Label>
               <div className="col-span-3">
-                <Input
+                <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Invoice description"
+                  rows={3}
                 />
+                {selectedOrders.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Description generated from selected orders
+                  </p>
+                )}
               </div>
             </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="dueDate" className="text-right">
-                Due Date
+                Due Date <span className="text-red-500">*</span>
               </Label>
               <div className="col-span-3">
                 <Input

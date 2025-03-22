@@ -360,44 +360,55 @@ export default function Orders() {
     }));
   };
   
-  // CSS fix for position:relative needed for Resizable to work properly
+  // Apply CSS for resizable columns
   useEffect(() => {
-    // Add a style to ensure TableHead has position: relative for the resize handle to work
     const style = document.createElement('style');
     style.innerHTML = `
-      thead th {
-        position: relative !important;
-      }
       table {
-        table-layout: fixed !important;
-        width: auto !important;
+        width: 100%;
+        table-layout: fixed;
       }
+      
+      th {
+        position: relative;
+        overflow: visible;
+      }
+      
       .react-resizable {
         position: relative;
-        background-clip: padding-box;
       }
+      
       .react-resizable-handle {
         position: absolute;
-        right: -5px;
+        right: -1px;
+        bottom: 0;
         top: 0;
+        width: 8px;
         height: 100%;
-        width: 10px;
         cursor: col-resize;
-        z-index: 10;
+        z-index: 1;
+        background-color: transparent;
       }
-      /* Create a visible resize handle */
-      .react-resizable-handle::after {
+      
+      .react-resizable-handle:after {
         content: "";
         position: absolute;
-        right: 5px;
+        right: 3px;
         top: 0;
         height: 100%;
-        width: 1px;
-        background-color: #e5e7eb;
-      }
-      .react-resizable-handle:hover::after {
-        background-color: #60a5fa;
         width: 2px;
+        background-color: #e2e8f0;
+      }
+      
+      .react-resizable-handle:hover:after,
+      .react-resizable-handle:active:after {
+        background-color: #3b82f6;
+      }
+      
+      .truncate-cell {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     `;
     document.head.appendChild(style);

@@ -752,7 +752,7 @@ export default function Orders() {
   // Check for status changes to show toast notifications
   // This only runs when orders are fetched from polling (not user-triggered updates)
   useEffect(() => {
-    if (!isLoading && orders.length > 0) {
+    if (!isLoading && orders.length > 0 && !isActionInProgress) {
       // Create a map of current order statuses
       const currentOrderStatuses: Record<number, string> = {};
       orders.forEach((order: any) => {
@@ -776,9 +776,14 @@ export default function Orders() {
       setPreviousOrderStatuses(currentOrderStatuses);
       
       // Clear recent status updates after they've been processed
-      setRecentStatusUpdates({});
+      // But only if we're not in the middle of an action
+      if (Object.keys(recentStatusUpdates).length > 0) {
+        setTimeout(() => {
+          setRecentStatusUpdates({});
+        }, 2000); // Keep recent updates for 2 seconds to avoid race conditions
+      }
     }
-  }, [isLoading, orders, toast, recentStatusUpdates]);
+  }, [isLoading, orders, toast, recentStatusUpdates, isActionInProgress, previousOrderStatuses]);
 
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
@@ -1305,7 +1310,7 @@ export default function Orders() {
             <PaginationItem>
               <PaginationPrevious
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
+                disabled={currentPage === 1 || isActionInProgress}
               />
             </PaginationItem>
 

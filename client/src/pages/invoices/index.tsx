@@ -514,10 +514,6 @@ function UserInvoicesTab() {
   });
   const [isFilteringByDate, setIsFilteringByDate] = useState(false);
   const [billingDetails, setBillingDetails] = useState({
-    paymentMethod: "",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCVC: "",
     billingName: "",
     billingAddress: "",
     billingCity: "",
@@ -619,54 +615,7 @@ function UserInvoicesTab() {
           <CardContent>
             {isEditingBilling ? (
               <form onSubmit={handleBillingSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="paymentMethod">Payment Method</Label>
-                  <select 
-                    id="paymentMethod"
-                    className="w-full p-2 border rounded"
-                    value={billingDetails.paymentMethod}
-                    onChange={(e) => setBillingDetails({...billingDetails, paymentMethod: e.target.value})}
-                  >
-                    <option value="">Select payment method</option>
-                    <option value="creditCard">Credit Card</option>
-                    <option value="bankTransfer">Bank Transfer</option>
-                    <option value="paypal">PayPal</option>
-                  </select>
-                </div>
-                
-                {billingDetails.paymentMethod === 'creditCard' && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="cardNumber">Card Number</Label>
-                      <Input 
-                        id="cardNumber"
-                        placeholder="1234 5678 9012 3456"
-                        value={billingDetails.cardNumber}
-                        onChange={(e) => setBillingDetails({...billingDetails, cardNumber: e.target.value})}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="cardExpiry">Expiration Date</Label>
-                        <Input 
-                          id="cardExpiry"
-                          placeholder="MM/YY"
-                          value={billingDetails.cardExpiry}
-                          onChange={(e) => setBillingDetails({...billingDetails, cardExpiry: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cardCVC">CVC</Label>
-                        <Input 
-                          id="cardCVC"
-                          placeholder="123"
-                          value={billingDetails.cardCVC}
-                          onChange={(e) => setBillingDetails({...billingDetails, cardCVC: e.target.value})}
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
+
                 
                 <div className="space-y-2">
                   <Label htmlFor="billingName">Person Name / Business Name</Label>
@@ -752,26 +701,38 @@ function UserInvoicesTab() {
               </form>
             ) : (
               <div className="space-y-4">
-                {billingDetails.paymentMethod ? (
+                {billingDetails.billingName ? (
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Payment Method:</span>
-                      <span className="font-medium">
-                        {billingDetails.paymentMethod === 'creditCard' ? 'Credit Card' : 
-                         billingDetails.paymentMethod === 'bankTransfer' ? 'Bank Transfer' : 
-                         billingDetails.paymentMethod === 'paypal' ? 'PayPal' : '-'}
-                      </span>
-                    </div>
-                    {billingDetails.cardNumber && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Card Number:</span>
-                        <span className="font-medium">xxxx-xxxx-xxxx-{billingDetails.cardNumber.slice(-4)}</span>
-                      </div>
-                    )}
                     {billingDetails.billingName && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Billing Name:</span>
+                        <span className="text-muted-foreground">Name:</span>
                         <span className="font-medium">{billingDetails.billingName}</span>
+                      </div>
+                    )}
+                    {billingDetails.billingAddress && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Address:</span>
+                        <span className="font-medium">{billingDetails.billingAddress}</span>
+                      </div>
+                    )}
+                    {(billingDetails.billingCity || billingDetails.billingState) && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">City/State:</span>
+                        <span className="font-medium">
+                          {billingDetails.billingCity}{billingDetails.billingCity && billingDetails.billingState ? ', ' : ''}{billingDetails.billingState}
+                        </span>
+                      </div>
+                    )}
+                    {billingDetails.billingZip && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">ZIP:</span>
+                        <span className="font-medium">{billingDetails.billingZip}</span>
+                      </div>
+                    )}
+                    {billingDetails.billingCountry && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Country:</span>
+                        <span className="font-medium">{billingDetails.billingCountry}</span>
                       </div>
                     )}
                     {billingDetails.billingNotes && (
@@ -792,7 +753,7 @@ function UserInvoicesTab() {
                   className="w-full" 
                   onClick={() => setIsEditingBilling(true)}
                 >
-                  {billingDetails.paymentMethod ? 'Edit Billing Details' : 'Add Billing Details'}
+                  {billingDetails.billingName ? 'Edit Billing Details' : 'Add Billing Details'}
                 </Button>
               </div>
             )}

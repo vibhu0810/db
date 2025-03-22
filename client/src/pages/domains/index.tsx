@@ -387,7 +387,7 @@ export default function DomainsPage() {
                     <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
                   }
                 >
-                  <div className="h-full flex items-center pr-4">
+                  <div className="h-full flex items-center justify-center pr-4">
                     <SortableHeader field="domainRating">DR</SortableHeader>
                   </div>
                 </Resizable>
@@ -402,7 +402,7 @@ export default function DomainsPage() {
                     <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
                   }
                 >
-                  <div className="h-full flex items-center pr-4">
+                  <div className="h-full flex items-center justify-center pr-4">
                     <SortableHeader field="websiteTraffic">Traffic</SortableHeader>
                   </div>
                 </Resizable>
@@ -432,7 +432,7 @@ export default function DomainsPage() {
                     <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
                   }
                 >
-                  <div className="h-full flex items-center pr-4">
+                  <div className="h-full flex items-center justify-center pr-4">
                     Guest Post Price
                   </div>
                 </Resizable>
@@ -447,7 +447,7 @@ export default function DomainsPage() {
                     <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
                   }
                 >
-                  <div className="h-full flex items-center pr-4">
+                  <div className="h-full flex items-center justify-center pr-4">
                     Niche Edit Price
                   </div>
                 </Resizable>
@@ -462,7 +462,7 @@ export default function DomainsPage() {
                     <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
                   }
                 >
-                  <div className="h-full flex items-center pr-4">
+                  <div className="h-full flex items-center justify-center pr-4">
                     Guest Post TAT
                   </div>
                 </Resizable>
@@ -477,7 +477,7 @@ export default function DomainsPage() {
                     <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
                   }
                 >
-                  <div className="h-full flex items-center pr-4">
+                  <div className="h-full flex items-center justify-center pr-4">
                     Niche Edit TAT
                   </div>
                 </Resizable>
@@ -540,8 +540,8 @@ export default function DomainsPage() {
                     </Button>
                   </div>
                 </TableCell>
-                <TableCell>{domain.domainRating}</TableCell>
-                <TableCell>{Number(domain.websiteTraffic).toLocaleString()}</TableCell>
+                <TableCell className="text-center">{domain.domainRating}</TableCell>
+                <TableCell className="text-center">{Number(domain.websiteTraffic).toLocaleString()}</TableCell>
                 <TableCell>
                   {domain.type === "both"
                     ? "Both"
@@ -549,10 +549,18 @@ export default function DomainsPage() {
                       ? "Guest Post"
                       : "Niche Edit"}
                 </TableCell>
-                <TableCell>${domain.guestPostPrice}</TableCell>
-                <TableCell>${domain.nicheEditPrice}</TableCell>
-                <TableCell>{getGuestPostTAT(domain)}</TableCell>
-                <TableCell>{getNicheEditTAT(domain)}</TableCell>
+                <TableCell className="text-center">
+                  {domain.type !== "niche_edit" && domain.guestPostPrice ? `$${domain.guestPostPrice}` : "—"}
+                </TableCell>
+                <TableCell className="text-center">
+                  {domain.type !== "guest_post" && domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : "—"}
+                </TableCell>
+                <TableCell className="text-center">
+                  {domain.type !== "niche_edit" ? getGuestPostTAT(domain) : "—"}
+                </TableCell>
+                <TableCell className="text-center">
+                  {domain.type !== "guest_post" ? getNicheEditTAT(domain) : "—"}
+                </TableCell>
                 <TableCell className="max-w-[200px]">
                   {domain.guidelines ? (
                     <TooltipProvider>

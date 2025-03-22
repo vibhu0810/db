@@ -31,6 +31,7 @@ import { Loader2 } from "lucide-react";
 import { updateProfileSchema } from "@shared/schema";
 import { uploadFile } from "@/utils/uploadthing";
 import { countries } from "@/lib/countries";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 // Extend the schema with stricter validation
 const profileFormSchema = updateProfileSchema.extend({
@@ -398,7 +399,12 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>Phone Number *</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={updateProfileMutation.isPending} />
+                        <PhoneInput 
+                          value={field.value} 
+                          onChange={field.onChange} 
+                          disabled={updateProfileMutation.isPending}
+                          defaultCountry={user?.country || "US"}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

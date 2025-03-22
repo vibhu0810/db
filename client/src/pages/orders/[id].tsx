@@ -300,17 +300,11 @@ export default function OrderDetailsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    {!isAdmin && (order.status === "Completed" || order.status === "Cancelled") && (
-                      <div className="text-sm text-muted-foreground mb-2 p-2 bg-muted rounded-md">
-                        Comments are disabled for completed or cancelled orders.
-                      </div>
-                    )}
                     <Textarea
                       ref={textareaRef}
                       placeholder="Add a comment... (Ctrl+Enter to submit)"
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      disabled={!isAdmin && (order.status === "Completed" || order.status === "Cancelled")}
                       onKeyDown={(e) => {
                         // Submit comment with Ctrl+Enter
                         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && newComment.trim()) {
@@ -322,8 +316,7 @@ export default function OrderDetailsPage() {
                     />
                     <Button
                       onClick={() => addCommentMutation.mutate()}
-                      disabled={addCommentMutation.isPending || !newComment.trim() || 
-                        (!isAdmin && (order.status === "Completed" || order.status === "Cancelled"))}
+                      disabled={addCommentMutation.isPending || !newComment.trim()}
                       className="w-full"
                     >
                       {addCommentMutation.isPending && (

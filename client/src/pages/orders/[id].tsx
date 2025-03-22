@@ -6,15 +6,17 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Loader2, Copy, MessageSquare, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
   const [newComment, setNewComment] = useState("");
+  const commentsEndRef = useRef<HTMLDivElement>(null);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['/api/orders', id],
@@ -25,6 +27,13 @@ export default function OrderDetailsPage() {
     queryKey: ['/api/orders', id, 'comments'],
     queryFn: () => apiRequest("GET", `/api/orders/${id}/comments`).then(res => res.json()),
   });
+  
+  // Auto-scroll to the bottom of the comments when new comments are added
+  useEffect(() => {
+    if (comments.length && commentsEndRef.current) {
+      commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [comments]);
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {
@@ -219,25 +228,30 @@ export default function OrderDetailsPage() {
                 </div>
               ) : (
                 <>
-                  <div className="space-y-4">
-                    {comments.map((comment: any) => (
-                      <div key={comment.id} className="rounded-lg bg-muted p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium">{comment.user?.username}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
-                          </span>
+                  <ScrollArea className="h-[300px] mb-4 pr-4">
+                    <div className="space-y-4">
+                      {comments.map((comment: any) => (
+                        <div key={comment.id} className="rounded-lg bg-muted p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-medium">{comment.user?.username}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                            </span>
+                          </div>
+                          <p className="text-sm">{comment.message}</p>
                         </div>
-                        <p className="text-sm">{comment.message}</p>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                      {/* Invisible element at the end to scroll to */}
+                      <div ref={commentsEndRef} />
+                    </div>
+                  </ScrollArea>
 
                   <div className="space-y-2">
                     <Textarea
                       placeholder="Add a comment..."
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
+                      rows={3}
                     />
                     <Button
                       onClick={() => addCommentMutation.mutate()}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Domain, User } from "@shared/schema";
@@ -47,21 +47,42 @@ function getTurnaroundTime(domain: Domain, orderType: OrderType | null) {
   }
 }
 
-const formSchema = z.object({
-  sourceUrl: z.string()
-    .optional()
-    .refine(val => !val || val.startsWith('http'), "Must be a valid URL if provided"),
-  targetUrl: z.string()
-    .min(1, "Target URL is required")
-    .url("Must be a valid URL"),
-  anchorText: z.string().min(1, "Anchor text is required"),
-  title: z.string().optional(),
-  content: z.string().optional(),
-  textEdit: z.string().optional(),
-  notes: z.string().optional(),
-});
+// We'll create a dynamic schema based on domain and order type
+const createFormSchema = (domain: Domain | undefined, orderType: OrderType | null) => {
+  return z.object({
+    sourceUrl: z.string()
+      .optional()
+      .refine(val => {
+        // For niche edits, Source URL must be provided and be a valid URL from the domain
+        if (orderType === "niche_edit") {
+          if (!val || !val.trim()) return false;
+          try {
+            const url = new URL(val);
+            return domain ? url.hostname === domain.websiteUrl || 
+                           url.hostname === `www.${domain.websiteUrl}` || 
+                           `www.${url.hostname}` === domain.websiteUrl : false;
+          } catch {
+            return false;
+          }
+        }
+        // For guest posts or no type selected yet, no validation needed
+        return true;
+      }, orderType === "niche_edit" ? 
+         "Source URL must be from the selected domain" : 
+         "Must be a valid URL if provided"),
+    targetUrl: z.string()
+      .min(1, "Target URL is required")
+      .url("Must be a valid URL format"),
+    anchorText: z.string().min(1, "Anchor text is required"),
+    title: z.string().optional(),
+    content: z.string().optional(),
+    textEdit: z.string().optional(),
+    notes: z.string().optional(),
+  });
+};
 
-type FormValues = z.infer<typeof formSchema>;
+// Define this type for form values 
+type FormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 export default function NewOrder() {
   const [, setLocation] = useLocation();
@@ -83,6 +104,9 @@ export default function NewOrder() {
   });
 
   const domain = domains.find(d => d.websiteUrl === domainUrl);
+  
+  // Create form schema based on the current domain and selected order type
+  const formSchema = createFormSchema(domain, selectedType);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -95,7 +119,20 @@ export default function NewOrder() {
       textEdit: "",
       notes: "",
     },
+    // Re-validate form fields when order type changes
+    context: { selectedType, domain },
   });
+  
+  // Watch source URL to provide real-time validation feedback
+  const sourceUrl = form.watch("sourceUrl");
+  
+  // Re-validate when order type changes
+  useEffect(() => {
+    if (domain && selectedType) {
+      // Trigger re-validation with the current schema
+      form.trigger();
+    }
+  }, [selectedType, domain, form]);
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: FormValues) => {

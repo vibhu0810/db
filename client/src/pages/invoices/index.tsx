@@ -85,18 +85,55 @@ function CreateInvoiceDialog() {
   // Query for clients to select for invoice
   console.log("Client query setup. User admin:", !!user?.is_admin, "Dialog open:", open);
   
+  // Direct fetch for debugging
+  useEffect(() => {
+    if (user?.is_admin) {
+      console.log("Making direct fetch to /api/users for debugging");
+      fetch("/api/users", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      })
+        .then((res) => {
+          console.log("Direct fetch response status:", res.status);
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Direct fetch result:", data);
+        })
+        .catch((err) => {
+          console.error("Direct fetch error:", err);
+        });
+    }
+  }, [user?.is_admin]);
+
   const clientsQuery = useQuery({
     queryKey: ['/api/users'],
     queryFn: async () => {
       try {
         // Using the standard users endpoint which already has role-based filtering
-        console.log("Fetching clients from /api/users");
-        const result = await apiRequest("GET", "/api/users").then(res => res.json());
-        console.log("Clients result:", result);
-        return result;
+        console.log("Fetching clients from /api/users via React Query");
+        const response = await fetch("/api/users", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+        
+        console.log("React Query fetch status:", response.status);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch clients: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Clients result from React Query:", data);
+        return data;
       } catch (error) {
-        console.error("Error fetching clients:", error);
-        throw error;
+        console.error("Error fetching clients in React Query:", error);
+        return [];  // Return empty array on error
       }
     },
     // Always enable this query for now to troubleshoot

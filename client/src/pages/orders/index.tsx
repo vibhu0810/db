@@ -455,9 +455,13 @@ export default function Orders() {
         const error = await res.json();
         throw new Error(error.error || "Failed to update order status");
       }
-      return res.json();
+      return { orderId, data: await res.json() };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      const { orderId } = result;
+      // Mark this order as recently updated to prevent duplicate toast in the useEffect
+      setRecentStatusUpdates(prev => ({ ...prev, [orderId]: true }));
+      
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Status updated",
@@ -537,8 +541,12 @@ export default function Orders() {
         const error = await res.json();
         throw new Error(error.error || "Failed to cancel order");
       }
+      return orderId;
     },
-    onSuccess: () => {
+    onSuccess: (orderId) => {
+      // Mark this order as recently updated to prevent duplicate toast in the useEffect
+      setRecentStatusUpdates(prev => ({ ...prev, [orderId]: true }));
+      
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Order cancelled",
@@ -705,6 +713,9 @@ export default function Orders() {
     );
   };
 
+  // State to track recent manual status updates
+  const [recentStatusUpdates, setRecentStatusUpdates] = useState<Record<number, boolean>>({});
+  
   // Check for status changes to show toast notifications
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
@@ -713,10 +724,11 @@ export default function Orders() {
       orders.forEach((order: any) => {
         currentOrderStatuses[order.id] = order.status;
         
-        // If we have a previous status and it's different than the current one, show a notification
+        // If we have a previous status and it's different than the current one, and it's not a recent manual update
         if (
           previousOrderStatuses[order.id] && 
-          previousOrderStatuses[order.id] !== order.status
+          previousOrderStatuses[order.id] !== order.status &&
+          !recentStatusUpdates[order.id]
         ) {
           toast({
             title: `Order #${order.id} status updated`,
@@ -728,8 +740,11 @@ export default function Orders() {
       
       // Update the previous statuses map for the next comparison
       setPreviousOrderStatuses(currentOrderStatuses);
+      
+      // Clear recent status updates after they've been processed
+      setRecentStatusUpdates({});
     }
-  }, [isLoading, orders, toast]);
+  }, [isLoading, orders, toast, recentStatusUpdates]);
 
   useEffect(() => {
     if (!isLoading && orders.length > 0) {

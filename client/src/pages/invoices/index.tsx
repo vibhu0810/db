@@ -187,19 +187,79 @@ function CreateInvoiceDialog() {
     isError: false,
   };
 
+  // State to store domains for reference
+  const [domains, setDomains] = useState<any[]>([]);
+  
+  // For due date selection
+  const [dueDate, setDueDate] = useState<Date>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 30); // Default 30 days
+    return date;
+  });
+  
+  // Fetch domains for getting website names
+  useEffect(() => {
+    if (!user?.is_admin) return;
+    
+    fetch("/api/domains", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setDomains(data);
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching domains:", error);
+      });
+  }, [user]);
+  
+  // Helper function to find domain name from sourceUrl
+  const getDomainName = (sourceUrl: string): string => {
+    if (!sourceUrl || sourceUrl === 'not_applicable') return 'Unknown Domain';
+    
+    // Try to find the domain in our domains list
+    const domain = domains.find(d => 
+      sourceUrl.includes(d.websiteUrl) || 
+      (d.websiteName && sourceUrl.toLowerCase().includes(d.websiteName.toLowerCase()))
+    );
+    
+    if (domain) {
+      return domain.websiteName || domain.websiteUrl;
+    }
+    
+    // Try to extract domain from URL if we couldn't find it in our list
+    try {
+      // Remove protocol if present
+      let cleanUrl = sourceUrl.replace(/^(https?:\/\/)?(www\.)?/, '');
+      // Get domain part (before first /)
+      cleanUrl = cleanUrl.split('/')[0];
+      return cleanUrl;
+    } catch (e) {
+      return sourceUrl;
+    }
+  };
+
   // Generate invoice description based on order type
   const generateInvoiceDescription = (order: any) => {
     const orderId = order.id;
     const price = order.price;
+    const domainName = getDomainName(order.sourceUrl);
     
     // Check if it's a guest post
     if (order.status === "guest_post_published" || 
-        (order.type === "guest_post" && order.status === "completed")) {
-      return `Link Building Services - #${orderId} - ${order.sourceUrl} (${order.title || 'Guest Post'}) - $${price}`;
+        (order.type === "guest_post" && order.status === "completed") ||
+        order.status === "Completed") {
+      return `Link Building Services - #${orderId} - ${domainName} (${order.title || 'Guest Post'}) - $${price}`;
     } 
     // Otherwise it's a niche edit
     else {
-      return `Link Building Services - #${orderId} - ${order.sourceUrl} - $${price}`;
+      return `Link Building Services - #${orderId} - ${domainName} - $${price}`;
     }
   };
   
@@ -250,15 +310,11 @@ function CreateInvoiceDialog() {
   // Create and send the invoice
   const createInvoiceMutation = useMutation({
     mutationFn: async () => {
-      // Set due date to 30 days from now by default
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 30);
-      
       const invoiceData = {
         userId: selectedUser,
         amount: totalAmount * 100, // Convert to cents for storage
         notes: invoiceDescription,
-        dueDate: dueDate.toISOString(),
+        dueDate: dueDate.toISOString(), // Use the selected date from the datepicker
         status: 'pending',
         fileName: 'invoice.pdf',
         fileUrl: '',
@@ -348,6 +404,29 @@ function CreateInvoiceDialog() {
               </div>
             </div>
             
+            <div className="grid grid-cols-4 items-center gap-4 mt-4">
+              <Label htmlFor="dueDate" className="text-right">
+                Due Date <span className="text-red-500">*</span>
+              </Label>
+              <div className="col-span-3">
+                <input
+                  id="dueDate"
+                  type="date"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={dueDate.toISOString().slice(0, 10)}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if (!isNaN(newDate.getTime())) {
+                      setDueDate(newDate);
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Default is 30 days from today
+                </p>
+              </div>
+            </div>
+            
             {completedOrdersQuery.isLoading && selectedUser && (
               <div className="flex justify-center items-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -370,33 +449,71 @@ function CreateInvoiceDialog() {
         {/* Step 2: Invoice Preview */}
         {previewStep && selectedClient && (
           <div className="space-y-6 py-4">
-            <div className="bg-muted p-4 rounded-lg">
-              <div className="flex justify-between items-center border-b pb-2 mb-3">
-                <h3 className="font-semibold text-lg">Invoice Preview</h3>
+            <div className="bg-muted p-5 rounded-lg">
+              <div className="flex justify-between items-center border-b pb-3 mb-4">
+                <div>
+                  <h3 className="font-semibold text-lg">Invoice Preview</h3>
+                  <p className="text-sm text-muted-foreground">Invoice #{new Date().getTime().toString().slice(-6)}</p>
+                </div>
                 <div className="font-mono text-sm bg-primary/10 text-primary px-3 py-1 rounded-full">
                   ${totalAmount.toFixed(2)}
                 </div>
               </div>
               
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Client:</span>
-                  <span className="font-medium">{selectedClient.companyName || selectedClient.username}</span>
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold uppercase text-gray-500">Bill From</h4>
+                  <div className="border-l-2 border-primary pl-3">
+                    <p className="font-medium">SaaSxLinks.ai</p>
+                    <p className="text-sm text-muted-foreground">Digital Link Building Services</p>
+                    <p className="text-sm text-muted-foreground">contact@saasxlinks.ai</p>
+                  </div>
                 </div>
                 
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Orders:</span>
-                  <span className="font-medium">{completedOrdersQuery.data.length} item(s)</span>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold uppercase text-gray-500">Bill To</h4>
+                  <div className="border-l-2 border-primary pl-3">
+                    <p className="font-medium">{selectedClient.companyName || selectedClient.username}</p>
+                    <p className="text-sm text-muted-foreground">{selectedClient.email}</p>
+                    {selectedClient.billingAddress && (
+                      <p className="text-sm text-muted-foreground">{selectedClient.billingAddress}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border rounded-md bg-white divide-y">
+                <div className="grid grid-cols-3 p-3 bg-muted/40 font-medium text-sm">
+                  <div>DETAILS</div>
+                  <div className="text-center">QUANTITY</div>
+                  <div className="text-right">AMOUNT</div>
                 </div>
                 
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Amount:</span>
-                  <span className="font-medium">${totalAmount.toFixed(2)}</span>
+                <div className="p-3">
+                  <div className="grid grid-cols-3">
+                    <div>
+                      <p className="font-medium">Link Building Services</p>
+                      <p className="text-xs text-muted-foreground mt-1">{completedOrdersQuery.data.length} completed orders</p>
+                    </div>
+                    <div className="text-center">{completedOrdersQuery.data.length}</div>
+                    <div className="text-right font-medium">${totalAmount.toFixed(2)}</div>
+                  </div>
                 </div>
                 
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Due Date:</span>
-                  <span className="font-medium">30 days from today</span>
+                <div className="p-3 bg-muted/20">
+                  <div className="grid grid-cols-3">
+                    <div className="col-span-2 text-right font-medium">Total:</div>
+                    <div className="text-right font-bold">${totalAmount.toFixed(2)}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="text-sm">
+                  <span className="font-medium">Issue Date:</span> {new Date().toLocaleDateString()}
+                </div>
+                <div className="text-sm text-right">
+                  <span className="font-medium">Due Date:</span> {dueDate.toLocaleDateString()}
                 </div>
               </div>
             </div>

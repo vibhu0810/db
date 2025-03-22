@@ -323,6 +323,7 @@ export default function Orders() {
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [previousOrderStatuses, setPreviousOrderStatuses] = useState<Record<number, string>>({});
+  const [recentStatusUpdates, setRecentStatusUpdates] = useState<Record<number, boolean>>({});
   const [isActionInProgress, setIsActionInProgress] = useState<boolean>(false);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
@@ -749,7 +750,6 @@ export default function Orders() {
   };
 
   // State to track recent manual status updates
-  const [recentStatusUpdates, setRecentStatusUpdates] = useState<Record<number, boolean>>({});
   
   // Check for status changes to show toast notifications
   useEffect(() => {

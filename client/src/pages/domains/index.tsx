@@ -433,7 +433,7 @@ export default function DomainsPage() {
                   }
                 >
                   <div className="h-full flex items-center justify-center pr-4">
-                    Guest Post Price
+                    <SortableHeader field="guestPostPrice">Guest Post Price</SortableHeader>
                   </div>
                 </Resizable>
               </TableHead>
@@ -448,7 +448,7 @@ export default function DomainsPage() {
                   }
                 >
                   <div className="h-full flex items-center justify-center pr-4">
-                    Niche Edit Price
+                    <SortableHeader field="nicheEditPrice">Niche Edit Price</SortableHeader>
                   </div>
                 </Resizable>
               </TableHead>

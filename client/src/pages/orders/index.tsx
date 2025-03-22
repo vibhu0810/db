@@ -800,7 +800,7 @@ export default function Orders() {
       order.title && order.title !== "not_applicable" 
         ? (order.sourceUrl !== "not_applicable" 
             ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-            : `${order.title} - bookafy.com`)
+            : order.title)
         : order.sourceUrl === "not_applicable"
           ? "No title provided"
           : order.sourceUrl,
@@ -1400,7 +1400,7 @@ export default function Orders() {
                             {order.title && order.title !== "not_applicable" 
                               ? (order.sourceUrl !== "not_applicable" 
                                   ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-                                  : `${order.title} - bookafy.com`)
+                                  : order.title)
                               : order.sourceUrl === "not_applicable" 
                                 ? "No title provided" 
                                 : order.sourceUrl}
@@ -1410,7 +1410,9 @@ export default function Orders() {
                             size="icon"
                             className="flex-shrink-0"
                             onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
-                              ? `${order.title} - ${extractDomainFromUrl(order.targetUrl)}`
+                              ? (order.sourceUrl !== "not_applicable" 
+                                  ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
+                                  : order.title)
                               : order.sourceUrl === "not_applicable"
                                 ? ""
                                 : order.sourceUrl)}

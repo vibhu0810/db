@@ -433,13 +433,17 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     
-    // Create notification for the user
-    await this.createNotification({
-      userId: invoiceData.userId,
-      type: "invoice",
-      message: "A new invoice has been added to your account",
-      createdAt: new Date(),
-    });
+    // Only create notification if there's a valid userId
+    if (invoiceData.userId) {
+      // Create notification for the user
+      await this.createNotification({
+        userId: invoiceData.userId,
+        type: "invoice",
+        message: "A new invoice has been added to your account",
+        createdAt: new Date(),
+        read: false,
+      });
+    }
 
     return invoice;
   }
@@ -462,6 +466,21 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(invoices.id, id))
       .returning();
+    
+    // Get the full invoice to access userId for notification
+    const fullInvoice = await this.getInvoice(id);
+    
+    // Only create notification if there's a valid userId
+    if (fullInvoice && fullInvoice.userId) {
+      await this.createNotification({
+        userId: fullInvoice.userId,
+        type: "invoice_paid",
+        message: `Invoice #${id} has been marked as paid`,
+        createdAt: new Date(),
+        read: false,
+      });
+    }
+    
     return invoice;
   }
 
@@ -506,13 +525,17 @@ export class DatabaseStorage implements IStorage {
       .delete(invoices)
       .where(eq(invoices.id, id));
 
-    // Create notification for the user
-    await this.createNotification({
-      userId: invoice.userId,
-      type: "invoice_deleted",
-      message: `Invoice #${invoice.invoiceNumber} has been deleted`,
-      createdAt: new Date(),
-    });
+    // Only create notification if there's a valid userId
+    if (invoice.userId) {
+      // Create notification for the user
+      await this.createNotification({
+        userId: invoice.userId,
+        type: "invoice_deleted",
+        message: `Invoice #${id} has been deleted`,
+        createdAt: new Date(),
+        read: false,
+      });
+    }
   }
 }
 

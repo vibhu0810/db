@@ -996,6 +996,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       
       const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ error: "Invalid invoice ID" });
+      }
       const invoice = await storage.getInvoice(invoiceId);
       
       if (!invoice) {
@@ -1069,6 +1072,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ error: "Invalid invoice ID" });
+      }
       const invoice = await storage.markInvoiceAsPaid(invoiceId);
       
       res.json(invoice);

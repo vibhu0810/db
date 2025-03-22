@@ -1069,6 +1069,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get completed orders that haven't been billed yet for a specific user (admin only)
+  app.get("/api/orders/completed-unbilled/:userId", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      // Get all orders for the specified user
+      const userOrders = await storage.getOrders(userId);
+      
+      // Filter to only completed orders
+      const completedOrders = userOrders.filter(order => {
+        return order.status === "Completed" || 
+          order.status === "completed" || 
+          order.status === "guest_post_published" || 
+          order.status === "niche_edit_completed";
+      });
+      
+      // Get all invoices for this user
+      const userInvoices = await storage.getInvoices(userId);
+      
+      // Create a set of invoiced order IDs
+      const invoicedOrderIds = new Set();
+      
+      // Iterate through invoices to find order IDs that have been billed
+      for (const invoice of userInvoices) {
+        // Extract order ID from invoice notes if they follow our pattern
+        if (invoice.notes) {
+          const orderIdMatch = invoice.notes.match(/Link Building Services.+?#?(\d+)/i);
+          if (orderIdMatch && orderIdMatch[1]) {
+            invoicedOrderIds.add(parseInt(orderIdMatch[1]));
+          }
+        }
+      }
+      
+      // Filter orders that haven't been billed yet
+      const unbilledOrders = completedOrders.filter(order => !invoicedOrderIds.has(order.id));
+      
+      res.json(unbilledOrders);
+    } catch (error) {
+      console.error("Error fetching completed unbilled orders:", error);
+      res.status(500).json({ error: "Failed to fetch completed unbilled orders" });
+    }
+  });
+  
   // Get completed orders that have not been invoiced (admin only)
   app.get("/api/orders/completed-not-invoiced", async (req, res) => {
     try {
@@ -1076,9 +1126,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Unauthorized: Admin access required" });
       }
       
-      // Get all orders with status "Completed"
+      // Get all orders with status that indicates completion
       const allOrders = await storage.getAllOrders();
-      const completedOrders = allOrders.filter(order => order.status === "Completed");
+      const completedOrders = allOrders.filter(order => {
+        return order.status === "Completed" || 
+          order.status === "completed" || 
+          order.status === "guest_post_published" || 
+          order.status === "niche_edit_completed";
+      });
       
       // Get all invoices
       const allInvoices = await storage.getAllInvoices();

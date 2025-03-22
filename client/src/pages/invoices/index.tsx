@@ -63,6 +63,7 @@ function CreateInvoiceDialog() {
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Query for users to select client
   const usersQuery = useQuery({
     queryKey: ['/api/users'],
     queryFn: async () => {
@@ -75,6 +76,22 @@ function CreateInvoiceDialog() {
     initialData: [],
     refetchOnMount: true,
     staleTime: 30000,
+  });
+
+  // Query for completed orders that haven't been billed yet
+  const completedOrdersQuery = useQuery({
+    queryKey: ['/api/orders/completed-unbilled'],
+    queryFn: async () => {
+      if (!selectedUser) return [];
+      const res = await apiRequest("GET", `/api/orders/completed-unbilled/${selectedUser}`);
+      if (!res.ok) {
+        console.error("Failed to fetch completed orders:", await res.text());
+        return [];
+      }
+      return await res.json();
+    },
+    enabled: !!selectedUser,
+    initialData: [],
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,7 +156,7 @@ function CreateInvoiceDialog() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedUser || !amount || !description || !dueDate) {
+    if (!selectedUser || !amount || !dueDate) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -228,7 +245,6 @@ function CreateInvoiceDialog() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Invoice description"
-                  required
                 />
               </div>
             </div>

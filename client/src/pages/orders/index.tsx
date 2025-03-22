@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Table,
   TableBody,
@@ -31,7 +33,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { FileDown, Loader2, MessageSquare, Copy, ChevronDown, X } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { useAuth } from "@/hooks/use-auth";
 import { Resizable } from "react-resizable";
 import { cn } from "@/lib/utils";
 import 'react-resizable/css/styles.css';

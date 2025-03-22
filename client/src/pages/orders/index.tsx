@@ -1163,6 +1163,11 @@ export default function Orders() {
                               // Mark comments as read when clicked
                               if (unreadCommentCounts[order.id]) {
                                 apiRequest("POST", `/api/orders/${order.id}/comments/read`);
+                                // Update the local state immediately to remove the badge
+                                const updatedCounts = {...unreadCommentCounts};
+                                delete updatedCounts[order.id];
+                                setUnreadCommentCounts(updatedCounts);
+                                // Also invalidate the query to update the server data
                                 queryClient.invalidateQueries({ queryKey: ['/api/orders/unread-comments'] });
                               }
                             }}

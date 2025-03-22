@@ -190,6 +190,13 @@ function CreateInvoiceDialog() {
   // State to store domains for reference
   const [domains, setDomains] = useState<any[]>([]);
   
+  // State for admin billing details
+  const [adminDetails, setAdminDetails] = useState<any>({
+    companyName: user?.companyName || "SaaSxLinks.ai",
+    email: user?.email || "contact@saasxlinks.ai",
+    billingAddress: user?.billingAddress || ""
+  });
+  
   // For due date selection
   const [dueDate, setDueDate] = useState<Date>(() => {
     const date = new Date();
@@ -464,9 +471,12 @@ function CreateInvoiceDialog() {
                 <div className="space-y-2">
                   <h4 className="text-sm font-semibold uppercase text-gray-500">Bill From</h4>
                   <div className="border-l-2 border-primary pl-3">
-                    <p className="font-medium">SaaSxLinks.ai</p>
-                    <p className="text-sm text-muted-foreground">Digital Link Building Services</p>
-                    <p className="text-sm text-muted-foreground">contact@saasxlinks.ai</p>
+                    <p className="font-medium">{adminDetails.companyName}</p>
+                    <p className="text-sm text-muted-foreground">Link Building Services</p>
+                    <p className="text-sm text-muted-foreground">{adminDetails.email}</p>
+                    {adminDetails.billingAddress && (
+                      <p className="text-sm text-muted-foreground">{adminDetails.billingAddress}</p>
+                    )}
                   </div>
                 </div>
                 
@@ -543,13 +553,7 @@ function CreateInvoiceDialog() {
               </div>
             </div>
             
-            {/* Description Preview */}
-            <div>
-              <h4 className="font-medium mb-2">Invoice Description</h4>
-              <div className="bg-muted/30 rounded-md p-3 max-h-40 overflow-y-auto">
-                <pre className="text-sm whitespace-pre-wrap">{invoiceDescription}</pre>
-              </div>
-            </div>
+
           </div>
         )}
         

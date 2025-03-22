@@ -348,13 +348,42 @@ export default function Orders() {
       user: 200,
     };
 
-    const newWidth = Math.min(size.width, maxWidths[column as keyof typeof maxWidths]);
+    const minWidth = 50; // Add a minimum width
+    const maxWidth = maxWidths[column as keyof typeof maxWidths];
+    const newWidth = Math.min(Math.max(size.width, minWidth), maxWidth);
+    
+    console.log(`Resizing column ${column} to ${newWidth}px`);
 
     setColumnWidths(prev => ({
       ...prev,
       [column]: newWidth,
     }));
   };
+  
+  // CSS fix for position:relative needed for Resizable to work properly
+  React.useEffect(() => {
+    // Add a style to ensure TableHead has position: relative for the resize handle to work
+    const style = document.createElement('style');
+    style.innerHTML = `
+      thead th {
+        position: relative !important;
+      }
+      .react-resizable-handle {
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        cursor: col-resize;
+        z-index: 10;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // Track unread comments
   const [unreadCommentCounts, setUnreadCommentCounts] = useState<{[key: number]: number}>({});

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -140,13 +140,41 @@ export default function DomainsPage() {
   const onResize = (column: keyof typeof columnWidths) => (_e: React.SyntheticEvent, { size }: { size: { width: number } }) => {
     // Set a maximum column width to prevent excessive stretching
     const maxWidth = 500;
-    const newWidth = Math.min(size.width, maxWidth);
+    const minWidth = 50; // Add a minimum width to prevent columns from disappearing
+    const newWidth = Math.min(Math.max(size.width, minWidth), maxWidth);
+    
+    console.log(`Resizing column ${column} to ${newWidth}px`);
     
     setColumnWidths(prev => ({
       ...prev,
       [column]: newWidth
     }));
   };
+  
+  // CSS fix for position:relative needed for Resizable to work properly
+  useEffect(() => {
+    // Add a style to ensure TableHead has position: relative for the resize handle to work
+    const style = document.createElement('style');
+    style.innerHTML = `
+      thead th {
+        position: relative !important;
+      }
+      .react-resizable-handle {
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        cursor: col-resize;
+        z-index: 10;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
     <Button

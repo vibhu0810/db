@@ -19,10 +19,29 @@ export default function OrderDetailsPage() {
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Keep track of previous order status to detect changes
+  const [previousStatus, setPreviousStatus] = useState<string | null>(null);
+  
   const { data: order, isLoading } = useQuery({
     queryKey: ['/api/orders', id],
     queryFn: () => apiRequest("GET", `/api/orders/${id}`).then(res => res.json()),
+    refetchInterval: 5000, // Poll every 5 seconds for order status updates
   });
+  
+  // Notify on status change
+  useEffect(() => {
+    if (order && previousStatus !== null && order.status !== previousStatus) {
+      toast({
+        title: "Status Updated",
+        description: `Order status changed from "${previousStatus}" to "${order.status}"`,
+        variant: "default",
+      });
+    }
+    
+    if (order) {
+      setPreviousStatus(order.status);
+    }
+  }, [order?.status, previousStatus, toast]);
 
   const { data: comments = [], isLoading: isLoadingComments, refetch: refetchComments } = useQuery({
     queryKey: ['/api/orders', id, 'comments'],
@@ -212,7 +231,33 @@ export default function OrderDetailsPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
-                <div className="mt-1">{order.status}</div>
+                <div className="mt-1">
+                  {order.status === "completed" ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500">
+                      Completed
+                    </span>
+                  ) : order.status === "in_progress" ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-500">
+                      In Progress
+                    </span>
+                  ) : order.status === "pending" ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500">
+                      Pending
+                    </span>
+                  ) : order.status === "cancelled" ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500">
+                      Cancelled
+                    </span>
+                  ) : order.status === "rejected" ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500">
+                      Rejected
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500">
+                      {order.status}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 

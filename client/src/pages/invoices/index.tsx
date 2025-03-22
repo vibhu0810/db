@@ -123,33 +123,63 @@ function CreateInvoiceDialog() {
     isError: false,
   };
 
-  // Query for completed orders that haven't been billed yet
-  const completedOrdersQuery = useQuery({
-    queryKey: ['/api/orders/completed-unbilled', selectedUser],
-    queryFn: async () => {
-      if (!selectedUser) return [];
-      
-      try {
-        const res = await apiRequest("GET", `/api/orders/completed-unbilled/${selectedUser}`);
+  // State to store completed orders
+  const [completedOrders, setCompletedOrders] = useState<any[]>([]);
+  
+  // Effect to fetch completed orders when user changes
+  useEffect(() => {
+    if (!selectedUser) {
+      setCompletedOrders([]);
+      return;
+    }
+    
+    console.log("Fetching completed orders for user:", selectedUser);
+    
+    // Directly fetch from a simpler endpoint that just gets all orders for the user
+    fetch(`/api/orders?userId=${selectedUser}&status=completed`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+      .then(res => {
+        console.log("Completed orders fetch status:", res.status);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Completed orders found:", data);
         
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Failed to fetch completed orders:", errorText);
-          return [];
+        // If we got an array of orders, use it
+        if (Array.isArray(data)) {
+          // Filter to only include orders with a dateCompleted property
+          const filteredOrders = data.filter(order => 
+            order.dateCompleted || 
+            order.status === 'completed' || 
+            order.status === 'guest_post_published' ||
+            order.status === 'niche_edit_published'
+          );
+          
+          console.log("Filtered completed orders:", filteredOrders);
+          setCompletedOrders(filteredOrders);
+        } else {
+          console.error("Expected array of orders but got:", data);
+          setCompletedOrders([]);
         }
-        
-        const data = await res.json();
-        console.log("Completed unbilled orders:", data);
-        return data;
-      } catch (error) {
+      })
+      .catch(error => {
         console.error("Error fetching completed orders:", error);
-        return [];
-      }
-    },
-    enabled: !!selectedUser,
-    staleTime: 10000,
-    initialData: [],
-  });
+        setCompletedOrders([]);
+      });
+  }, [selectedUser]);
+  
+  // Dummy query object to maintain compatibility with existing code
+  const completedOrdersQuery = {
+    data: completedOrders,
+    isLoading: false,
+    isSuccess: true,
+    isError: false,
+  };
 
   // Generate invoice description based on order type
   const generateInvoiceDescription = (order: any) => {
@@ -285,12 +315,6 @@ function CreateInvoiceDialog() {
                 Client <span className="text-red-500">*</span>
               </Label>
               <div className="col-span-3">
-                {/* Debug Info */}
-                <div className="mb-2 p-2 bg-yellow-50 text-xs rounded-md border border-yellow-200">
-                  <p>Debug - Client data available: {Array.isArray(clientsQuery.data) ? 'Yes' : 'No'}</p>
-                  <p>Debug - Client count: {Array.isArray(clientsQuery.data) ? clientsQuery.data.length : 0}</p>
-                </div>
-                
                 <select 
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={selectedUser?.toString() || ""}

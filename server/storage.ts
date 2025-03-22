@@ -10,8 +10,15 @@ import { db } from "./db";
 import { eq, or, and, desc, gte, lte, between, asc } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
 
+// For development and debugging, we'll log when the session store is initialized
+console.log("Initializing session store...");
+
+// Create session stores
 const MemoryStore = createMemoryStore(session);
+const PgStore = connectPgSimple(session);
+const isProduction = process.env.NODE_ENV === "production";
 
 export interface IStorage {
   // User operations
@@ -70,9 +77,32 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
-    });
+    // In production or if PostgreSQL is available, use PostgreSQL for session storage
+    try {
+      // Use PostgreSQL session store for persistence across restarts
+      const connectionString = process.env.DATABASE_URL;
+      
+      if (connectionString) {
+        console.log("Using PostgreSQL session store for persistence");
+        this.sessionStore = new PgStore({
+          conObject: {
+            connectionString,
+          },
+          tableName: 'session', // Default table name
+          createTableIfMissing: true,
+        });
+      } else {
+        throw new Error("No DATABASE_URL found");
+      }
+    } catch (error) {
+      // Fallback to memory store if PostgreSQL setup fails
+      console.error("Failed to set up PostgreSQL session store, falling back to memory store:", error);
+      this.sessionStore = new MemoryStore({
+        checkPeriod: 86400000, // Clear expired sessions every 24h
+      });
+    }
+    
+    console.log("Session store initialized");
   }
 
   // User operations

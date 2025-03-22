@@ -43,10 +43,21 @@ export default function OrderDetailsPage() {
         });
       }
     },
-    onNewComment: (orderId: number) => {
+    onNewComment: (orderId: number, comment: any) => {
       // Only update if this is the order we're viewing
       if (orderId === parseInt(id as string)) {
+        // Add comment to local state immediately for real-time update
+        if (comment) {
+          setLocalComments(prev => [...prev, comment]);
+        }
+        
+        // Also invalidate the query to ensure data consistency
         queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
+        
+        toast({
+          title: "New Comment",
+          description: `New comment from ${comment?.user?.username || 'another user'}`,
+        });
       }
     }
   });
@@ -56,10 +67,20 @@ export default function OrderDetailsPage() {
     queryFn: () => apiRequest("GET", `/api/orders/${id}`).then(res => res.json()),
   });
 
-  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
+  // Keep track of comments locally for real-time updates
+  const [localComments, setLocalComments] = useState<any[]>([]);
+  
+  const { data: fetchedComments = [], isLoading: isLoadingComments } = useQuery({
     queryKey: ['/api/orders', id, 'comments'],
     queryFn: () => apiRequest("GET", `/api/orders/${id}/comments`).then(res => res.json()),
+    onSuccess: (data) => {
+      // Update local comments when data is fetched
+      setLocalComments(data);
+    }
   });
+  
+  // Use localComments for rendering
+  const comments = localComments;
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {

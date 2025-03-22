@@ -130,17 +130,17 @@ export default function OrderDetailsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center">
           <Link href="/orders">
             <Button variant="outline" size="sm" className="flex items-center gap-1">
               <ArrowLeft className="h-4 w-4" />
               Back to Orders
             </Button>
           </Link>
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Order #{id}</h2>
-            <p className="text-muted-foreground">View and manage order details</p>
-          </div>
+        </div>
+        <div className="text-right">
+          <h2 className="text-3xl font-bold tracking-tight">Order #{id}</h2>
+          <p className="text-muted-foreground">View and manage order details</p>
         </div>
       </div>
 

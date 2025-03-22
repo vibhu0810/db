@@ -492,6 +492,28 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(invoices.createdAt));
   }
+  
+  async deleteInvoice(id: number): Promise<void> {
+    // First get the invoice to access the user ID for notification
+    const invoice = await this.getInvoice(id);
+    
+    if (!invoice) {
+      throw new Error("Invoice not found");
+    }
+    
+    // Delete the invoice
+    await db
+      .delete(invoices)
+      .where(eq(invoices.id, id));
+
+    // Create notification for the user
+    await this.createNotification({
+      userId: invoice.userId,
+      type: "invoice_deleted",
+      message: `Invoice #${invoice.invoiceNumber} has been deleted`,
+      createdAt: new Date(),
+    });
+  }
 }
 
 export const storage = new DatabaseStorage();

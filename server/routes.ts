@@ -1102,9 +1102,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Invoice not found" });
       }
       
-      // We need to add a deleteInvoice method to storage
-      // For now we'll just return success
-      // await storage.deleteInvoice(invoiceId);
+      // Delete the invoice using our new storage method
+      await storage.deleteInvoice(invoiceId);
       
       res.status(200).json({ success: true, message: "Invoice deleted successfully" });
     } catch (error) {

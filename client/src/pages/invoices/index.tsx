@@ -72,14 +72,31 @@ function CreateInvoiceDialog() {
   const usersQuery = useQuery({
     queryKey: ['/api/users'],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/users");
-      const data = await res.json();
-      console.log("Users for invoice dropdown:", data);
-      return data;
+      try {
+        const res = await fetch("/api/users", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch users: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        console.log("Users for invoice dropdown:", data);
+        return data;
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        return [];
+      }
     },
-    enabled: !!user?.is_admin,
+    enabled: !!user?.is_admin && open, // Only fetch when dialog is open
     initialData: [],
     refetchOnMount: true,
+    refetchOnWindowFocus: false,
     staleTime: 30000,
   });
 
@@ -300,22 +317,27 @@ function CreateInvoiceDialog() {
                     <SelectValue placeholder="Select a client" />
                   </SelectTrigger>
                   <SelectContent>
-                    {usersQuery.data && usersQuery.data.length > 0 ? (
+                    {usersQuery.isLoading ? (
+                      <div className="p-2 text-sm text-center">Loading clients...</div>
+                    ) : usersQuery.data && usersQuery.data.length > 0 ? (
                       usersQuery.data.map((user: any) => (
                         <SelectItem key={user.id} value={user.id.toString()}>
                           {user.companyName || user.username}
                         </SelectItem>
                       ))
                     ) : (
-                      <div className="relative flex w-full h-10 cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                        No clients found
-                      </div>
+                      <div className="p-2 text-sm text-center">No clients found</div>
                     )}
                   </SelectContent>
                 </Select>
-                {usersQuery.data && usersQuery.data.length === 0 && (
+                {usersQuery.isSuccess && usersQuery.data.length === 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
                     No clients found. Make sure there are regular users in the system.
+                  </p>
+                )}
+                {usersQuery.isError && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Error loading clients. Please try again.
                   </p>
                 )}
               </div>

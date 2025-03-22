@@ -812,7 +812,7 @@ export default function Orders() {
   // Check for status changes to show toast notifications
   // This only runs when orders are fetched from polling (not user-triggered updates)
   useEffect(() => {
-    if (!isLoading && orders.length > 0 && !isActionInProgress) {
+    if (!isLoading && orders.length > 0 && !isUpdatingStatus && !isAddingComment && !isCancellingOrder && !isDeletingOrder && !isCreatingOrder) {
       // Create a map of current order statuses
       const currentOrderStatuses: Record<number, string> = {};
       const now = Date.now();
@@ -862,7 +862,7 @@ export default function Orders() {
         }
       }
     }
-  }, [isLoading, orders, toast, recentStatusUpdates, isActionInProgress, previousOrderStatuses]);
+  }, [isLoading, orders, toast, recentStatusUpdates, isUpdatingStatus, isAddingComment, isCancellingOrder, isDeletingOrder, isCreatingOrder, previousOrderStatuses]);
 
   useEffect(() => {
     if (!isLoading && orders.length > 0) {

@@ -79,23 +79,34 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    const url = queryKey[0] as string;
+    console.log(`Fetching data from ${url}`);
+    
     try {
-      const res = await fetch(queryKey[0] as string, {
+      const res = await fetch(url, {
         credentials: "include",
       });
-
+      
+      console.log(`Response from ${url}: status=${res.status}`);
+      
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        console.log(`Unauthorized access to ${url}, returning null as configured`);
         return null;
       }
 
       if (!res.ok) {
         const text = await res.text();
+        console.error(`Error response from ${url}: ${res.status} - ${text || res.statusText}`);
         throw new Error(`${res.status}: ${text || res.statusText}`);
       }
 
-      return await res.json();
+      const data = await res.json();
+      console.log(`Successful data fetch from ${url}, data:`, 
+        url.includes('/api/user') ? (data ? 'User data present' : 'No user data') : 'Data received');
+      
+      return data;
     } catch (error) {
-      console.error(`Error fetching ${queryKey[0]}:`, error);
+      console.error(`Error fetching ${url}:`, error);
       throw error;
     }
   };

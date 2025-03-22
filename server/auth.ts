@@ -185,4 +185,24 @@ export function setupAuth(app: Express) {
     }
     res.json(req.user);
   });
+  
+  // Debug endpoint to check auth status
+  app.get("/api/auth-status", (req, res) => {
+    console.log("GET /api/auth-status called");
+    console.log("Session ID:", req.sessionID);
+    console.log("Is authenticated:", req.isAuthenticated());
+    
+    const status = {
+      isAuthenticated: req.isAuthenticated(),
+      sessionID: req.sessionID,
+      sessionExists: !!req.session,
+      sessionData: req.session,
+      userExists: !!req.user,
+      // Only include user data if authenticated
+      user: req.isAuthenticated() ? req.user : null,
+    };
+    
+    console.log("Auth status:", JSON.stringify(status, null, 2));
+    res.json(status);
+  });
 }

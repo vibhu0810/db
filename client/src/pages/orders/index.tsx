@@ -73,7 +73,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { User } from "@shared/schema";
+import { User, GUEST_POST_STATUSES, NICHE_EDIT_STATUSES } from "@shared/schema";
 import { Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";

@@ -1218,12 +1218,15 @@ export default function Orders() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              setSelectedOrderId(order.id);
-                              // Mark comments as read when clicked using our mutation
-                              if (unreadCommentCounts[order.id]) {
-                                markCommentsAsReadMutation.mutate(order.id);
+                              if (!isActionInProgress) {
+                                setSelectedOrderId(order.id);
+                                // Mark comments as read when clicked using our mutation
+                                if (unreadCommentCounts[order.id]) {
+                                  markCommentsAsReadMutation.mutate(order.id);
+                                }
                               }
                             }}
+                            disabled={isActionInProgress}
                             className="relative flex items-center gap-1"
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -1258,7 +1261,12 @@ export default function Orders() {
                                 )}
                                 {order.status !== "Completed" && order.status !== "Cancelled" && (
                                   <DropdownMenuItem
-                                    onClick={() => setOrderToCancel(order.id)}
+                                    onClick={() => {
+                                      if (!isActionInProgress) {
+                                        setOrderToCancel(order.id);
+                                      }
+                                    }}
+                                    disabled={isActionInProgress}
                                     className="text-destructive focus:text-destructive"
                                   >
                                     <X className="mr-2 h-4 w-4" />
@@ -1267,7 +1275,12 @@ export default function Orders() {
                                 )}
                                 {isAdmin && (
                                   <DropdownMenuItem
-                                    onClick={() => setOrderToDelete(order.id)}
+                                    onClick={() => {
+                                      if (!isActionInProgress) {
+                                        setOrderToDelete(order.id);
+                                      }
+                                    }}
+                                    disabled={isActionInProgress}
                                     className="text-destructive focus:text-destructive"
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" />
@@ -1356,10 +1369,16 @@ export default function Orders() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
-                  cancelOrderMutation.mutate(orderToCancel);
-                  setOrderToCancel(null);
+                  if (!isActionInProgress) {
+                    setIsActionInProgress(true);
+                    cancelOrderMutation.mutate(orderToCancel);
+                    setOrderToCancel(null);
+                  }
                 }}
+                disabled={isActionInProgress}
               >
+                {isActionInProgress ? 
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Confirm
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -1378,11 +1397,15 @@ export default function Orders() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (orderToDelete) {
+                if (orderToDelete && !isActionInProgress) {
+                  setIsActionInProgress(true);
                   deleteOrderMutation.mutate(orderToDelete);
                 }
               }}
+              disabled={isActionInProgress}
             >
+              {isActionInProgress ? 
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1431,11 +1454,16 @@ export default function Orders() {
                   onChange={(e) => setNewComment(e.target.value)}
                 />
                 <Button
-                  onClick={() => addCommentMutation.mutate()}
-                  disabled={!newComment.trim() || addCommentMutation.isPending}
+                  onClick={() => {
+                    if (!isActionInProgress && newComment.trim()) {
+                      setIsActionInProgress(true);
+                      addCommentMutation.mutate();
+                    }
+                  }}
+                  disabled={!newComment.trim() || isActionInProgress || addCommentMutation.isPending}
                   className="w-full"
                 >
-                  {addCommentMutation.isPending && (
+                  {(isActionInProgress || addCommentMutation.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   Add Comment

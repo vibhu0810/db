@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,16 +25,16 @@ export function PhoneInput({
   placeholder = "Enter phone number",
   disabled = false
 }: PhoneInputProps) {
-  const [open, setOpen] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState(
+  const [open, setOpen] = React.useState(false);
+  const [selectedCountry, setSelectedCountry] = React.useState(
     countryCodes.find(country => country.code === defaultCountry) || 
     countryCodes.find(country => country.code === "US")
   );
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [phoneNumber, setPhoneNumber] = React.useState("");
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Parse the value into countryCode and phoneNumber on initial load
-  useEffect(() => {
+  React.useEffect(() => {
     if (value) {
       // Check if the value starts with a dial code
       const matchedCountry = countryCodes.find(country => value.startsWith(country.dialCode));
@@ -50,7 +50,7 @@ export function PhoneInput({
   }, []);
 
   // Update the combined value whenever country or phone number changes
-  useEffect(() => {
+  React.useEffect(() => {
     const combinedValue = `${selectedCountry?.dialCode} ${phoneNumber}`.trim();
     onChange(combinedValue);
   }, [selectedCountry, phoneNumber, onChange]);

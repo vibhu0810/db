@@ -19,21 +19,36 @@ export async function apiRequest(
     // First form: apiRequest(url, data)
     url = urlOrOptions;
     const method = typeof optionsOrData === 'object' && optionsOrData !== null ? 'POST' : 'GET';
+    
+    // Create base options
     options = {
       method,
-      headers: optionsOrData ? { "Content-Type": "application/json" } : {},
-      body: optionsOrData ? JSON.stringify(optionsOrData) : undefined,
+      headers: {},
       credentials: "include",
     };
+    
+    // Only add body and Content-Type for non-GET/HEAD requests
+    if (method !== 'GET' && method !== 'HEAD' && optionsOrData) {
+      options.headers = { "Content-Type": "application/json" };
+      options.body = JSON.stringify(optionsOrData);
+    }
   } else {
     // Second form: apiRequest({ method, body }, undefined)
     url = optionsOrData as string;
+    const method = urlOrOptions.method;
+    
+    // Create base options
     options = {
-      method: urlOrOptions.method,
-      headers: urlOrOptions.body ? { "Content-Type": "application/json" } : {},
-      body: urlOrOptions.body,
+      method,
+      headers: {},
       credentials: "include",
     };
+    
+    // Only add body and Content-Type for non-GET/HEAD requests
+    if (method !== 'GET' && method !== 'HEAD' && urlOrOptions.body) {
+      options.headers = { "Content-Type": "application/json" };
+      options.body = urlOrOptions.body;
+    }
   }
 
   const res = await fetch(url, options);

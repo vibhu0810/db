@@ -485,10 +485,10 @@ export default function Orders() {
         description: "Order status has been updated successfully.",
       });
       
-      // Reset action flag after a brief delay to prevent UI glitches
+      // Reset action flag after a longer delay to prevent UI glitches
       setTimeout(() => {
         setIsActionInProgress(false);
-      }, 300);
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
@@ -496,7 +496,11 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      setIsActionInProgress(false);
+      
+      // Ensure we reset action state on error with delay
+      setTimeout(() => {
+        setIsActionInProgress(false);
+      }, 300);
     },
   });
 
@@ -516,14 +520,14 @@ export default function Orders() {
         description: "The order has been deleted successfully.",
       });
       
-      // Reset all states in a consistent manner
+      // Reset all states in a consistent manner with longer delay
       setTimeout(() => {
         setOrderToDelete(null);
         setOrderToEdit(null);
         setOrderToCancel(null);
         setSelectedOrderId(null);
         setIsActionInProgress(false);
-      }, 100);
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
@@ -531,9 +535,11 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      // Make sure to reset the state even on error
-      setOrderToDelete(null);
-      setIsActionInProgress(false);
+      // Make sure to reset the state even on error with delay
+      setTimeout(() => {
+        setOrderToDelete(null);
+        setIsActionInProgress(false);
+      }, 300);
     },
   });
 
@@ -554,11 +560,11 @@ export default function Orders() {
         description: "Order has been created successfully.",
       });
       
-      // Reset states in a consistent manner
+      // Reset states in a consistent manner with longer delay
       setTimeout(() => {
         setShowCustomOrderSheet(false);
         setIsActionInProgress(false);
-      }, 100);
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
@@ -566,7 +572,11 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      setIsActionInProgress(false);
+      
+      // Ensure we reset action state on error
+      setTimeout(() => {
+        setIsActionInProgress(false);
+      }, 300);
     },
   });
 
@@ -595,14 +605,14 @@ export default function Orders() {
         description: "The order has been cancelled successfully.",
       });
       
-      // Reset all states in a consistent manner with a slightly longer delay for better UX
+      // Reset all states in a consistent manner with a longer delay for better UX
       setTimeout(() => {
         setOrderToCancel(null);
         setOrderToEdit(null);
         setOrderToDelete(null);
         setSelectedOrderId(null);
         setIsActionInProgress(false);
-      }, 300);
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
@@ -610,19 +620,31 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      // Make sure to reset the state even on error
-      setOrderToCancel(null);
-      setIsActionInProgress(false);
+      // Make sure to reset the state even on error with delay
+      setTimeout(() => {
+        setOrderToCancel(null);
+        setIsActionInProgress(false);
+      }, 300);
     },
   });
 
 
   const handleSort = (field: string) => {
+    // Prevent sorting during action processing
+    if (isActionInProgress) return;
+    
     if (sortField === field) {
       setSortDirection(prev => prev === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
       setSortDirection("desc");
+    }
+  };
+  
+  // A helper to handle page changes with action state
+  const handlePageChange = (page: number) => {
+    if (!isActionInProgress) {
+      setCurrentPage(page);
     }
   };
 

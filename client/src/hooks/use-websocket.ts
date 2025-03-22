@@ -87,15 +87,28 @@ export function useWebSocket(options?: {
           console.log(`🔴 Extracted orderId=${orderId}, comment:`, comment);
           
           // Call the onNewComment callback if provided
-          if (options?.onNewComment && orderId && comment) {
+          if (options?.onNewComment && orderId) {
             console.log('🔴 Calling onNewComment callback with:', {
               orderId,
               comment
             });
             
             try {
-              options.onNewComment(orderId, comment);
-              console.log('🔴 onNewComment callback executed successfully');
+              // Create a direct force refresh by just sending minimal but consistent data
+              // This ensures we don't have issues with comment structure
+              const minimalComment = {
+                id: comment.id || new Date().getTime(),
+                message: comment.message || 'New comment',
+                createdAt: comment.createdAt || new Date().toISOString(),
+                userId: comment.userId || comment.user?.id,
+                user: {
+                  username: comment.user?.username || 'User',
+                  is_admin: comment.user?.is_admin
+                }
+              };
+              
+              options.onNewComment(orderId, minimalComment);
+              console.log('🔴 onNewComment callback executed successfully with minimal comment data');
             } catch (err) {
               console.error('🔴 Error in onNewComment callback:', err);
             }
@@ -105,11 +118,10 @@ export function useWebSocket(options?: {
               description: `New comment on Order #${orderId}`,
             });
           } else {
-            console.log('🔴 No onNewComment callback or missing data:', {
+            console.log('🔴 No onNewComment callback or missing orderId:', {
               hasOptions: !!options,
               hasCallback: !!(options && options.onNewComment),
-              hasOrderId: !!orderId,
-              hasComment: !!comment
+              hasOrderId: !!orderId
             });
           }
         }

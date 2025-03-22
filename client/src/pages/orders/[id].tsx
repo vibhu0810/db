@@ -53,43 +53,44 @@ export default function OrderDetailsPage() {
         
         // Add comment to local state immediately for real-time update
         if (comment) {
-          console.log('🔵 Adding comment to local state:', comment);
-          
-          // Ensure comment has user information for display
-          const commentWithUser = comment.user ? comment : {
-            ...comment,
-            user: {
-              username: comment.userId === user?.id ? user.username : "User"
-            }
-          };
-          
-          // Update local comments state with the new comment
-          setLocalComments(prevComments => {
-            console.log('🔵 Current comments count:', prevComments.length);
-            // Check if comment already exists to avoid duplicates
-            const exists = prevComments.some(c => c.id === commentWithUser.id);
-            if (exists) {
+          try {
+            console.log('🔵 Adding comment to local state:', comment);
+            
+            // Create a well-formed comment object with required fields
+            const newComment = {
+              id: comment.id,
+              orderId: comment.orderId || orderId,
+              userId: comment.userId || comment.user?.id,
+              message: comment.message,
+              createdAt: comment.createdAt || new Date().toISOString(),
+              user: comment.user || {
+                id: comment.userId,
+                username: comment.userId === user?.id ? user.username : "User",
+                is_admin: comment.userId === user?.id ? user.is_admin : false
+              }
+            };
+            
+            console.log('🔵 Formatted comment for display:', newComment);
+            
+            // Direct state update - simpler and more reliable
+            const exists = localComments.some(c => c.id === newComment.id);
+            if (!exists) {
+              console.log('🔵 Adding new comment directly to state');
+              setLocalComments([...localComments, newComment]);
+              
+              toast({
+                title: "New Comment",
+                description: `New comment from ${newComment.user?.username || 'another user'}`,
+              });
+            } else {
               console.log('🔵 Comment already exists in state, not adding duplicate');
-              return prevComments;
             }
             
-            console.log('🔵 Adding new comment to state:', commentWithUser);
-            const newComments = [...prevComments, commentWithUser];
-            console.log('🔵 Updated comments count:', newComments.length);
-            return newComments;
-          });
-          
-          // Also invalidate the query to ensure data consistency but with a delay
-          // to avoid race conditions with the local state update
-          setTimeout(() => {
-            console.log('🔵 Invalidating comments query');
+          } catch (err) {
+            console.error('🔵 Error updating comment state:', err);
+            // Fallback to query invalidation if direct update fails
             queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
-          }, 500);
-          
-          toast({
-            title: "New Comment",
-            description: `New comment from ${comment?.user?.username || 'another user'}`,
-          });
+          }
         }
       } else {
         console.log('🔵 Comment is for a different order, ignoring');

@@ -323,7 +323,8 @@ export default function Orders() {
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [previousOrderStatuses, setPreviousOrderStatuses] = useState<Record<number, string>>({});
-  const [recentStatusUpdates, setRecentStatusUpdates] = useState<Record<number, boolean>>({});
+  // Track manual status updates with timestamps to know which ones were user-initiated
+  const [recentStatusUpdates, setRecentStatusUpdates] = useState<Record<number, number>>({});
   const [isActionInProgress, setIsActionInProgress] = useState<boolean>(false);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
@@ -470,8 +471,13 @@ export default function Orders() {
     },
     onSuccess: (result) => {
       const { orderId } = result;
-      // Mark this order as recently updated to prevent duplicate toast in the useEffect
-      setRecentStatusUpdates(prev => ({ ...prev, [orderId]: true }));
+      // Mark this order as recently updated with timestamp to prevent duplicate toast in the useEffect
+      const timestamp = Date.now();
+      setRecentStatusUpdates(prev => {
+        const newUpdates = { ...prev };
+        newUpdates[orderId] = timestamp;
+        return newUpdates;
+      });
       
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
@@ -479,10 +485,10 @@ export default function Orders() {
         description: "Order status has been updated successfully.",
       });
       
-      // Reset action flag
+      // Reset action flag after a brief delay to prevent UI glitches
       setTimeout(() => {
         setIsActionInProgress(false);
-      }, 100);
+      }, 300);
     },
     onError: (error: Error) => {
       toast({
@@ -575,8 +581,13 @@ export default function Orders() {
       return orderId;
     },
     onSuccess: (orderId) => {
-      // Mark this order as recently updated to prevent duplicate toast in the useEffect
-      setRecentStatusUpdates(prev => ({ ...prev, [orderId]: true }));
+      // Mark this order as recently updated with timestamp to prevent duplicate toast
+      const timestamp = Date.now();
+      setRecentStatusUpdates(prev => {
+        const newUpdates = { ...prev };
+        newUpdates[orderId] = timestamp;
+        return newUpdates;
+      });
       
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
@@ -584,14 +595,14 @@ export default function Orders() {
         description: "The order has been cancelled successfully.",
       });
       
-      // Reset all states in a consistent manner
+      // Reset all states in a consistent manner with a slightly longer delay for better UX
       setTimeout(() => {
         setOrderToCancel(null);
         setOrderToEdit(null);
         setOrderToDelete(null);
         setSelectedOrderId(null);
         setIsActionInProgress(false);
-      }, 100);
+      }, 300);
     },
     onError: (error: Error) => {
       toast({
@@ -1347,7 +1358,7 @@ export default function Orders() {
             <PaginationItem>
               <PaginationNext
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || isActionInProgress}
               />
             </PaginationItem>
           </PaginationContent>

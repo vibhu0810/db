@@ -500,10 +500,13 @@ export default function Orders() {
       if (!selectedOrderId || !newComment.trim()) {
         throw new Error("Please enter a comment");
       }
-      const res = await apiRequest("POST", `/api/orders/${selectedOrderId}/comments`, {
+      
+      const commentData = {
         orderId: selectedOrderId,
         message: newComment.trim(),
-      });
+      };
+      
+      const res = await apiRequest("POST", `/api/orders/${selectedOrderId}/comments`, commentData);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to add comment");

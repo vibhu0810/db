@@ -15,7 +15,22 @@ import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Trash, Upload, FileText, Filter, FileCheck, FileX, Download } from "lucide-react";
+import { 
+  AlertTriangle, 
+  Trash, 
+  Upload, 
+  FileText, 
+  Filter, 
+  FileCheck, 
+  FileX, 
+  Download,
+  Loader2,
+  Check, 
+  Clock,
+  MoreHorizontal,
+  Pencil,
+  Search
+} from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { uploadFile } from "@/utils/uploadthing";
@@ -60,21 +75,33 @@ function CreateInvoiceDialog() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
-  const [totalSelectedAmount, setTotalSelectedAmount] = useState(0);
-
-  // Query for users to select client - always enabled for admins to prefetch
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [previewStep, setPreviewStep] = useState(false);
+  
+  // Automatically calculated fields from completed orders
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [invoiceDescription, setInvoiceDescription] = useState("");
+  
+  // Query for users to select client
   const usersQuery = useQuery({
-    queryKey: ['/api/users'],
+    queryKey: ['/api/users/stats'],
     queryFn: async () => {
       try {
-        const res = await apiRequest("GET", "/api/users");
+        // Using the /api/users/stats endpoint which is already working in the app
+        const res = await fetch("/api/users/stats", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch users: ${res.status}`);
+        }
+        
         const data = await res.json();
+        console.log("Users from stats endpoint:", data);
         
         // Filter out admin users, we only want to create invoices for regular users
         return data.filter((u: any) => !u.is_admin);
@@ -83,11 +110,10 @@ function CreateInvoiceDialog() {
         return [];
       }
     },
-    enabled: !!user?.is_admin, // Always fetch for admins
+    enabled: !!user?.is_admin && open, // Only fetch when dialog is open and user is admin
     initialData: [],
-    refetchOnMount: false,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   // Query for completed orders that haven't been billed yet
@@ -97,13 +123,7 @@ function CreateInvoiceDialog() {
       if (!selectedUser) return [];
       
       try {
-        const res = await fetch(`/api/orders/completed-unbilled/${selectedUser}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
+        const res = await apiRequest("GET", `/api/orders/completed-unbilled/${selectedUser}`);
         
         if (!res.ok) {
           const errorText = await res.text();
@@ -139,38 +159,21 @@ function CreateInvoiceDialog() {
       return `Link Building Services - #${orderId} - ${order.sourceUrl} - $${price}`;
     }
   };
-
-  // Generate complete invoice description from selected orders
-  const generateFullDescription = () => {
-    if (!selectedOrders.length) return "";
-
-    const selectedOrderObjects = completedOrdersQuery.data.filter((order: any) => 
-      selectedOrders.includes(order.id)
-    );
-
-    if (selectedOrderObjects.length === 1) {
-      return generateInvoiceDescription(selectedOrderObjects[0]);
-    } else {
-      const descriptions = selectedOrderObjects.map((order: any, index: number) => 
-        `${index + 1}. ${generateInvoiceDescription(order)}`
-      );
-      return descriptions.join('\n');
-    }
-  };
   
-  // Automatically select all orders and calculate total when order data changes
+  // When selected user changes, calculate invoice details
   useEffect(() => {
     if (!completedOrdersQuery.data || completedOrdersQuery.data.length === 0) {
-      setTotalSelectedAmount(0);
-      setSelectedOrders([]);
-      setAmount("0.00");
-      setDescription("");
+      setTotalAmount(0);
+      setInvoiceDescription("");
+      setPreviewStep(false);
       return;
     }
     
-    // Automatically select all orders
-    const allOrderIds = completedOrdersQuery.data.map((order: any) => order.id);
-    setSelectedOrders(allOrderIds);
+    // Find the selected client's details
+    if (selectedUser && usersQuery.data) {
+      const client = usersQuery.data.find((u: any) => u.id === selectedUser);
+      setSelectedClient(client);
+    }
     
     // Calculate total from all orders
     const total = completedOrdersQuery.data.reduce((sum: number, order: any) => {
@@ -178,43 +181,46 @@ function CreateInvoiceDialog() {
       return sum + (isNaN(price) ? 0 : price);
     }, 0);
     
-    setTotalSelectedAmount(total);
-    setAmount(total.toFixed(2));
+    setTotalAmount(total);
     
-    // Generate and set description based on all orders
+    // Generate invoice description based on all orders
     const descriptions = completedOrdersQuery.data.map((order: any, index: number) => 
       `${index + 1}. ${generateInvoiceDescription(order)}`
     );
-    setDescription(descriptions.join('\n'));
-  }, [completedOrdersQuery.data]);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
+    setInvoiceDescription(descriptions.join('\n'));
     
-    const file = e.target.files[0];
-    setUploading(true);
-    
-    try {
-      const response = await uploadFile(file, 'invoice');
-      setFileUrl(response);
-      toast({
-        title: "Success",
-        description: "File uploaded successfully",
-      });
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload file",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
+    // Automatically move to preview step when we have orders
+    if (completedOrdersQuery.data.length > 0) {
+      setPreviewStep(true);
     }
+  }, [completedOrdersQuery.data, selectedUser, usersQuery.data]);
+
+  // Reset form and go back to client selection
+  const resetForm = () => {
+    setSelectedUser(null);
+    setSelectedClient(null);
+    setPreviewStep(false);
+    setTotalAmount(0);
+    setInvoiceDescription("");
   };
 
+  // Create and send the invoice
   const createInvoiceMutation = useMutation({
-    mutationFn: async (invoiceData: any) => {
+    mutationFn: async () => {
+      // Set due date to 30 days from now by default
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 30);
+      
+      const invoiceData = {
+        userId: selectedUser,
+        amount: totalAmount * 100, // Convert to cents for storage
+        notes: invoiceDescription,
+        dueDate: dueDate.toISOString(),
+        status: 'pending',
+        fileName: 'invoice.pdf',
+        fileUrl: '',
+      };
+      
       const response = await apiRequest('/api/invoices', {
         method: 'POST',
         body: JSON.stringify(invoiceData),
@@ -224,7 +230,7 @@ function CreateInvoiceDialog() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Invoice created successfully",
+        description: "Invoice created and sent to client",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/invoices/all'] });
       setOpen(false);
@@ -239,64 +245,15 @@ function CreateInvoiceDialog() {
     },
   });
 
-  const resetForm = () => {
-    setSelectedUser(null);
-    setAmount("");
-    setDescription("");
-    setDueDate("");
-    setFileUrl(null);
-    setSelectedOrders([]);
-    setTotalSelectedAmount(0);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedUser || !amount || !dueDate) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const invoiceData = {
-      userId: selectedUser,
-      amount: parseFloat(amount) * 100, // Convert to cents for storage
-      notes: description,
-      dueDate: new Date(dueDate).toISOString(),
-      status: 'pending',
-      fileName: 'invoice.pdf',
-      fileUrl: '',
-    };
-
-    createInvoiceMutation.mutate(invoiceData);
-  };
-
-  // All orders are automatically selected
-  // This is just a placeholder function for the UI to show/hide which orders are included
-  const toggleOrderSelection = (orderId: number) => {
-    // No-op, all orders are always included
-  };
-
-  // All orders are automatically selected
-  const selectAllOrders = () => {
-    if (!completedOrdersQuery.data) return;
-    
-    const allOrderIds = completedOrdersQuery.data.map((order: any) => order.id);
-    setSelectedOrders(allOrderIds);
-  };
-  
-  // This function is not used since all orders are always selected
-  const deselectAllOrders = () => {
-    // No-op, as we should always include all orders
-  };
-
   if (!user?.is_admin) return null;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      if (!newOpen) {
+        resetForm();
+      }
+      setOpen(newOpen);
+    }}>
       <DialogTrigger asChild>
         <Button className="ml-auto">
           <Upload className="mr-2 h-4 w-4" />
@@ -305,13 +262,17 @@ function CreateInvoiceDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Create New Invoice</DialogTitle>
+          <DialogTitle>{previewStep ? "Invoice Preview" : "Create New Invoice"}</DialogTitle>
           <DialogDescription>
-            Create an invoice to send to a client. Fill in the details below.
+            {previewStep 
+              ? "Review and approve this invoice to send to the client" 
+              : "Select a client to generate an invoice from their completed orders"}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
+        
+        {/* Step 1: Client Selection */}
+        {!previewStep && (
+          <div className="py-6">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="client" className="text-right">
                 Client <span className="text-red-500">*</span>
@@ -343,130 +304,134 @@ function CreateInvoiceDialog() {
                     No clients found. Make sure there are regular users in the system.
                   </p>
                 )}
-                {usersQuery.isError && (
-                  <p className="text-xs text-red-500 mt-1">
-                    Error loading clients. Please try again.
-                  </p>
-                )}
               </div>
             </div>
             
-            {selectedUser && completedOrdersQuery.data.length > 0 && (
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right mt-2">
-                  Orders to Bill
-                </Label>
-                <div className="col-span-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm text-muted-foreground">
-                      All {completedOrdersQuery.data.length} completed unbilled orders will be included
-                    </p>
-                  </div>
-                  <div className="border rounded-md max-h-40 overflow-y-auto">
-                    {completedOrdersQuery.data.map((order: any) => (
-                      <div 
-                        key={order.id}
-                        className="flex items-center justify-between p-2 border-b last:border-0 hover:bg-muted/50 bg-muted"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-sm border border-primary flex items-center justify-center bg-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                          </div>
-                          <Label htmlFor={`order-${order.id}`} className="cursor-default">
-                            #{order.id} - {order.sourceUrl.substring(0, 30)}...
-                          </Label>
-                        </div>
-                        <div className="text-sm font-medium">
-                          ${parseFloat(order.price).toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    All completed orders are automatically included in the invoice calculation
-                  </p>
+            {completedOrdersQuery.isLoading && selectedUser && (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <span className="ml-2">Loading completed orders...</span>
+              </div>
+            )}
+            
+            {!completedOrdersQuery.isLoading && selectedUser && completedOrdersQuery.data.length === 0 && (
+              <div className="text-center my-8 p-4 bg-muted rounded-lg">
+                <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                <h3 className="font-medium">No Billable Orders</h3>
+                <p className="text-muted-foreground">
+                  This client doesn't have any completed unbilled orders. Only completed orders can be billed.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Step 2: Invoice Preview */}
+        {previewStep && selectedClient && (
+          <div className="space-y-6 py-4">
+            <div className="bg-muted p-4 rounded-lg">
+              <div className="flex justify-between items-center border-b pb-2 mb-3">
+                <h3 className="font-semibold text-lg">Invoice Preview</h3>
+                <div className="font-mono text-sm bg-primary/10 text-primary px-3 py-1 rounded-full">
+                  ${totalAmount.toFixed(2)}
                 </div>
               </div>
-            )}
-            
-            {selectedUser && completedOrdersQuery.data.length === 0 && (
-              <div className="col-span-4 text-center my-2">
-                <p className="text-muted-foreground">No completed unbilled orders found for this client</p>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="amount" className="text-right">
-                Amount (USD) <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                  required
-                  className="bg-muted/30"
-                />
-                {totalSelectedAmount > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Automatically calculated total from all completed orders: ${totalSelectedAmount.toFixed(2)}
-                  </p>
-                )}
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Client:</span>
+                  <span className="font-medium">{selectedClient.companyName || selectedClient.username}</span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Orders:</span>
+                  <span className="font-medium">{completedOrdersQuery.data.length} item(s)</span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Amount:</span>
+                  <span className="font-medium">${totalAmount.toFixed(2)}</span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Due Date:</span>
+                  <span className="font-medium">30 days from today</span>
+                </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <div className="col-span-3">
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Invoice description"
-                  rows={3}
-                  className="bg-muted/30"
-                />
-                {selectedOrders.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Automatically generated description for all completed orders, using the standardized format
-                  </p>
-                )}
+            {/* Orders Included */}
+            <div>
+              <h4 className="font-medium mb-2">Orders Included</h4>
+              <div className="border rounded-md max-h-60 overflow-y-auto">
+                {completedOrdersQuery.data.map((order: any) => (
+                  <div 
+                    key={order.id}
+                    className="flex items-center justify-between p-3 border-b last:border-0 hover:bg-muted/50"
+                  >
+                    <div className="overflow-hidden">
+                      <div className="font-medium truncate">
+                        #{order.id} - {order.sourceUrl}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        Completed on {new Date(order.dateCompleted).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="text-sm font-medium whitespace-nowrap">
+                      ${parseFloat(order.price).toFixed(2)}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dueDate" className="text-right">
-                Due Date <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  required
-                />
+            {/* Description Preview */}
+            <div>
+              <h4 className="font-medium mb-2">Invoice Description</h4>
+              <div className="bg-muted/30 rounded-md p-3 max-h-40 overflow-y-auto">
+                <pre className="text-sm whitespace-pre-wrap">{invoiceDescription}</pre>
               </div>
             </div>
-
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createInvoiceMutation.isPending}>
-              {createInvoiceMutation.isPending ? "Creating..." : "Create Invoice"}
-            </Button>
-          </DialogFooter>
-        </form>
+        )}
+        
+        <DialogFooter>
+          {previewStep ? (
+            <>
+              <Button variant="outline" onClick={() => setPreviewStep(false)}>
+                Back
+              </Button>
+              <Button 
+                onClick={() => createInvoiceMutation.mutate()} 
+                disabled={createInvoiceMutation.isPending}
+              >
+                {createInvoiceMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    Approve & Send Invoice
+                  </>
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={!selectedUser || completedOrdersQuery.isLoading || completedOrdersQuery.data.length === 0}
+                onClick={() => setPreviewStep(true)}
+              >
+                {completedOrdersQuery.isLoading ? "Loading..." : "Continue"}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

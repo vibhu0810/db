@@ -652,13 +652,13 @@ export default function Orders() {
           Completed
         </span>
       );
-    } else if (status === "In Progress" || status === "Content Writing") {
+    } else if (status === "In Progress") {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-500">
           {status}
         </span>
       );
-    } else if (status === "Title Approval Pending" || status === "Sent" || status === "Sent To Editor") {
+    } else if (status === "Sent to Editor") {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500">
           {status}
@@ -670,7 +670,7 @@ export default function Orders() {
           {status}
         </span>
       );
-    } else if (status === "Title Approved") {
+    } else if (status === "Approved") {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-800/30 dark:text-purple-500">
           {status}
@@ -685,27 +685,16 @@ export default function Orders() {
     }
   };
 
-  const getStatusOptions = (isGuestPost: boolean) => {
-    if (isGuestPost) {
-      return (
-        <>
-          <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
-          <SelectItem value="Title Approved">Title Approved</SelectItem>
-          <SelectItem value="Content Writing">Content Writing</SelectItem>
-          <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
-          <SelectItem value="Completed">Completed</SelectItem>
-          <SelectItem value="Rejected">Rejected</SelectItem>
-          <SelectItem value="Cancelled">Cancelled</SelectItem>
-        </>
-      );
-    }
+  // Use the same status options for both guest posts and niche edits
+  const getStatusOptions = () => {
     return (
       <>
         <SelectItem value="In Progress">In Progress</SelectItem>
-        <SelectItem value="Sent">Sent</SelectItem>
+        <SelectItem value="Approved">Approved</SelectItem>
+        <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
+        <SelectItem value="Completed">Completed</SelectItem>
         <SelectItem value="Rejected">Rejected</SelectItem>
         <SelectItem value="Cancelled">Cancelled</SelectItem>
-        <SelectItem value="Completed">Completed</SelectItem>
       </>
     );
   };
@@ -955,16 +944,12 @@ export default function Orders() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
-            <SelectItem value="Title Approved">Title Approved</SelectItem>
-            <SelectItem value="Content Writing">Content Writing</SelectItem>
-            <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
+            <SelectItem value="In Progress">In Progress</SelectItem>
+            <SelectItem value="Approved">Approved</SelectItem>
+            <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
             <SelectItem value="Completed">Completed</SelectItem>
             <SelectItem value="Rejected">Rejected</SelectItem>
             <SelectItem value="Cancelled">Cancelled</SelectItem>
-            <SelectItem value="In Progress">In Progress</SelectItem>
-            <SelectItem value="Sent">Sent</SelectItem>
-            <SelectItem value="Rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
         {isAdmin && (
@@ -1141,7 +1126,7 @@ export default function Orders() {
                               <SelectValue>{renderStatusBadge(order.status)}</SelectValue>
                             </SelectTrigger>
                             <SelectContent>
-                              {getStatusOptions(!!order.title)}
+                              {getStatusOptions()}
                             </SelectContent>
                           </Select>
                         ) : (

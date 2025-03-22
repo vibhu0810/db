@@ -94,6 +94,24 @@ interface EditOrderFormData {
   price: number;
 }
 
+// Interface for orders with unread comments count
+interface Order {
+  id: number;
+  userId: number;
+  sourceUrl: string;
+  targetUrl: string;
+  anchorText: string;
+  textEdit: string | null;
+  notes: string | null;
+  price: string;
+  status: string;
+  dateOrdered: string;
+  dateCompleted: string | null;
+  title: string | null;
+  linkUrl: string | null;
+  unreadComments?: number;  // Added for unread comment counts
+}
+
 interface CustomOrderFormData {
   userId: number;
   sourceUrl: string;

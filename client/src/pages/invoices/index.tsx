@@ -27,12 +27,13 @@ interface Invoice {
   id: number;
   userId: number;
   amount: number;
-  description: string;
+  notes: string | null;
   dueDate: string;
-  isPaid: boolean;
-  invoiceNumber: string;
+  status: "pending" | "paid" | "overdue";
   createdAt: string;
-  fileUrl: string | null;
+  fileUrl: string;
+  fileName: string;
+  paidAt: string | null;
 }
 
 interface InvoiceWithUser extends Invoice {
@@ -141,12 +142,12 @@ function CreateInvoiceDialog() {
 
     const invoiceData = {
       userId: selectedUser,
-      amount: parseFloat(amount),
-      description,
+      amount: parseFloat(amount) * 100, // Convert to cents for storage
+      notes: description,
       dueDate: new Date(dueDate).toISOString(),
-      isPaid: false,
-      invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
-      fileUrl,
+      status: 'pending',
+      fileName: fileUrl ? fileUrl.split('/').pop() || 'invoice.pdf' : 'invoice.pdf',
+      fileUrl: fileUrl || '',
     };
 
     createInvoiceMutation.mutate(invoiceData);
@@ -376,15 +377,19 @@ function AdminInvoicesTab() {
               <TableBody>
                 {invoices.map((invoice: InvoiceWithUser) => (
                   <TableRow key={invoice.id}>
-                    <TableCell>{invoice.invoiceNumber}</TableCell>
+                    <TableCell>INV-{invoice.id}</TableCell>
                     <TableCell>{invoice.user?.companyName || 'Unknown'}</TableCell>
-                    <TableCell>{formatCurrency(invoice.amount)}</TableCell>
-                    <TableCell>{invoice.description}</TableCell>
+                    <TableCell>{formatCurrency(invoice.amount / 100)}</TableCell>
+                    <TableCell>{invoice.notes || 'No description'}</TableCell>
                     <TableCell>{format(new Date(invoice.dueDate), "PPP")}</TableCell>
                     <TableCell>
-                      {invoice.isPaid ? (
+                      {invoice.status === 'paid' ? (
                         <Badge variant="success" className="bg-green-100 text-green-800">
                           Paid
+                        </Badge>
+                      ) : invoice.status === 'overdue' ? (
+                        <Badge variant="destructive">
+                          Overdue
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
@@ -394,7 +399,7 @@ function AdminInvoicesTab() {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        {!invoice.isPaid && (
+                        {invoice.status === 'pending' && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -441,7 +446,7 @@ function AdminInvoicesTab() {
         <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Invoice #{selectedInvoice.invoiceNumber}</DialogTitle>
+              <DialogTitle>Invoice #INV-{selectedInvoice.id}</DialogTitle>
               <DialogDescription>
                 Issued on {format(new Date(selectedInvoice.createdAt), "PPP")}
               </DialogDescription>
@@ -455,15 +460,19 @@ function AdminInvoicesTab() {
                 </div>
                 <div className="text-right">
                   <h3 className="font-medium">Amount</h3>
-                  <p className="text-lg font-bold">{formatCurrency(selectedInvoice.amount)}</p>
-                  <p className={`text-sm ${selectedInvoice.isPaid ? 'text-green-600' : 'text-yellow-600'}`}>
-                    {selectedInvoice.isPaid ? 'Paid' : 'Pending'}
+                  <p className="text-lg font-bold">{formatCurrency(selectedInvoice.amount / 100)}</p>
+                  <p className={`text-sm ${
+                    selectedInvoice.status === 'paid' ? 'text-green-600' : 
+                    selectedInvoice.status === 'overdue' ? 'text-red-600' : 'text-yellow-600'
+                  }`}>
+                    {selectedInvoice.status === 'paid' ? 'Paid' : 
+                     selectedInvoice.status === 'overdue' ? 'Overdue' : 'Pending'}
                   </p>
                 </div>
               </div>
               <div>
-                <h3 className="font-medium">Description</h3>
-                <p>{selectedInvoice.description}</p>
+                <h3 className="font-medium">Notes</h3>
+                <p>{selectedInvoice.notes || 'No description provided'}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -486,7 +495,7 @@ function AdminInvoicesTab() {
               <Button variant="outline" onClick={() => setSelectedInvoice(null)}>
                 Close
               </Button>
-              {!selectedInvoice.isPaid && (
+              {selectedInvoice.status === 'pending' && (
                 <Button
                   onClick={() => {
                     markAsPaidMutation.mutate(selectedInvoice.id);
@@ -832,12 +841,12 @@ function UserInvoicesTab() {
               <TableBody>
                 {invoices.map((invoice: Invoice) => (
                   <TableRow key={invoice.id}>
-                    <TableCell>{invoice.invoiceNumber}</TableCell>
-                    <TableCell>{formatCurrency(invoice.amount)}</TableCell>
-                    <TableCell>{invoice.description}</TableCell>
+                    <TableCell>INV-{invoice.id}</TableCell>
+                    <TableCell>{formatCurrency(invoice.amount / 100)}</TableCell>
+                    <TableCell>{invoice.notes || 'No description'}</TableCell>
                     <TableCell>{format(new Date(invoice.dueDate), "PPP")}</TableCell>
                     <TableCell>
-                      {invoice.isPaid ? (
+                      {invoice.status === 'paid' ? (
                         <Badge variant="success" className="bg-green-100 text-green-800">
                           Paid
                         </Badge>
@@ -884,7 +893,7 @@ function UserInvoicesTab() {
         <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Invoice #{selectedInvoice.invoiceNumber}</DialogTitle>
+              <DialogTitle>Invoice #INV-{selectedInvoice.id}</DialogTitle>
               <DialogDescription>
                 Issued on {format(new Date(selectedInvoice.createdAt), "PPP")}
               </DialogDescription>
@@ -893,18 +902,22 @@ function UserInvoicesTab() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="font-medium">Amount</h3>
-                  <p className="text-lg font-bold">{formatCurrency(selectedInvoice.amount)}</p>
+                  <p className="text-lg font-bold">{formatCurrency(selectedInvoice.amount / 100)}</p>
                 </div>
                 <div className="text-right">
                   <h3 className="font-medium">Status</h3>
-                  <p className={`text-sm ${selectedInvoice.isPaid ? 'text-green-600' : 'text-yellow-600'}`}>
-                    {selectedInvoice.isPaid ? 'Paid' : 'Pending'}
+                  <p className={`text-sm ${
+                    selectedInvoice.status === 'paid' ? 'text-green-600' : 
+                    selectedInvoice.status === 'overdue' ? 'text-red-600' : 'text-yellow-600'
+                  }`}>
+                    {selectedInvoice.status === 'paid' ? 'Paid' : 
+                     selectedInvoice.status === 'overdue' ? 'Overdue' : 'Pending'}
                   </p>
                 </div>
               </div>
               <div>
-                <h3 className="font-medium">Description</h3>
-                <p>{selectedInvoice.description}</p>
+                <h3 className="font-medium">Notes</h3>
+                <p>{selectedInvoice.notes || 'No description provided'}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

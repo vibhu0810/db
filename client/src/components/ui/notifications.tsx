@@ -28,13 +28,29 @@ export function NotificationsDropdown() {
         const res = await apiRequest("GET", "/api/notifications");
         if (res.status === 401) {
           // Return empty array for unauthorized
+          console.log("User not authenticated, returning empty notifications array");
           return { notifications: [] };
         }
+        
         const data = await res.json();
+        console.log("Notifications API response:", data);
+        
         // Ensure we return an object with a notifications array
-        return Array.isArray(data) ? { notifications: data } : 
-               (data && typeof data === 'object' && Array.isArray(data.notifications)) ? data : 
-               { notifications: [] };
+        if (Array.isArray(data)) {
+          console.log("API returned an array, converting to object format");
+          return { notifications: data };
+        } else if (data && typeof data === 'object') {
+          if (Array.isArray(data.notifications)) {
+            console.log("API returned correct object format");
+            return data;
+          } else {
+            console.log("API returned object without notifications array");
+            return { notifications: [] };
+          }
+        } else {
+          console.log("API returned unexpected format");
+          return { notifications: [] };
+        }
       } catch (error) {
         console.error("Error fetching notifications:", error);
         return { notifications: [] };
@@ -149,7 +165,9 @@ export function NotificationsDropdown() {
     return null;
   };
 
-  const unreadCount = notifications.filter((n: any) => !n.read).length;
+  // Safely get unread count (handle case where notifications is not an array)
+  const unreadCount = Array.isArray(notifications) ? 
+    notifications.filter((n: any) => !n.read).length : 0;
 
   if (isError) {
     return null;
@@ -194,7 +212,7 @@ export function NotificationsDropdown() {
           )}
         </div>
         <DropdownMenuSeparator />
-        {notifications.length === 0 ? (
+        {!Array.isArray(notifications) || notifications.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground">
             No notifications
           </div>
@@ -209,9 +227,11 @@ export function NotificationsDropdown() {
                 )}
                 onClick={() => handleNotificationClick(notification)}
               >
-                <p className="text-sm">{notification.message}</p>
+                <p className="text-sm">{notification.message || "New notification"}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                  {notification.createdAt 
+                    ? formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })
+                    : "Just now"}
                 </p>
               </DropdownMenuItem>
             ))}

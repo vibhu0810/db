@@ -85,5 +85,5 @@ export function useWebSocket() {
     return () => cleanup?.();
   }, [connect]);
 
-  return socket;
+  return { socket };
 }

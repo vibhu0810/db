@@ -105,14 +105,32 @@ function CreateInvoiceDialog() {
     queryKey: ['/api/orders/completed-unbilled', selectedUser],
     queryFn: async () => {
       if (!selectedUser) return [];
-      const res = await apiRequest("GET", `/api/orders/completed-unbilled/${selectedUser}`);
-      if (!res.ok) {
-        console.error("Failed to fetch completed orders:", await res.text());
+      
+      try {
+        const res = await fetch(`/api/orders/completed-unbilled/${selectedUser}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Failed to fetch completed orders:", errorText);
+          return [];
+        }
+        
+        const data = await res.json();
+        console.log("Completed unbilled orders:", data);
+        return data;
+      } catch (error) {
+        console.error("Error fetching completed orders:", error);
         return [];
       }
-      return await res.json();
     },
     enabled: !!selectedUser,
+    staleTime: 10000,
     initialData: [],
   });
 

@@ -1339,6 +1339,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to delete invoice" });
     }
   });
+  
+  // Get completed orders that haven't been billed yet for a specific user
+  app.get("/api/orders/completed-unbilled/:userId", async (req, res) => {
+    const { userId } = req.params;
+    
+    if (!req.user?.is_admin) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    
+    try {
+      const numUserId = parseInt(userId, 10);
+      if (isNaN(numUserId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      // Get all orders for this user
+      const allOrders = await storage.getOrders(numUserId);
+      
+      // Get all invoices for this user
+      const userInvoices = await storage.getInvoices(numUserId);
+      
+      // Determine which orders have been completed but not billed
+      // Get the orders that are completed (status includes "completed" or "published")
+      const completedOrders = allOrders.filter(order => {
+        const isCompleted = order.status === "completed" || 
+                           order.status === "guest_post_published" || 
+                           order.status === "niche_edit_completed";
+                           
+        // Check if this order has already been included in an invoice
+        // This is a simplified check - in a real app, you'd track this in the database
+        const alreadyBilled = userInvoices.some(invoice => {
+          // Check if the invoice notes contain the order ID
+          return invoice.notes && invoice.notes.includes(`#${order.id}`);
+        });
+        
+        return isCompleted && !alreadyBilled;
+      });
+      
+      return res.json(completedOrders);
+    } catch (error) {
+      console.error("Error fetching completed unbilled orders:", error);
+      return res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
 
   // Configure UploadThing routes
   app.use("/api/uploadthing", uploadthingHandler);

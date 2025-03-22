@@ -179,6 +179,23 @@ export default function OrderDetailsPage() {
             <CardTitle>Order Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {order.title && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Post Title</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="truncate">{order.title}</div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="flex-shrink-0"
+                    onClick={() => copyToClipboard(order.title)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            
             <div>
               <label className="text-sm font-medium text-muted-foreground">Source URL</label>
               <div className="flex items-center gap-2 mt-1">

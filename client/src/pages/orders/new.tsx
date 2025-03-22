@@ -174,13 +174,38 @@ export default function NewOrder() {
         }
       }
 
-      if (selectedType === "niche_edit" && !data.sourceUrl?.trim()) {
-        toast({
-          title: "Error",
-          description: "Source URL is required for niche edits",
-          variant: "destructive",
-        });
-        return;
+      if (selectedType === "niche_edit") {
+        if (!data.sourceUrl?.trim()) {
+          toast({
+            title: "Error",
+            description: "Source URL is required for niche edits",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Validate that the source URL belongs to the selected domain
+        try {
+          const sourceUrlHost = new URL(data.sourceUrl).hostname;
+          const domainHostname = domain.websiteUrl;
+          
+          // Check if source URL is from the domain website
+          if (!sourceUrlHost.includes(domainHostname)) {
+            toast({
+              title: "Invalid Source URL",
+              description: `Source URL must be from ${domainHostname}`,
+              variant: "destructive",
+            });
+            return;
+          }
+        } catch (urlError) {
+          toast({
+            title: "Invalid URL format",
+            description: "Please enter a valid URL with http:// or https://",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       const orderData = await createOrderMutation.mutateAsync(data);

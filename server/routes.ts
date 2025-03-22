@@ -568,14 +568,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user details for response
       const user = await storage.getUser(req.user.id);
-      res.status(201).json({
+      const commentWithUser = {
         ...comment,
         user: {
           username: user?.username,
           companyName: user?.companyName,
           is_admin: user?.is_admin,
         }
-      });
+      };
+      
+      // Send real-time WebSocket notification
+      try {
+        notifyNewComment(orderId, commentWithUser, order.userId);
+      } catch (error) {
+        console.error("Failed to send WebSocket notification for new comment:", error);
+        // Continue even if notification fails
+      }
+      
+      res.status(201).json(commentWithUser);
 
     } catch (error) {
       console.error("Error creating comment:", error);

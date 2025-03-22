@@ -488,6 +488,10 @@ export default function Orders() {
         description: "The order has been deleted successfully.",
       });
       setOrderToDelete(null);
+      // Reset state of other order actions to prevent UI issues
+      setOrderToEdit(null);
+      setOrderToCancel(null);
+      setSelectedOrderId(null);
     },
     onError: (error: Error) => {
       toast({
@@ -495,6 +499,8 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
+      // Make sure to reset the state even on error
+      setOrderToDelete(null);
     },
   });
 
@@ -539,6 +545,10 @@ export default function Orders() {
         description: "The order has been cancelled successfully.",
       });
       setOrderToCancel(null);
+      // Reset state of other order actions to prevent UI issues
+      setOrderToEdit(null);
+      setOrderToDelete(null);
+      setSelectedOrderId(null);
     },
     onError: (error: Error) => {
       toast({
@@ -546,6 +556,8 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
+      // Make sure to reset the state even on error
+      setOrderToCancel(null);
     },
   });
 

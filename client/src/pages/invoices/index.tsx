@@ -19,6 +19,7 @@ import { Trash, Upload, FileText, Filter, FileCheck, FileX, Download } from "luc
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { uploadFile } from "@/utils/uploadthing";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DateRange {
   from: Date | undefined;
@@ -291,20 +292,32 @@ function CreateInvoiceDialog() {
                 Client <span className="text-red-500">*</span>
               </Label>
               <div className="col-span-3">
-                <select
-                  id="client"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={selectedUser || ""}
-                  onChange={(e) => setSelectedUser(Number(e.target.value))}
-                  required
+                <Select
+                  value={selectedUser?.toString() || ""}
+                  onValueChange={(value) => setSelectedUser(Number(value))}
                 >
-                  <option value="">Select a client</option>
-                  {usersQuery.data?.map((user: any) => (
-                    <option key={user.id} value={user.id}>
-                      {user.companyName || user.username}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usersQuery.data && usersQuery.data.length > 0 ? (
+                      usersQuery.data.map((user: any) => (
+                        <SelectItem key={user.id} value={user.id.toString()}>
+                          {user.companyName || user.username}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        No clients found
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {usersQuery.data && usersQuery.data.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    No clients found. Make sure there are regular users in the system.
+                  </p>
+                )}
               </div>
             </div>
             

@@ -1365,7 +1365,7 @@ export default function Orders() {
                 size="icon" 
                 className="h-9 w-9"
                 disabled={currentPage === 1 || isActionInProgress}
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -1387,7 +1387,7 @@ export default function Orders() {
                         "h-9 w-9",
                         currentPage === page && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
                       )}
-                      onClick={() => !isActionInProgress && setCurrentPage(page)}
+                      onClick={() => handlePageChange(page)}
                       disabled={isActionInProgress || currentPage === page}
                     >
                       {page}
@@ -1413,7 +1413,7 @@ export default function Orders() {
                 size="icon" 
                 className="h-9 w-9"
                 disabled={currentPage === totalPages || isActionInProgress}
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>

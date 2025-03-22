@@ -749,9 +749,8 @@ export default function Orders() {
     );
   };
 
-  // State to track recent manual status updates
-  
   // Check for status changes to show toast notifications
+  // This only runs when orders are fetched from polling (not user-triggered updates)
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
       // Create a map of current order statuses

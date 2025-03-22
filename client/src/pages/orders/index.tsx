@@ -349,6 +349,23 @@ export default function Orders() {
   // Set up WebSocket connection for real-time updates
   useEffect(() => {
     if (!socket || !user) return;
+    
+    // Set up authentication with the WebSocket server only when socket is connected
+    const sendAuth = () => {
+      if (socket.readyState === WebSocket.OPEN) {
+        const authData = {
+          type: 'auth',
+          userId: user.id,
+          username: user.username
+        };
+        socket.send(JSON.stringify(authData));
+      } else if (socket.readyState === WebSocket.CONNECTING) {
+        // If still connecting, wait and try again
+        setTimeout(sendAuth, 100);
+      }
+    };
+    
+    sendAuth();
 
     // Set up message handler for WebSocket
     const handleMessage = (event: MessageEvent) => {

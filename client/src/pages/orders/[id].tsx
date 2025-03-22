@@ -18,7 +18,7 @@ export default function OrderDetailsPage() {
   const { user, isAdmin } = useAuth();
   const [newComment, setNewComment] = useState("");
   const commentsEndRef = useRef<HTMLDivElement>(null);
-  const { socket } = useWebSocket();
+  const { socket, sendMessage } = useWebSocket();
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['/api/orders', id],
@@ -34,13 +34,22 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     if (!socket || !user) return;
 
-    // Set up authentication with the WebSocket server
-    const authData = {
-      type: 'auth',
-      userId: user.id,
-      username: user.username
+    // Set up authentication with the WebSocket server only when socket is connected
+    const sendAuth = () => {
+      if (socket.readyState === WebSocket.OPEN) {
+        const authData = {
+          type: 'auth',
+          userId: user.id,
+          username: user.username
+        };
+        socket.send(JSON.stringify(authData));
+      } else if (socket.readyState === WebSocket.CONNECTING) {
+        // If still connecting, wait and try again
+        setTimeout(sendAuth, 100);
+      }
     };
-    socket.send(JSON.stringify(authData));
+    
+    sendAuth();
 
     // Set up message handler
     const handleMessage = (event: MessageEvent) => {

@@ -25,12 +25,16 @@ export function useWebSocket() {
       console.log('WebSocket connected');
       
       // Authenticate the WebSocket connection
-      if (user) {
-        ws.send(JSON.stringify({
-          type: 'auth',
-          userId: user.id,
-          username: user.username
-        }));
+      if (user && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({
+            type: 'auth',
+            userId: user.id,
+            username: user.username
+          }));
+        } catch (error) {
+          console.error('Error sending authentication message:', error);
+        }
       }
     };
 
@@ -85,5 +89,26 @@ export function useWebSocket() {
     return () => cleanup?.();
   }, [connect]);
 
-  return { socket };
+  // Helper function to safely send WebSocket messages
+  const sendMessage = useCallback((message: any) => {
+    if (!socket) {
+      console.warn('Cannot send message: WebSocket is not connected');
+      return false;
+    }
+
+    if (socket.readyState !== WebSocket.OPEN) {
+      console.warn(`Cannot send message: WebSocket is not open (state: ${socket.readyState})`);
+      return false;
+    }
+
+    try {
+      socket.send(typeof message === 'string' ? message : JSON.stringify(message));
+      return true;
+    } catch (error) {
+      console.error('Error sending WebSocket message:', error);
+      return false;
+    }
+  }, [socket]);
+
+  return { socket, sendMessage };
 }

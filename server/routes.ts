@@ -1090,6 +1090,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/invoices/all", async (req, res) => {
     try {
       console.log("Accessing /api/invoices/all route, user:", req.user?.id);
+      console.log("User object:", req.user);
+      console.log("Session ID:", req.sessionID);
+      console.log("Session:", req.session);
       
       // First check if user is authenticated
       if (!req.user) {
@@ -1103,32 +1106,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Unauthorized: Admin access required" });
       }
       
-      // Add debug output for session data
-      console.log("Session ID:", req.sessionID);
-      console.log("Session:", req.session);
+      console.log("User is admin, proceeding with invoice fetching");
       
-      console.log("Fetching all invoices");
-      const invoices = await storage.getAllInvoices();
-      console.log("Invoices fetched:", invoices.length);
-      
-      console.log("Fetching users");
-      const users = await storage.getUsers();
-      console.log("Users fetched:", users.length);
-      
-      // Join invoices with user data
-      const invoicesWithUserDetails = invoices.map(invoice => {
-        const user = users.find(u => u.id === invoice.userId);
-        return {
-          ...invoice,
-          user: user ? {
-            username: user.username,
-            companyName: user.companyName,
-            email: user.email
-          } : null
-        };
-      });
-      
-      res.json(invoicesWithUserDetails);
+      try {
+        console.log("Fetching all invoices");
+        const invoices = await storage.getAllInvoices();
+        console.log("Invoices fetched successfully:", invoices.length);
+        
+        console.log("Fetching users");
+        const users = await storage.getUsers();
+        console.log("Users fetched successfully:", users.length);
+        
+        // Join invoices with user data
+        const invoicesWithUserDetails = invoices.map(invoice => {
+          const user = users.find(u => u.id === invoice.userId);
+          return {
+            ...invoice,
+            user: user ? {
+              username: user.username,
+              companyName: user.companyName,
+              email: user.email
+            } : null
+          };
+        });
+        
+        console.log("Successfully processed invoices with user details");
+        res.json(invoicesWithUserDetails);
+      } catch (innerError) {
+        console.error("Error in data processing:", innerError);
+        res.status(500).json({ error: "Failed to process invoice data" });
+      }
     } catch (error) {
       console.error("Error fetching all invoices:", error);
       res.status(500).json({ error: "Failed to fetch invoices" });

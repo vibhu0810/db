@@ -967,6 +967,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Unauthorized" });
       }
       
+      // Add debug output for session
+      console.log("Session ID:", req.sessionID);
+      console.log("Session data:", req.session);
+      
       console.log("Fetching invoices for user", req.user.id);
       const invoices = await storage.getInvoices(req.user.id);
       console.log("Invoices found:", invoices.length);
@@ -1085,11 +1089,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin route to get all invoices
   app.get("/api/invoices/all", async (req, res) => {
     try {
-      console.log("Accessing /api/invoices/all route, user:", req.user);
-      if (!req.user?.is_admin) {
+      console.log("Accessing /api/invoices/all route, user:", req.user?.id);
+      
+      // First check if user is authenticated
+      if (!req.user) {
+        console.log("No authenticated user found");
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Then check if they're an admin
+      if (!req.user.is_admin) {
         console.log("User is not admin, access denied");
         return res.status(403).json({ error: "Unauthorized: Admin access required" });
       }
+      
+      // Add debug output for session data
+      console.log("Session ID:", req.sessionID);
+      console.log("Session:", req.session);
       
       console.log("Fetching all invoices");
       const invoices = await storage.getAllInvoices();
@@ -1097,6 +1113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Fetching users");
       const users = await storage.getUsers();
+      console.log("Users fetched:", users.length);
       
       // Join invoices with user data
       const invoicesWithUserDetails = invoices.map(invoice => {

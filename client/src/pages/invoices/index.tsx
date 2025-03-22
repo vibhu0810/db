@@ -65,6 +65,7 @@ function CreateInvoiceDialog() {
   const usersQuery = useQuery({
     queryKey: ['/api/users'],
     enabled: !!user?.is_admin,
+    initialData: [],
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -274,6 +275,7 @@ function AdminInvoicesTab() {
   const invoicesQuery = useQuery({
     queryKey: ['/api/invoices/all'],
     refetchInterval: 10000, // Refresh every 10 seconds
+    initialData: [],
   });
 
   const markAsPaidMutation = useMutation({
@@ -521,6 +523,7 @@ function UserInvoicesTab() {
     queryKey: ['/api/invoices'],
     refetchInterval: 10000, // Refresh every 10 seconds
     enabled: !isFilteringByDate && !isFilteringByAmount,
+    initialData: [],
   });
 
   const dateFilteredInvoicesQuery = useQuery({
@@ -530,6 +533,7 @@ function UserInvoicesTab() {
       dateRange?.to?.toISOString(),
     ],
     enabled: isFilteringByDate && !!dateRange?.from,
+    initialData: [],
   });
 
   const amountFilteredInvoicesQuery = useQuery({
@@ -539,6 +543,7 @@ function UserInvoicesTab() {
       amountFilter.max,
     ],
     enabled: isFilteringByAmount && (!!amountFilter.min || !!amountFilter.max),
+    initialData: [],
   });
 
   const invoices = isFilteringByDate

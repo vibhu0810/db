@@ -618,63 +618,69 @@ function UserInvoicesTab() {
 
                 
                 <div className="space-y-2">
-                  <Label htmlFor="billingName">Person Name / Business Name</Label>
+                  <Label htmlFor="billingName">Person Name / Business Name <span className="text-red-500">*</span></Label>
                   <Input 
                     id="billingName"
                     placeholder="John Doe or Acme Inc."
                     value={billingDetails.billingName}
                     onChange={(e) => setBillingDetails({...billingDetails, billingName: e.target.value})}
+                    required
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="billingAddress">Billing Address</Label>
+                  <Label htmlFor="billingAddress">Billing Address <span className="text-red-500">*</span></Label>
                   <Input 
                     id="billingAddress"
                     placeholder="123 Main St"
                     value={billingDetails.billingAddress}
                     onChange={(e) => setBillingDetails({...billingDetails, billingAddress: e.target.value})}
+                    required
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-2">
-                    <Label htmlFor="billingCity">City</Label>
+                    <Label htmlFor="billingCity">City <span className="text-red-500">*</span></Label>
                     <Input 
                       id="billingCity"
                       placeholder="New York"
                       value={billingDetails.billingCity}
                       onChange={(e) => setBillingDetails({...billingDetails, billingCity: e.target.value})}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="billingState">State</Label>
+                    <Label htmlFor="billingState">State <span className="text-red-500">*</span></Label>
                     <Input 
                       id="billingState"
                       placeholder="NY"
                       value={billingDetails.billingState}
                       onChange={(e) => setBillingDetails({...billingDetails, billingState: e.target.value})}
+                      required
                     />
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-2">
-                    <Label htmlFor="billingZip">ZIP Code</Label>
+                    <Label htmlFor="billingZip">ZIP Code <span className="text-red-500">*</span></Label>
                     <Input 
                       id="billingZip"
                       placeholder="10001"
                       value={billingDetails.billingZip}
                       onChange={(e) => setBillingDetails({...billingDetails, billingZip: e.target.value})}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="billingCountry">Country</Label>
+                    <Label htmlFor="billingCountry">Country <span className="text-red-500">*</span></Label>
                     <Input 
                       id="billingCountry"
                       placeholder="United States"
                       value={billingDetails.billingCountry}
                       onChange={(e) => setBillingDetails({...billingDetails, billingCountry: e.target.value})}
+                      required
                     />
                   </div>
                 </div>

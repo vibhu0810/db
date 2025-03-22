@@ -1,8 +1,11 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState, useEffect, useCallback } from "react";
-import { Loader2, Send, Check, CheckCheck } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { 
+  Loader2, Send, Check, CheckCheck, Image as ImageIcon, 
+  Mic, MicOff, X, FileText, Paperclip, Music 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,6 +13,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { User } from "@shared/schema";
+import { uploadFile } from "@/utils/uploadthing";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatUser extends User {
   companyName: string;
@@ -20,6 +25,7 @@ interface ChatUser extends User {
 
 export default function ChatPage() {
   const { user, isAdmin } = useAuth();
+  const { toast } = useToast();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -122,14 +128,34 @@ export default function ChatPage() {
     }
   };
 
+  // Message upload states
+  const [imageAttachment, setImageAttachment] = useState<File | null>(null);
+  const [audioAttachment, setAudioAttachment] = useState<File | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageText: string) => {
+    mutationFn: async ({ 
+      messageText, 
+      attachmentUrl = null, 
+      attachmentType = null 
+    }: { 
+      messageText: string, 
+      attachmentUrl?: string | null, 
+      attachmentType?: string | null 
+    }) => {
       if (!selectedUserId) throw new Error("No recipient selected");
+      
       const res = await apiRequest("POST", "/api/messages", {
         content: messageText,
         receiverId: selectedUserId,
+        attachmentUrl,
+        attachmentType
       });
+      
       if (!res.ok) throw new Error('Failed to send message');
       return res.json();
     },
@@ -138,12 +164,47 @@ export default function ChatPage() {
       setMessageInput("");
       setIsTyping(false);
       updateTypingStatus.mutate(false);
+      setImageAttachment(null);
+      setAudioAttachment(null);
     },
   });
 
-  const handleSendMessage = () => {
-    if (!messageInput.trim()) return;
-    sendMessageMutation.mutate(messageInput);
+  // Handle file upload and message sending
+  const handleSendMessage = async () => {
+    const hasText = messageInput.trim().length > 0;
+    const hasAttachment = imageAttachment || audioAttachment;
+    
+    if (!hasText && !hasAttachment) return;
+    
+    try {
+      if (hasAttachment) {
+        setUploadingAttachment(true);
+        
+        if (imageAttachment) {
+          const uploadUrl = await uploadFile(imageAttachment, "chatImage");
+          await sendMessageMutation.mutateAsync({ 
+            messageText: messageInput.trim() || "📷 Image", 
+            attachmentUrl: uploadUrl, 
+            attachmentType: "image" 
+          });
+        } else if (audioAttachment) {
+          const uploadUrl = await uploadFile(audioAttachment, "chatAudio");
+          await sendMessageMutation.mutateAsync({ 
+            messageText: messageInput.trim() || "🎤 Voice message", 
+            attachmentUrl: uploadUrl, 
+            attachmentType: "audio" 
+          });
+        }
+        
+        setUploadingAttachment(false);
+      } else {
+        // Text-only message
+        await sendMessageMutation.mutateAsync({ messageText: messageInput });
+      }
+    } catch (error) {
+      console.error("Failed to send message with attachment:", error);
+      setUploadingAttachment(false);
+    }
   };
 
   // Clear typing status when component unmounts or user changes
@@ -273,9 +334,42 @@ export default function ChatPage() {
                               : "bg-muted"
                           )}
                         >
+                          {/* Display message content */}
                           <p className="whitespace-pre-wrap break-words">
                             {message.content}
                           </p>
+                          
+                          {/* Display image attachment if present */}
+                          {message.attachmentUrl && message.attachmentType === 'image' && (
+                            <div className="mt-2 rounded-md overflow-hidden">
+                              <a 
+                                href={message.attachmentUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="block"
+                              >
+                                <img 
+                                  src={message.attachmentUrl} 
+                                  alt="Message attachment" 
+                                  className="max-w-full rounded-md hover:opacity-90 transition-opacity" 
+                                  loading="lazy"
+                                />
+                              </a>
+                            </div>
+                          )}
+                          
+                          {/* Display audio attachment if present */}
+                          {message.attachmentUrl && message.attachmentType === 'audio' && (
+                            <div className="mt-2">
+                              <audio 
+                                src={message.attachmentUrl} 
+                                controls 
+                                className="max-w-full"
+                              />
+                            </div>
+                          )}
+                          
+                          {/* Display message metadata */}
                           <div
                             className={cn(
                               "text-xs mt-1 flex items-center gap-1",
@@ -323,18 +417,160 @@ export default function ChatPage() {
 
             {/* Input area */}
             <div className="p-4 border-t">
+              {/* Display selected attachments */}
+              {(imageAttachment || audioAttachment) && (
+                <div className="mb-3 p-2 border rounded-md bg-muted/50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {imageAttachment && (
+                      <>
+                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm truncate max-w-[200px]">
+                          {imageAttachment.name}
+                        </span>
+                      </>
+                    )}
+                    {audioAttachment && (
+                      <>
+                        <Music className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm truncate max-w-[200px]">
+                          {audioAttachment.name || "Voice recording.mp3"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {(audioAttachment.size / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setImageAttachment(null);
+                      setAudioAttachment(null);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              
+              {/* Voice recording UI */}
+              {isRecording && (
+                <div className="mb-3 p-2 border rounded-md bg-destructive/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                    <span className="text-sm text-destructive font-medium">Recording...</span>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      if (mediaRecorder) {
+                        mediaRecorder.stop();
+                      }
+                    }}
+                  >
+                    <MicOff className="h-4 w-4 mr-1" />
+                    Stop
+                  </Button>
+                </div>
+              )}
+              
               <div className="flex gap-2">
+                {/* Attachment buttons */}
+                <div className="flex gap-1">
+                  {/* Image upload button */}
+                  <input 
+                    type="file" 
+                    id="image-upload" 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setImageAttachment(file);
+                        setAudioAttachment(null);
+                      }
+                      e.target.value = ''; // Reset input
+                    }}
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    type="button"
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                    disabled={isRecording || uploadingAttachment}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Voice recording button */}
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    type="button"
+                    onClick={() => {
+                      if (isRecording) {
+                        if (mediaRecorder) {
+                          mediaRecorder.stop();
+                        }
+                        return;
+                      }
+                      
+                      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        navigator.mediaDevices.getUserMedia({ audio: true })
+                          .then(stream => {
+                            const recorder = new MediaRecorder(stream);
+                            const chunks: Blob[] = [];
+                            
+                            recorder.ondataavailable = e => {
+                              chunks.push(e.data);
+                            };
+                            
+                            recorder.onstop = () => {
+                              setIsRecording(false);
+                              const blob = new Blob(chunks, { type: 'audio/mp3' });
+                              const audioFile = new File([blob], 'voice-message.mp3', { type: 'audio/mp3' });
+                              setAudioAttachment(audioFile);
+                              setImageAttachment(null);
+                              
+                              // Stop the media tracks
+                              stream.getTracks().forEach(track => track.stop());
+                            };
+                            
+                            recorder.start();
+                            setIsRecording(true);
+                            setMediaRecorder(recorder);
+                          })
+                          .catch(err => {
+                            console.error("Error accessing microphone:", err);
+                          });
+                      } else {
+                        console.error("Media devices not supported");
+                      }
+                    }}
+                    disabled={uploadingAttachment}
+                    className={isRecording ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+                  >
+                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </Button>
+                </div>
+                
+                {/* Message input */}
                 <Input
                   value={messageInput}
                   onChange={handleMessageInputChange}
                   placeholder="Type a message..."
-                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                  disabled={isRecording || uploadingAttachment}
                 />
+                
+                {/* Send button */}
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!messageInput.trim() || sendMessageMutation.isPending}
+                  disabled={(!(messageInput.trim() || imageAttachment || audioAttachment)) || sendMessageMutation.isPending || uploadingAttachment}
                 >
-                  {sendMessageMutation.isPending ? (
+                  {sendMessageMutation.isPending || uploadingAttachment ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Send className="h-4 w-4" />

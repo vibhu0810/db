@@ -55,6 +55,34 @@ export const ourFileRouter = {
       console.log("Document upload complete for userId:", metadata.userId);
       return { uploadedBy: metadata.userId, url: file.url };
     }),
+    
+  // Chat image attachment uploads
+  chatImage: f({ image: { maxFileSize: "8MB" } })
+    .middleware(async ({ req }) => {
+      const user = (req as any).user;
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+      return { userId: user.id, purpose: "chat" };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log("Chat image upload complete for userId:", metadata.userId);
+      return { uploadedBy: metadata.userId, url: file.url };
+    }),
+    
+  // Chat voice message uploads
+  chatAudio: f({ audio: { maxFileSize: "16MB" } })
+    .middleware(async ({ req }) => {
+      const user = (req as any).user;
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+      return { userId: user.id, purpose: "chat" };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log("Chat audio upload complete for userId:", metadata.userId);
+      return { uploadedBy: metadata.userId, url: file.url };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

@@ -135,6 +135,8 @@ export default function ChatPage() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const recordingTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -248,6 +250,28 @@ export default function ChatPage() {
       }
     };
   }, [selectedUserId, isTyping]);
+
+  // Handle recording timer
+  useEffect(() => {
+    if (isRecording) {
+      setRecordingDuration(0);
+      recordingTimer.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (recordingTimer.current) {
+        clearInterval(recordingTimer.current);
+        recordingTimer.current = null;
+      }
+    }
+    
+    return () => {
+      if (recordingTimer.current) {
+        clearInterval(recordingTimer.current);
+        recordingTimer.current = null;
+      }
+    };
+  }, [isRecording]);
 
   if (usersLoading) {
     return (
@@ -375,16 +399,20 @@ export default function ChatPage() {
                           {/* Display image attachment if present */}
                           {message.attachmentUrl && message.attachmentType === 'image' && (
                             <div className="mt-2 rounded-md overflow-hidden">
+                              <div className="flex items-center gap-2 mb-1">
+                                <ImageIcon className="h-4 w-4" />
+                                <span className="text-xs font-medium">Image</span>
+                              </div>
                               <a 
                                 href={message.attachmentUrl} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
-                                className="block"
+                                className="block rounded-md overflow-hidden"
                               >
                                 <img 
                                   src={message.attachmentUrl} 
                                   alt="Message attachment" 
-                                  className="max-w-full rounded-md hover:opacity-90 transition-opacity" 
+                                  className="max-w-full rounded-md hover:opacity-90 transition-opacity border border-border" 
                                   loading="lazy"
                                 />
                               </a>
@@ -393,11 +421,16 @@ export default function ChatPage() {
                           
                           {/* Display audio attachment if present */}
                           {message.attachmentUrl && message.attachmentType === 'audio' && (
-                            <div className="mt-2">
+                            <div className="mt-2 bg-background/20 rounded-md p-2">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Music className="h-4 w-4" />
+                                <span className="text-xs font-medium">Voice Message</span>
+                              </div>
                               <audio 
                                 src={message.attachmentUrl} 
                                 controls 
-                                className="max-w-full"
+                                className="max-w-full w-full h-8"
+                                controlsList="nodownload noplaybackrate"
                               />
                             </div>
                           )}
@@ -491,8 +524,17 @@ export default function ChatPage() {
               {isRecording && (
                 <div className="mb-3 p-2 border rounded-md bg-destructive/10 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-                    <span className="text-sm text-destructive font-medium">Recording...</span>
+                    <div className="relative">
+                      <span className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
+                      <span className="absolute -inset-1 rounded-full bg-destructive/30 animate-ping opacity-75" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-destructive font-medium">Recording...</span>
+                      <span className="text-xs text-muted-foreground">
+                        {Math.floor(recordingDuration / 60).toString().padStart(2, '0')}:
+                        {(recordingDuration % 60).toString().padStart(2, '0')}
+                      </span>
+                    </div>
                   </div>
                   <Button
                     variant="destructive"

@@ -72,19 +72,41 @@ export function NotificationsDropdown() {
         await markAsReadMutation.mutate(notification.id);
       }
 
-      // Check if this is an order-related notification
-      const orderIdFromMessage = extractOrderIdFromMessage(notification.message);
+      setIsOpen(false);
       
-      if (orderIdFromMessage) {
-        console.log('Extracted order ID from message:', orderIdFromMessage);
-        
-        // Close dropdown and navigate to the specific order page
-        setIsOpen(false);
-        setLocation(`/orders/${orderIdFromMessage}`);
-      } else {
-        // Default behavior for non-order notifications
-        setIsOpen(false);
-        setLocation('/orders');
+      // Handle different notification types
+      switch(notification.type) {
+        case "message":
+          // Chat notification
+          console.log('Detected chat notification, redirecting to chat');
+          setLocation('/chat');
+          break;
+          
+        case "order":
+        case "status":
+        case "comment":
+          // Order-related notification
+          if (notification.orderId) {
+            // If we have an orderId directly in the notification, use it
+            console.log('Using orderId from notification:', notification.orderId);
+            setLocation(`/orders/${notification.orderId}`);
+          } else {
+            // Fallback to extract from message if needed
+            const orderIdFromMessage = extractOrderIdFromMessage(notification.message);
+            if (orderIdFromMessage) {
+              console.log('Extracted order ID from message:', orderIdFromMessage);
+              setLocation(`/orders/${orderIdFromMessage}`);
+            } else {
+              // Can't determine specific order, go to orders list
+              setLocation('/orders');
+            }
+          }
+          break;
+          
+        default:
+          // Default behavior for other notification types
+          console.log('Unknown notification type:', notification.type);
+          setLocation('/orders');
       }
     } catch (error) {
       console.error('Error handling notification click:', error);

@@ -308,18 +308,38 @@ export default function Orders() {
   // Setup WebSocket for real-time updates
   useWebSocket({
     onOrderUpdate: (orderId, status) => {
-      // When an order status changes, refresh the orders list
-      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-      // If we're viewing comments for this order, highlight it briefly
-      if (orderId === selectedOrderId) {
-        setHighlightedOrderId(orderId);
-        setTimeout(() => setHighlightedOrderId(null), 2000);
+      console.log("WebSocket: Order status updated", orderId, status);
+      try {
+        // Use a safer approach to refresh queries that won't cause React errors
+        setTimeout(() => {
+          // For admin users, refresh the all orders query
+          if (isAdmin) {
+            queryClient.invalidateQueries({ queryKey: ['/api/orders/all'] });
+          }
+          // Always refresh regular orders query
+          queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+          
+          // If we're viewing comments for this order, highlight it briefly
+          if (orderId === selectedOrderId) {
+            setHighlightedOrderId(orderId);
+            setTimeout(() => setHighlightedOrderId(null), 2000);
+          }
+        }, 100);
+      } catch (error) {
+        console.error("Error handling order update:", error);
       }
     },
     onNewComment: (orderId) => {
-      // If we're viewing comments for this order, refresh them
-      if (orderId === selectedOrderId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrderId, 'comments'] });
+      console.log("WebSocket: New comment received", orderId);
+      try {
+        // If we're viewing comments for this order, refresh them
+        if (orderId === selectedOrderId) {
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrderId, 'comments'] });
+          }, 100);
+        }
+      } catch (error) {
+        console.error("Error handling new comment:", error);
       }
     }
   });
@@ -608,6 +628,7 @@ export default function Orders() {
       notes: "",
       price: 0,
     },
+    mode: "onChange", // Validate on change for better user experience
   });
 
   const onSubmit = (data: CustomOrderFormData) => {

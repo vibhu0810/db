@@ -1383,6 +1383,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ error: "Failed to fetch orders" });
     }
   });
+  
+  // Specific endpoint for getting clients for invoice creation
+  app.get("/api/clients", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      // Only admins can get the client list
+      if (!req.user.is_admin) {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+      }
+      
+      // Get all users
+      const users = await storage.getUsers();
+      
+      // Filter out admins - we only want clients
+      const clients = users.filter(u => !u.is_admin).map(client => ({
+        id: client.id,
+        username: client.username,
+        companyName: client.companyName,
+        email: client.email,
+        is_admin: client.is_admin
+      }));
+      
+      console.log(`Retrieved ${clients.length} clients for invoice creation`);
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ error: "Failed to fetch clients" });
+    }
+  });
 
   // Configure UploadThing routes
   app.use("/api/uploadthing", uploadthingHandler);

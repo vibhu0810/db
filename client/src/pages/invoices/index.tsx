@@ -82,13 +82,13 @@ function CreateInvoiceDialog() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [invoiceDescription, setInvoiceDescription] = useState("");
   
-  // Query for users to select client
-  const usersQuery = useQuery({
-    queryKey: ['/api/users/stats'],
+  // Query for clients to select for invoice
+  const clientsQuery = useQuery({
+    queryKey: ['/api/clients'],
     queryFn: async () => {
       try {
-        // Using the /api/users/stats endpoint which is already working in the app
-        const res = await fetch("/api/users/stats", {
+        // Using our dedicated clients endpoint
+        const response = await fetch("/api/clients", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -96,17 +96,15 @@ function CreateInvoiceDialog() {
           credentials: "include",
         });
         
-        if (!res.ok) {
-          throw new Error(`Failed to fetch users: ${res.status}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch clients: ${response.status}`);
         }
         
-        const data = await res.json();
-        console.log("Users from stats endpoint:", data);
-        
-        // Filter out admin users, we only want to create invoices for regular users
-        return data.filter((u: any) => !u.is_admin);
+        const data = await response.json();
+        console.log("Clients for invoice creation:", data);
+        return data;
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching clients:", error);
         return [];
       }
     },

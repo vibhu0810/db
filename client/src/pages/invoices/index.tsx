@@ -512,17 +512,25 @@ function UserInvoicesTab() {
     from: undefined,
     to: undefined,
   });
-  const [amountFilter, setAmountFilter] = useState({
-    min: "",
-    max: "",
-  });
   const [isFilteringByDate, setIsFilteringByDate] = useState(false);
-  const [isFilteringByAmount, setIsFilteringByAmount] = useState(false);
+  const [billingDetails, setBillingDetails] = useState({
+    paymentMethod: "",
+    cardNumber: "",
+    cardExpiry: "",
+    cardCVC: "",
+    billingName: "",
+    billingAddress: "",
+    billingCity: "",
+    billingState: "",
+    billingZip: "",
+    billingCountry: "",
+  });
+  const [isEditingBilling, setIsEditingBilling] = useState(false);
 
   const baseInvoicesQuery = useQuery({
     queryKey: ['/api/invoices'],
     refetchInterval: 10000, // Refresh every 10 seconds
-    enabled: !isFilteringByDate && !isFilteringByAmount,
+    enabled: !isFilteringByDate,
     initialData: [],
   });
 
@@ -536,31 +544,17 @@ function UserInvoicesTab() {
     initialData: [],
   });
 
-  const amountFilteredInvoicesQuery = useQuery({
-    queryKey: [
-      '/api/invoices/filter/amount',
-      amountFilter.min,
-      amountFilter.max,
-    ],
-    enabled: isFilteringByAmount && (!!amountFilter.min || !!amountFilter.max),
-    initialData: [],
-  });
-
   const invoices = isFilteringByDate
     ? dateFilteredInvoicesQuery.data || []
-    : isFilteringByAmount
-    ? amountFilteredInvoicesQuery.data || []
     : baseInvoicesQuery.data || [];
 
   const isLoading =
-    (baseInvoicesQuery.isLoading && !isFilteringByDate && !isFilteringByAmount) ||
-    (dateFilteredInvoicesQuery.isLoading && isFilteringByDate) ||
-    (amountFilteredInvoicesQuery.isLoading && isFilteringByAmount);
+    (baseInvoicesQuery.isLoading && !isFilteringByDate) ||
+    (dateFilteredInvoicesQuery.isLoading && isFilteringByDate);
 
   const isError =
-    (baseInvoicesQuery.isError && !isFilteringByDate && !isFilteringByAmount) ||
-    (dateFilteredInvoicesQuery.isError && isFilteringByDate) ||
-    (amountFilteredInvoicesQuery.isError && isFilteringByAmount);
+    (baseInvoicesQuery.isError && !isFilteringByDate) ||
+    (dateFilteredInvoicesQuery.isError && isFilteringByDate);
 
   const applyDateFilter = () => {
     if (!dateRange?.from) {
@@ -573,28 +567,21 @@ function UserInvoicesTab() {
     }
     
     setIsFilteringByDate(true);
-    setIsFilteringByAmount(false);
-  };
-
-  const applyAmountFilter = () => {
-    if (!amountFilter.min && !amountFilter.max) {
-      toast({
-        title: "Error",
-        description: "Please enter at least one amount value",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsFilteringByAmount(true);
-    setIsFilteringByDate(false);
   };
 
   const clearFilters = () => {
     setIsFilteringByDate(false);
-    setIsFilteringByAmount(false);
     setDateRange({ from: undefined, to: undefined });
-    setAmountFilter({ min: "", max: "" });
+  };
+
+  const handleBillingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Here you would normally save the billing details to the backend
+    toast({
+      title: "Success",
+      description: "Billing details updated successfully",
+    });
+    setIsEditingBilling(false);
   };
 
   if (isLoading) {
@@ -608,8 +595,6 @@ function UserInvoicesTab() {
         <Button onClick={() => {
           if (isFilteringByDate) {
             dateFilteredInvoicesQuery.refetch();
-          } else if (isFilteringByAmount) {
-            amountFilteredInvoicesQuery.refetch();
           } else {
             baseInvoicesQuery.refetch();
           }
@@ -622,7 +607,7 @@ function UserInvoicesTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
         <Card className="w-full md:w-96">
           <CardHeader>
             <CardTitle>Billing Details</CardTitle>
@@ -631,20 +616,169 @@ function UserInvoicesTab() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Payment Method:</span>
-                <span className="font-medium">Credit Card</span>
+            {isEditingBilling ? (
+              <form onSubmit={handleBillingSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paymentMethod">Payment Method</Label>
+                  <select 
+                    id="paymentMethod"
+                    className="w-full p-2 border rounded"
+                    value={billingDetails.paymentMethod}
+                    onChange={(e) => setBillingDetails({...billingDetails, paymentMethod: e.target.value})}
+                    required
+                  >
+                    <option value="">Select payment method</option>
+                    <option value="creditCard">Credit Card</option>
+                    <option value="bankTransfer">Bank Transfer</option>
+                    <option value="paypal">PayPal</option>
+                  </select>
+                </div>
+                
+                {billingDetails.paymentMethod === 'creditCard' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="cardNumber">Card Number</Label>
+                      <Input 
+                        id="cardNumber"
+                        placeholder="1234 5678 9012 3456"
+                        value={billingDetails.cardNumber}
+                        onChange={(e) => setBillingDetails({...billingDetails, cardNumber: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="cardExpiry">Expiration Date</Label>
+                        <Input 
+                          id="cardExpiry"
+                          placeholder="MM/YY"
+                          value={billingDetails.cardExpiry}
+                          onChange={(e) => setBillingDetails({...billingDetails, cardExpiry: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cardCVC">CVC</Label>
+                        <Input 
+                          id="cardCVC"
+                          placeholder="123"
+                          value={billingDetails.cardCVC}
+                          onChange={(e) => setBillingDetails({...billingDetails, cardCVC: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="billingName">Name on Account</Label>
+                  <Input 
+                    id="billingName"
+                    placeholder="John Doe"
+                    value={billingDetails.billingName}
+                    onChange={(e) => setBillingDetails({...billingDetails, billingName: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="billingAddress">Billing Address</Label>
+                  <Input 
+                    id="billingAddress"
+                    placeholder="123 Main St"
+                    value={billingDetails.billingAddress}
+                    onChange={(e) => setBillingDetails({...billingDetails, billingAddress: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="billingCity">City</Label>
+                    <Input 
+                      id="billingCity"
+                      placeholder="New York"
+                      value={billingDetails.billingCity}
+                      onChange={(e) => setBillingDetails({...billingDetails, billingCity: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="billingState">State</Label>
+                    <Input 
+                      id="billingState"
+                      placeholder="NY"
+                      value={billingDetails.billingState}
+                      onChange={(e) => setBillingDetails({...billingDetails, billingState: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="billingZip">ZIP Code</Label>
+                    <Input 
+                      id="billingZip"
+                      placeholder="10001"
+                      value={billingDetails.billingZip}
+                      onChange={(e) => setBillingDetails({...billingDetails, billingZip: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="billingCountry">Country</Label>
+                    <Input 
+                      id="billingCountry"
+                      placeholder="United States"
+                      value={billingDetails.billingCountry}
+                      onChange={(e) => setBillingDetails({...billingDetails, billingCountry: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={() => setIsEditingBilling(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    Save
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                {billingDetails.paymentMethod ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Payment Method:</span>
+                      <span className="font-medium">
+                        {billingDetails.paymentMethod === 'creditCard' ? 'Credit Card' : 
+                         billingDetails.paymentMethod === 'bankTransfer' ? 'Bank Transfer' : 
+                         billingDetails.paymentMethod === 'paypal' ? 'PayPal' : '-'}
+                      </span>
+                    </div>
+                    {billingDetails.cardNumber && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Card Number:</span>
+                        <span className="font-medium">xxxx-xxxx-xxxx-{billingDetails.cardNumber.slice(-4)}</span>
+                      </div>
+                    )}
+                    {billingDetails.billingName && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Billing Name:</span>
+                        <span className="font-medium">{billingDetails.billingName}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Next Invoice:</span>
+                      <span className="font-medium">{format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "PPP")}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-2">No billing details provided yet</p>
+                )}
+                <Button 
+                  className="w-full" 
+                  onClick={() => setIsEditingBilling(true)}
+                >
+                  {billingDetails.paymentMethod ? 'Edit Billing Details' : 'Add Billing Details'}
+                </Button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Billing Cycle:</span>
-                <span className="font-medium">Monthly</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Next Invoice:</span>
-                <span className="font-medium">{format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "PPP")}</span>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
         
@@ -672,48 +806,7 @@ function UserInvoicesTab() {
             </CardContent>
           </Card>
           
-          <Card className="w-full md:w-auto">
-            <CardContent className="p-3">
-              <div className="flex flex-col sm:flex-row gap-4 items-end">
-                <div>
-                  <Label htmlFor="min-amount" className="text-sm">Min Amount</Label>
-                  <Input
-                    id="min-amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={amountFilter.min}
-                    onChange={(e) => setAmountFilter(prev => ({ ...prev, min: e.target.value }))}
-                    className="w-full sm:w-28"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="max-amount" className="text-sm">Max Amount</Label>
-                  <Input
-                    id="max-amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Max"
-                    value={amountFilter.max}
-                    onChange={(e) => setAmountFilter(prev => ({ ...prev, max: e.target.value }))}
-                    className="w-full sm:w-28"
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={applyAmountFilter}
-                  disabled={!amountFilter.min && !amountFilter.max}
-                >
-                  Filter
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {(isFilteringByDate || isFilteringByAmount) && (
+          {isFilteringByDate && (
             <Button
               variant="ghost"
               size="sm"
@@ -731,7 +824,7 @@ function UserInvoicesTab() {
           <CardContent className="flex flex-col items-center justify-center p-6">
             <FileText className="h-12 w-12 mb-4 text-muted-foreground" />
             <p className="text-muted-foreground">No invoices found</p>
-            {(isFilteringByDate || isFilteringByAmount) && (
+            {isFilteringByDate && (
               <p className="text-sm text-muted-foreground mt-1">
                 Try adjusting your filters
               </p>
@@ -861,24 +954,30 @@ function UserInvoicesTab() {
 export default function InvoicesPage() {
   const { user } = useAuth();
 
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <p>Please login to view invoices</p>
+      </div>
+    );
+  }
+
   return (
-    <DashboardShell>
-      <Tabs defaultValue={user?.is_admin ? "admin" : "user"} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-          {user?.is_admin && <TabsTrigger value="admin">Admin View</TabsTrigger>}
-          <TabsTrigger value="user" className={user?.is_admin ? "" : "col-span-2"}>
-            Invoices
-          </TabsTrigger>
-        </TabsList>
-        {user?.is_admin && (
-          <TabsContent value="admin" className="mt-6">
-            <AdminInvoicesTab />
-          </TabsContent>
-        )}
-        <TabsContent value="user" className="mt-6">
-          <UserInvoicesTab />
+    <Tabs defaultValue={user?.is_admin ? "admin" : "user"} className="w-full">
+      <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
+        {user?.is_admin && <TabsTrigger value="admin">Admin View</TabsTrigger>}
+        <TabsTrigger value="user" className={user?.is_admin ? "" : "col-span-2"}>
+          Invoices
+        </TabsTrigger>
+      </TabsList>
+      {user?.is_admin && (
+        <TabsContent value="admin" className="mt-6">
+          <AdminInvoicesTab />
         </TabsContent>
-      </Tabs>
-    </DashboardShell>
+      )}
+      <TabsContent value="user" className="mt-6">
+        <UserInvoicesTab />
+      </TabsContent>
+    </Tabs>
   );
 }

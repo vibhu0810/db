@@ -83,21 +83,28 @@ function CreateInvoiceDialog() {
   const [invoiceDescription, setInvoiceDescription] = useState("");
   
   // Query for clients to select for invoice
+  console.log("Client query setup. User admin:", !!user?.is_admin, "Dialog open:", open);
+  
   const clientsQuery = useQuery({
     queryKey: ['/api/users'],
     queryFn: async () => {
       try {
         // Using the standard users endpoint which already has role-based filtering
-        return await apiRequest("GET", "/api/users").then(res => res.json());
+        console.log("Fetching clients from /api/users");
+        const result = await apiRequest("GET", "/api/users").then(res => res.json());
+        console.log("Clients result:", result);
+        return result;
       } catch (error) {
         console.error("Error fetching clients:", error);
         throw error;
       }
     },
-    enabled: !!user?.is_admin && open, // Only fetch when dialog is open and user is admin
+    // Always enable this query for now to troubleshoot
+    enabled: true,
     initialData: [],
     refetchOnMount: true,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
 
   // Query for completed orders that haven't been billed yet

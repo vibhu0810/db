@@ -68,36 +68,26 @@ function CreateInvoiceDialog() {
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [totalSelectedAmount, setTotalSelectedAmount] = useState(0);
 
-  // Query for users to select client
+  // Query for users to select client - always enabled for admins to prefetch
   const usersQuery = useQuery({
     queryKey: ['/api/users'],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/users", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
-        
-        if (!res.ok) {
-          throw new Error(`Failed to fetch users: ${res.status}`);
-        }
-        
+        const res = await apiRequest("GET", "/api/users");
         const data = await res.json();
-        console.log("Users for invoice dropdown:", data);
-        return data;
+        
+        // Filter out admin users, we only want to create invoices for regular users
+        return data.filter((u: any) => !u.is_admin);
       } catch (error) {
         console.error("Error fetching users:", error);
         return [];
       }
     },
-    enabled: !!user?.is_admin && open, // Only fetch when dialog is open
+    enabled: !!user?.is_admin, // Always fetch for admins
     initialData: [],
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   // Query for completed orders that haven't been billed yet

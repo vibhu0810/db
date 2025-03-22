@@ -30,7 +30,7 @@ export default function ChatPage() {
   const [messageInput, setMessageInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
-  // Get users based on role
+  // Get users based on role - with better caching
   const { data: users = [], isLoading: usersLoading } = useQuery<ChatUser[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
@@ -41,6 +41,9 @@ export default function ChatPage() {
         isAdmin ? !chatUser.is_admin : chatUser.is_admin
       );
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Get messages for selected conversation

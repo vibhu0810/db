@@ -70,6 +70,20 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+function getDomainName(url: string): string {
+  try {
+    // Handle URLs without protocol by prepending http:// temporarily
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'http://' + url;
+    }
+    
+    const hostname = new URL(url).hostname;
+    return hostname.replace(/^www\./, '');
+  } catch (e) {
+    return url; // Return original if parsing fails
+  }
+}
+
 function CreateInvoiceDialog() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -472,7 +486,6 @@ function CreateInvoiceDialog() {
                   <h4 className="text-sm font-semibold uppercase text-gray-500">Bill From</h4>
                   <div className="border-l-2 border-primary pl-3">
                     <p className="font-medium">{adminDetails.companyName}</p>
-                    <p className="text-sm text-muted-foreground">Link Building Services</p>
                     <p className="text-sm text-muted-foreground">{adminDetails.email}</p>
                     {adminDetails.billingAddress && (
                       <p className="text-sm text-muted-foreground">{adminDetails.billingAddress}</p>
@@ -502,8 +515,8 @@ function CreateInvoiceDialog() {
                 <div className="p-3">
                   <div className="grid grid-cols-3">
                     <div>
-                      <p className="font-medium">Link Building Services</p>
-                      <p className="text-xs text-muted-foreground mt-1">{completedOrdersQuery.data.length} completed orders</p>
+                      <p className="font-medium">Completed Orders</p>
+                      <p className="text-xs text-muted-foreground mt-1">{completedOrdersQuery.data.length} orders</p>
                     </div>
                     <div className="text-center">{completedOrdersQuery.data.length}</div>
                     <div className="text-right font-medium">${totalAmount.toFixed(2)}</div>
@@ -532,24 +545,36 @@ function CreateInvoiceDialog() {
             <div>
               <h4 className="font-medium mb-2">Orders Included</h4>
               <div className="border rounded-md max-h-60 overflow-y-auto">
-                {completedOrdersQuery.data.map((order: any) => (
-                  <div 
-                    key={order.id}
-                    className="flex items-center justify-between p-3 border-b last:border-0 hover:bg-muted/50"
-                  >
-                    <div className="overflow-hidden">
-                      <div className="font-medium truncate">
-                        #{order.id} - {order.sourceUrl}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        Completed on {new Date(order.dateCompleted).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div className="text-sm font-medium whitespace-nowrap">
-                      ${parseFloat(order.price).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
+                <table className="w-full">
+                  <thead className="bg-muted/30">
+                    <tr>
+                      <th className="text-left p-2 text-xs font-medium">Order ID</th>
+                      <th className="text-left p-2 text-xs font-medium">Domain</th>
+                      <th className="text-right p-2 text-xs font-medium">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {completedOrdersQuery.data.map((order: any) => (
+                      <tr 
+                        key={order.id}
+                        className="border-b last:border-0 hover:bg-muted/20"
+                      >
+                        <td className="p-2 text-sm">#{order.id}</td>
+                        <td className="p-2 text-sm">
+                          <div className="max-w-xs overflow-hidden">
+                            <div className="truncate">{getDomainName(order.sourceUrl)}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(order.dateCompleted).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-2 text-sm text-right font-medium">
+                          ${parseFloat(order.price).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
             

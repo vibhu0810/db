@@ -325,15 +325,7 @@ export default function Orders() {
   const [previousOrderStatuses, setPreviousOrderStatuses] = useState<Record<number, string>>({});
   // Track manual status updates with timestamps to know which ones were user-initiated
   const [recentStatusUpdates, setRecentStatusUpdates] = useState<Record<number, number>>({});
-  // General action tracking flag
   const [isActionInProgress, setIsActionInProgress] = useState<boolean>(false);
-  
-  // Specific action flags for more granular control
-  const [isAddingComment, setIsAddingComment] = useState<boolean>(false);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
-  const [isDeletingOrder, setIsDeletingOrder] = useState<boolean>(false);
-  const [isCreatingOrder, setIsCreatingOrder] = useState<boolean>(false);
-  const [isCancellingOrder, setIsCancellingOrder] = useState<boolean>(false);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -429,8 +421,7 @@ export default function Orders() {
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {
-      // Only set the specific flag, not the generic one
-      setIsAddingComment(true);
+      setIsActionInProgress(true);
       if (!selectedOrderId || !newComment.trim()) {
         throw new Error("Please enter a comment");
       }
@@ -445,49 +436,32 @@ export default function Orders() {
       return res.json();
     },
     onSuccess: () => {
-      // Reset the comment flag immediately
-      setIsAddingComment(false);
-      
-      // Clear the comment input right away 
-      setNewComment("");
-      
-      // Refresh the comments
       queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrderId, 'comments'] });
       
-      // Show toast message
-      toast({
-        title: "Comment added",
-        description: "Your comment has been added successfully.",
-      });
-      
-      // Reset other states with a delay for better UX
+      // Reset state safely
       setTimeout(() => {
-        // Keep setIsActionInProgress for backwards compatibility
+        setNewComment("");
         setIsActionInProgress(false);
-      }, 500);
+        
+        toast({
+          title: "Comment added",
+          description: "Your comment has been added successfully.",
+        });
+      }, 100);
     },
     onError: (error: Error) => {
-      // Reset the comment flag immediately
-      setIsAddingComment(false);
-      
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
-      
-      // Reset other state with a delay for better UX
-      setTimeout(() => {
-        // Keep setIsActionInProgress for backwards compatibility
-        setIsActionInProgress(false);
-      }, 500);
+      setIsActionInProgress(false);
     },
   });
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
-      // Only set the specific flag, not the generic one
-      setIsUpdatingStatus(true);
+      setIsActionInProgress(true);
       const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
       if (!res.ok) {
         const error = await res.json();
@@ -505,20 +479,16 @@ export default function Orders() {
         return newUpdates;
       });
       
-      // Reset the updating flag immediately
-      setIsUpdatingStatus(false);
-      
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Status updated",
         description: "Order status has been updated successfully.",
       });
       
-      // Reset remaining flags after a delay for better UX
+      // Reset action flag after a brief delay to prevent UI glitches
       setTimeout(() => {
-        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
-      }, 750); // Using a longer delay for status updates as they're more complex
+      }, 300);
     },
     onError: (error: Error) => {
       toast({
@@ -526,22 +496,13 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      
-      // Reset the updating flag immediately
-      setIsUpdatingStatus(false);
-      
-      // Reset other flags after a delay for better UX
-      setTimeout(() => {
-        // Keep setIsActionInProgress for backwards compatibility
-        setIsActionInProgress(false);
-      }, 500);
+      setIsActionInProgress(false);
     },
   });
 
   const deleteOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
-      // Only set the specific flag, not the generic one
-      setIsDeletingOrder(true);
+      setIsActionInProgress(true);
       const res = await apiRequest("DELETE", `/api/orders/${orderId}`);
       if (!res.ok) {
         const error = await res.json();
@@ -549,24 +510,20 @@ export default function Orders() {
       }
     },
     onSuccess: () => {
-      // Reset the deleting flag immediately
-      setIsDeletingOrder(false);
-      
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Order deleted",
         description: "The order has been deleted successfully.",
       });
       
-      // Reset other states with a delay for better UX
+      // Reset all states in a consistent manner
       setTimeout(() => {
         setOrderToDelete(null);
         setOrderToEdit(null);
         setOrderToCancel(null);
         setSelectedOrderId(null);
-        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
-      }, 750);
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -574,23 +531,15 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      
-      // Reset the deleting flag immediately
-      setIsDeletingOrder(false);
-      
-      // Reset other state with a delay for better UX
-      setTimeout(() => {
-        setOrderToDelete(null);
-        // Keep setIsActionInProgress for backwards compatibility
-        setIsActionInProgress(false);
-      }, 500);
+      // Make sure to reset the state even on error
+      setOrderToDelete(null);
+      setIsActionInProgress(false);
     },
   });
 
   const createCustomOrderMutation = useMutation({
     mutationFn: async (data: CustomOrderFormData) => {
-      // Only set the specific flag, not the generic one
-      setIsCreatingOrder(true);
+      setIsActionInProgress(true);
       const res = await apiRequest("POST", "/api/orders", data);
       if (!res.ok) {
         const error = await res.json();
@@ -599,21 +548,17 @@ export default function Orders() {
       return res.json();
     },
     onSuccess: () => {
-      // Reset the creating flag immediately
-      setIsCreatingOrder(false);
-      
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Order created",
         description: "Order has been created successfully.",
       });
       
-      // Reset other states with a delay for better UX
+      // Reset states in a consistent manner
       setTimeout(() => {
         setShowCustomOrderSheet(false);
-        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
-      }, 750);
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -621,22 +566,13 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      
-      // Reset the creating flag immediately
-      setIsCreatingOrder(false);
-      
-      // Reset other state with a delay for better UX
-      setTimeout(() => {
-        // Keep setIsActionInProgress for backwards compatibility
-        setIsActionInProgress(false);
-      }, 500);
+      setIsActionInProgress(false);
     },
   });
 
   const cancelOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
-      // Only set the specific flag, not the generic one
-      setIsCancellingOrder(true);
+      setIsActionInProgress(true);
       const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: "Cancelled" });
       if (!res.ok) {
         const error = await res.json();
@@ -653,24 +589,20 @@ export default function Orders() {
         return newUpdates;
       });
       
-      // Reset the cancelling flag
-      setIsCancellingOrder(false);
-      
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Order cancelled",
         description: "The order has been cancelled successfully.",
       });
       
-      // Reset all states in a consistent manner with a longer delay for better UX
+      // Reset all states in a consistent manner with a slightly longer delay for better UX
       setTimeout(() => {
         setOrderToCancel(null);
         setOrderToEdit(null);
         setOrderToDelete(null);
         setSelectedOrderId(null);
-        // We already reset isCancellingOrder above, but keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
-      }, 750);
+      }, 300);
     },
     onError: (error: Error) => {
       toast({
@@ -678,36 +610,19 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      
-      // Reset the cancelling flag immediately
-      setIsCancellingOrder(false);
-      
-      // Reset other state with a delay for better UX
-      setTimeout(() => {
-        setOrderToCancel(null);
-        // Keep setIsActionInProgress for backwards compatibility
-        setIsActionInProgress(false);
-      }, 500);
+      // Make sure to reset the state even on error
+      setOrderToCancel(null);
+      setIsActionInProgress(false);
     },
   });
 
 
   const handleSort = (field: string) => {
-    // Prevent sorting during any action processing
-    if (isUpdatingStatus || isAddingComment || isCancellingOrder || isDeletingOrder || isCreatingOrder) return;
-    
     if (sortField === field) {
       setSortDirection(prev => prev === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
       setSortDirection("desc");
-    }
-  };
-  
-  // A helper to handle page changes with action state
-  const handlePageChange = (page: number) => {
-    if (!isUpdatingStatus && !isAddingComment && !isCancellingOrder && !isDeletingOrder && !isCreatingOrder) {
-      setCurrentPage(page);
     }
   };
 
@@ -848,7 +763,7 @@ export default function Orders() {
   // Check for status changes to show toast notifications
   // This only runs when orders are fetched from polling (not user-triggered updates)
   useEffect(() => {
-    if (!isLoading && orders.length > 0 && !isUpdatingStatus && !isAddingComment && !isCancellingOrder && !isDeletingOrder && !isCreatingOrder) {
+    if (!isLoading && orders.length > 0 && !isActionInProgress) {
       // Create a map of current order statuses
       const currentOrderStatuses: Record<number, string> = {};
       const now = Date.now();
@@ -898,7 +813,7 @@ export default function Orders() {
         }
       }
     }
-  }, [isLoading, orders, toast, recentStatusUpdates, isUpdatingStatus, isAddingComment, isCancellingOrder, isDeletingOrder, isCreatingOrder, previousOrderStatuses]);
+  }, [isLoading, orders, toast, recentStatusUpdates, isActionInProgress, previousOrderStatuses]);
 
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
@@ -1291,16 +1206,14 @@ export default function Orders() {
                           <Select
                             value={order.status}
                             onValueChange={(newStatus) => {
-                              if (!isActionInProgress && !isUpdatingStatus) {
-                                setIsUpdatingStatus(true);
-                                setIsActionInProgress(true);
+                              if (!isActionInProgress) {
                                 updateOrderStatusMutation.mutate({
                                   orderId: order.id,
                                   status: newStatus
                                 });
                               }
                             }}
-                            disabled={isUpdatingStatus || updateOrderStatusMutation.isPending}
+                            disabled={isActionInProgress}
                           >
                             <SelectTrigger className="w-[180px]">
                               <SelectValue>{renderStatusBadge(order.status)}</SelectValue>
@@ -1339,7 +1252,7 @@ export default function Orders() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              if (!isActionInProgress && !isAddingComment) {
+                              if (!isActionInProgress) {
                                 setSelectedOrderId(order.id);
                                 // Mark comments as read when clicked using our mutation
                                 if (unreadCommentCounts[order.id]) {
@@ -1347,7 +1260,7 @@ export default function Orders() {
                                 }
                               }
                             }}
-                            disabled={isAddingComment}
+                            disabled={isActionInProgress}
                             className="relative flex items-center gap-1"
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -1370,11 +1283,11 @@ export default function Orders() {
                                 {isAdmin && (
                                   <DropdownMenuItem 
                                     onClick={() => {
-                                      if (!isActionInProgress && !isUpdatingStatus) {
+                                      if (!isActionInProgress) {
                                         setOrderToEdit(order);
                                       }
                                     }}
-                                    disabled={isUpdatingStatus}
+                                    disabled={isActionInProgress}
                                   >
                                     <Pencil className="mr-2 h-4 w-4" />
                                     Edit Order
@@ -1383,11 +1296,11 @@ export default function Orders() {
                                 {order.status !== "Completed" && order.status !== "Cancelled" && (
                                   <DropdownMenuItem
                                     onClick={() => {
-                                      if (!isActionInProgress && !isCancellingOrder) {
+                                      if (!isActionInProgress) {
                                         setOrderToCancel(order.id);
                                       }
                                     }}
-                                    disabled={isCancellingOrder}
+                                    disabled={isActionInProgress}
                                     className="text-destructive focus:text-destructive"
                                   >
                                     <X className="mr-2 h-4 w-4" />
@@ -1397,11 +1310,11 @@ export default function Orders() {
                                 {isAdmin && (
                                   <DropdownMenuItem
                                     onClick={() => {
-                                      if (!isActionInProgress && !isDeletingOrder) {
+                                      if (!isActionInProgress) {
                                         setOrderToDelete(order.id);
                                       }
                                     }}
-                                    disabled={isDeletingOrder}
+                                    disabled={isActionInProgress}
                                     className="text-destructive focus:text-destructive"
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" />
@@ -1429,8 +1342,8 @@ export default function Orders() {
                 variant="outline" 
                 size="icon" 
                 className="h-9 w-9"
-                disabled={currentPage === 1 || isUpdatingStatus || isAddingComment || isCancellingOrder || isDeletingOrder}
-                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1 || isActionInProgress}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -1452,8 +1365,8 @@ export default function Orders() {
                         "h-9 w-9",
                         currentPage === page && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
                       )}
-                      onClick={() => handlePageChange(page)}
-                      disabled={(isUpdatingStatus || isAddingComment || isCancellingOrder || isDeletingOrder) || currentPage === page}
+                      onClick={() => !isActionInProgress && setCurrentPage(page)}
+                      disabled={isActionInProgress || currentPage === page}
                     >
                       {page}
                     </Button>
@@ -1477,8 +1390,8 @@ export default function Orders() {
                 variant="outline" 
                 size="icon" 
                 className="h-9 w-9"
-                disabled={currentPage === totalPages || isUpdatingStatus || isAddingComment || isCancellingOrder || isDeletingOrder}
-                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages || isActionInProgress}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -1506,16 +1419,15 @@ export default function Orders() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
-                  if (!isCancellingOrder) {
-                    setIsCancellingOrder(true);
+                  if (!isActionInProgress) {
                     setIsActionInProgress(true);
                     cancelOrderMutation.mutate(orderToCancel);
                     setOrderToCancel(null);
                   }
                 }}
-                disabled={isCancellingOrder || cancelOrderMutation.isPending}
+                disabled={isActionInProgress}
               >
-                {(isCancellingOrder || cancelOrderMutation.isPending) ? 
+                {isActionInProgress ? 
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Confirm
               </AlertDialogAction>
@@ -1535,15 +1447,14 @@ export default function Orders() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (orderToDelete && !isDeletingOrder) {
-                  setIsDeletingOrder(true);
+                if (orderToDelete && !isActionInProgress) {
                   setIsActionInProgress(true);
                   deleteOrderMutation.mutate(orderToDelete);
                 }
               }}
-              disabled={isDeletingOrder || deleteOrderMutation.isPending}
+              disabled={isActionInProgress}
             >
-              {(isDeletingOrder || deleteOrderMutation.isPending) ? 
+              {isActionInProgress ? 
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Delete
             </AlertDialogAction>
@@ -1594,15 +1505,15 @@ export default function Orders() {
                 />
                 <Button
                   onClick={() => {
-                    if (!isAddingComment && newComment.trim()) {
+                    if (!isActionInProgress && newComment.trim()) {
                       setIsActionInProgress(true);
                       addCommentMutation.mutate();
                     }
                   }}
-                  disabled={!newComment.trim() || isAddingComment || addCommentMutation.isPending}
+                  disabled={!newComment.trim() || isActionInProgress || addCommentMutation.isPending}
                   className="w-full"
                 >
-                  {(isAddingComment || addCommentMutation.isPending) && (
+                  {(isActionInProgress || addCommentMutation.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   Add Comment

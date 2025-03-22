@@ -344,6 +344,35 @@ export default function Orders() {
   // Track unread comments
   const [unreadCommentCounts, setUnreadCommentCounts] = useState<{[key: number]: number}>({});
 
+  // Mutation for marking comments as read
+  const markCommentsAsReadMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      const response = await apiRequest("POST", `/api/orders/${orderId}/comments/read`);
+      if (!response.ok) {
+        throw new Error("Failed to mark comments as read");
+      }
+      return response.json();
+    },
+    onSuccess: (_, orderId) => {
+      // Update the local state immediately to remove the badge
+      const updatedCounts = {...unreadCommentCounts};
+      delete updatedCounts[orderId];
+      setUnreadCommentCounts(updatedCounts);
+      
+      // Also invalidate related queries to update the server data
+      queryClient.invalidateQueries({ queryKey: ['/api/orders/unread-comments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to mark comments as read",
+        variant: "destructive",
+      });
+      console.error("Failed to mark comments as read:", error);
+    }
+  });
+
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['/api/orders'],
     queryFn: () => {

@@ -81,6 +81,24 @@ import { z } from "zod";
 import Checkbox from "@/components/ui/checkbox";
 import { Link } from "wouter";
 
+// Helper function to extract domain from URL
+function extractDomainFromUrl(url: string): string {
+  if (!url || url === "not_applicable") return "";
+  try {
+    // Use URL constructor to parse the URL
+    const urlObj = new URL(url);
+    // Remove 'www.' prefix if present
+    let domain = urlObj.hostname;
+    if (domain.startsWith('www.')) {
+      domain = domain.substring(4);
+    }
+    return domain;
+  } catch (e) {
+    // If URL is invalid, return the original string
+    return url;
+  }
+}
+
 // Make sure our DateRange is compatible with react-day-picker's DateRange
 import { DateRange as DayPickerDateRange } from "react-day-picker";
 
@@ -779,7 +797,11 @@ export default function Orders() {
 
     const rows = filteredOrders.map((order: any) => [
       order.id,
-      order.title && order.title !== "not_applicable" ? order.title : order.sourceUrl,
+      order.title && order.title !== "not_applicable" 
+        ? (order.sourceUrl !== "not_applicable" 
+            ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
+            : order.title)
+        : order.sourceUrl,
       order.targetUrl,
       order.anchorText,
       order.price,
@@ -1374,7 +1396,9 @@ export default function Orders() {
                         <div className="flex items-center space-x-2">
                           <div className="truncate max-w-[250px]">
                             {order.title && order.title !== "not_applicable" 
-                              ? order.title 
+                              ? (order.sourceUrl !== "not_applicable" 
+                                  ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
+                                  : order.title)
                               : order.sourceUrl === "not_applicable" 
                                 ? "No title provided" 
                                 : order.sourceUrl}
@@ -1384,7 +1408,9 @@ export default function Orders() {
                             size="icon"
                             className="flex-shrink-0"
                             onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
-                              ? order.title 
+                              ? (order.sourceUrl !== "not_applicable" 
+                                  ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
+                                  : order.title)
                               : order.sourceUrl === "not_applicable"
                                 ? ""
                                 : order.sourceUrl)}

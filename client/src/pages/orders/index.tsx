@@ -1151,7 +1151,7 @@ export default function Orders() {
                         <div className="flex items-center justify-end space-x-2">
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             onClick={() => {
                               setSelectedOrderId(order.id);
                               // Mark comments as read when clicked using our mutation
@@ -1159,16 +1159,17 @@ export default function Orders() {
                                 markCommentsAsReadMutation.mutate(order.id);
                               }
                             }}
-                            className="relative"
+                            className="relative flex items-center gap-1"
                           >
                             <MessageSquare className="h-4 w-4" />
+                            <span>Comments</span>
                             {unreadCommentCounts[order.id] > 0 && (
                               <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
                                 {unreadCommentCounts[order.id]}
                               </span>
                             )}
                           </Button>
-                          {(!["Sent", "Cancelled"].includes(order.status) || isAdmin) && (
+                          {((!["Sent", "Cancelled", "Completed"].includes(order.status) || isAdmin)) && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon">

@@ -337,11 +337,49 @@ export default function Orders() {
     enabled: isAdmin,
   });
 
-  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
+  const { data: comments = [], isLoading: isLoadingComments, refetch: refetchComments } = useQuery({
     queryKey: ['/api/orders', selectedOrderId, 'comments'],
     queryFn: () => apiRequest("GET", `/api/orders/${selectedOrderId}/comments`).then(res => res.json()),
     enabled: selectedOrderId !== null,
   });
+
+  // Get the WebSocket connection
+  const socket = useWebSocket();
+
+  // Set up WebSocket connection for real-time updates
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    // Set up message handler for WebSocket
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        // Check if this is a comment update for the currently selected order
+        if (data.type === 'comment_update' && selectedOrderId && data.data?.orderId === selectedOrderId) {
+          // Refetch comments
+          refetchComments();
+          
+          // Show toast notification if the comment is from someone else
+          if (data.data.userId !== user.id) {
+            toast({
+              title: "New Comment",
+              description: `${data.data.username} added a new comment`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error handling WebSocket message:", error);
+      }
+    };
+
+    socket.addEventListener('message', handleMessage);
+
+    // Clean up on unmount
+    return () => {
+      socket.removeEventListener('message', handleMessage);
+    };
+  }, [socket, user, selectedOrderId, refetchComments, toast]);
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {

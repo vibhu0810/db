@@ -67,6 +67,7 @@ function CreateInvoiceDialog() {
     queryKey: ['/api/users'],
     enabled: !!user?.is_admin,
     initialData: [],
+    refetchOnMount: true,
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,8 +147,8 @@ function CreateInvoiceDialog() {
       notes: description,
       dueDate: new Date(dueDate).toISOString(),
       status: 'pending',
-      fileName: fileUrl ? fileUrl.split('/').pop() || 'invoice.pdf' : 'invoice.pdf',
-      fileUrl: fileUrl || '',
+      fileName: 'invoice.pdf',
+      fileUrl: '',
     };
 
     createInvoiceMutation.mutate(invoiceData);
@@ -238,28 +239,13 @@ function CreateInvoiceDialog() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="file" className="text-right">
-                Attachment
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="file"
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                />
-                {uploading && <p className="text-sm text-muted-foreground mt-1">Uploading...</p>}
-                {fileUrl && <p className="text-sm text-muted-foreground mt-1">File uploaded successfully</p>}
-              </div>
-            </div>
+
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createInvoiceMutation.isPending || uploading}>
+            <Button type="submit" disabled={createInvoiceMutation.isPending}>
               {createInvoiceMutation.isPending ? "Creating..." : "Create Invoice"}
             </Button>
           </DialogFooter>

@@ -47,7 +47,7 @@ export function Sidebar() {
     <div 
       className={cn(
         "sidebar-container border-r bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out",
-        expanded ? "w-64" : "w-16 hover:w-64 group"
+        expanded ? "w-64" : "w-16 group"
       )}
     >
       <div className="h-16 border-b flex items-center justify-center px-4">
@@ -60,7 +60,7 @@ export function Sidebar() {
             />
             <span className={cn(
               "ml-2 text-lg font-semibold truncate transition-opacity duration-300",
-              expanded ? "opacity-100" : "opacity-0 group-hover:opacity-100 hidden group-hover:inline"
+              expanded ? "opacity-100 inline" : "hidden"
             )}>
               {isAdmin ? "Admin" : user.companyName}
             </span>
@@ -70,7 +70,7 @@ export function Sidebar() {
             <Logo size="sm" showText={false} showProduct={false} />
             <span className={cn(
               "ml-2 text-lg font-semibold transition-opacity duration-300",
-              expanded ? "opacity-100" : "opacity-0 group-hover:opacity-100 hidden group-hover:inline"
+              expanded ? "opacity-100 inline" : "hidden"
             )}>
               SaaSxLinks
               {isAdmin && (
@@ -99,7 +99,7 @@ export function Sidebar() {
               <Icon className="h-5 w-5 min-w-[20px]" />
               <span className={cn(
                 "transition-opacity duration-300 whitespace-nowrap",
-                expanded ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                expanded ? "opacity-100 inline" : "hidden"
               )}>
                 {item.name}
               </span>
@@ -107,7 +107,7 @@ export function Sidebar() {
               {/* Tooltip for when sidebar is collapsed */}
               <span className={cn(
                 "absolute left-full ml-2 px-2 py-1 bg-black/80 text-white text-xs rounded pointer-events-none transition-all duration-200 whitespace-nowrap",
-                expanded ? "opacity-0 scale-0" : "opacity-0 group-hover:opacity-0 hover:opacity-0 scale-0 group-hover:scale-0 origin-left"
+                expanded ? "opacity-0 scale-0" : "opacity-0 scale-100 origin-left hover:opacity-100"
               )}>
                 {item.name}
               </span>

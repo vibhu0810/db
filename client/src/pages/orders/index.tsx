@@ -657,8 +657,8 @@ export default function Orders() {
 
 
   const handleSort = (field: string) => {
-    // Prevent sorting during action processing
-    if (isActionInProgress) return;
+    // Prevent sorting during any action processing
+    if (isUpdatingStatus || isAddingComment || isCancellingOrder || isDeletingOrder || isCreatingOrder) return;
     
     if (sortField === field) {
       setSortDirection(prev => prev === "asc" ? "desc" : "asc");
@@ -670,7 +670,7 @@ export default function Orders() {
   
   // A helper to handle page changes with action state
   const handlePageChange = (page: number) => {
-    if (!isActionInProgress) {
+    if (!isUpdatingStatus && !isAddingComment && !isCancellingOrder && !isDeletingOrder && !isCreatingOrder) {
       setCurrentPage(page);
     }
   };
@@ -1393,7 +1393,7 @@ export default function Orders() {
                 variant="outline" 
                 size="icon" 
                 className="h-9 w-9"
-                disabled={currentPage === 1 || isActionInProgress}
+                disabled={currentPage === 1 || isUpdatingStatus || isAddingComment || isCancellingOrder || isDeletingOrder}
                 onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -1417,7 +1417,7 @@ export default function Orders() {
                         currentPage === page && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
                       )}
                       onClick={() => handlePageChange(page)}
-                      disabled={isActionInProgress || currentPage === page}
+                      disabled={(isUpdatingStatus || isAddingComment || isCancellingOrder || isDeletingOrder) || currentPage === page}
                     >
                       {page}
                     </Button>
@@ -1441,7 +1441,7 @@ export default function Orders() {
                 variant="outline" 
                 size="icon" 
                 className="h-9 w-9"
-                disabled={currentPage === totalPages || isActionInProgress}
+                disabled={currentPage === totalPages || isUpdatingStatus || isAddingComment || isCancellingOrder || isDeletingOrder}
                 onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
               >
                 <ChevronRight className="h-4 w-4" />

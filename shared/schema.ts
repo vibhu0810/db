@@ -43,15 +43,18 @@ export const updateProfileSchema = createInsertSchema(users)
   .omit({ 
     id: true, 
     username: true, 
-    password: true 
+    password: true,
+    billingAddress: true // Remove billing address field
   })
   .extend({
-    bio: z.string().min(1, "Bio is required"),
+    bio: z.string().min(20, "Bio must be at least 20 characters long").max(500, "Bio must not exceed 500 characters"),
     profilePicture: z.string().optional(),
     companyLogo: z.string().optional(),
     dateOfBirth: z.string().min(1, "Date of birth is required"),
-    phoneNumber: z.string().min(1, "Phone number is required"),
-    linkedinUrl: z.string().min(1, "LinkedIn URL is required").url("Must be a valid URL"),
+    phoneNumber: z.string().min(5, "Phone number is required").max(20, "Phone number is too long"),
+    linkedinUrl: z.string().min(1, "LinkedIn URL is required")
+      .url("Please enter a valid LinkedIn URL")
+      .includes("linkedin.com", { message: "URL must be from LinkedIn" }),
     instagramProfile: z.string().optional(),
   });
 

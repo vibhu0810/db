@@ -866,10 +866,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: updatedUser.email,
         companyName: updatedUser.companyName,
         country: updatedUser.country,
-        billingAddress: updatedUser.billingAddress,
         bio: updatedUser.bio,
         profilePicture: updatedUser.profilePicture,
         companyLogo: updatedUser.companyLogo,
+        dateOfBirth: updatedUser.dateOfBirth,
+        phoneNumber: updatedUser.phoneNumber,
+        linkedinUrl: updatedUser.linkedinUrl,
+        instagramProfile: updatedUser.instagramProfile,
         is_admin: updatedUser.is_admin
       };
 

@@ -224,3 +224,22 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 // Types remain the same
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
+
+// Invoices schema
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(), // Amount in cents
+  dueDate: timestamp("due_date").notNull(),
+  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  status: text("status", { enum: ["pending", "paid", "overdue"] }).default("pending").notNull(),
+  paidAt: timestamp("paid_at"),
+  notes: text("notes"),
+});
+
+export const insertInvoiceSchema = createInsertSchema(invoices);
+
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type Invoice = typeof invoices.$inferSelect;

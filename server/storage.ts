@@ -1,12 +1,13 @@
-import { users, orders, orderComments, notifications, messages, domains } from "@shared/schema";
+import { users, orders, orderComments, notifications, messages, domains, invoices } from "@shared/schema";
 import type {
   User, InsertUser, Domain, InsertDomain,
   Order, OrderComment, InsertOrderComment,
   Notification, InsertNotification,
-  Message, InsertMessage
+  Message, InsertMessage,
+  Invoice, InsertInvoice
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, or, and, desc } from "drizzle-orm";
+import { eq, or, and, desc, gte, lte, between, asc } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
@@ -50,6 +51,16 @@ export interface IStorage {
   getMessages(userId1: number, userId2: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   updateMessage(id: number, updates: Partial<Message>): Promise<Message>;
+
+  // Invoice operations
+  getInvoice(id: number): Promise<Invoice | undefined>;
+  getInvoices(userId: number): Promise<Invoice[]>;
+  getAllInvoices(): Promise<Invoice[]>;
+  createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  updateInvoice(id: number, updates: Partial<Invoice>): Promise<Invoice>;
+  markInvoiceAsPaid(id: number): Promise<Invoice>;
+  getInvoicesByDateRange(userId: number, startDate: Date, endDate: Date): Promise<Invoice[]>;
+  getInvoicesByAmount(userId: number, minAmount: number, maxAmount: number): Promise<Invoice[]>;
 
   // Session store
   sessionStore: session.Store;
@@ -390,6 +401,96 @@ export class DatabaseStorage implements IStorage {
     
     console.log('Updated message:', message);
     return message;
+  }
+
+  // Invoice operations
+  async getInvoice(id: number): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    return invoice;
+  }
+
+  async getInvoices(userId: number): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.userId, userId))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getAllInvoices(): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async createInvoice(invoiceData: InsertInvoice): Promise<Invoice> {
+    const [invoice] = await db
+      .insert(invoices)
+      .values({
+        ...invoiceData,
+        createdAt: new Date(),
+      })
+      .returning();
+    
+    // Create notification for the user
+    await this.createNotification({
+      userId: invoiceData.userId,
+      type: "invoice",
+      message: "A new invoice has been added to your account",
+      createdAt: new Date(),
+    });
+
+    return invoice;
+  }
+
+  async updateInvoice(id: number, updates: Partial<Invoice>): Promise<Invoice> {
+    const [invoice] = await db
+      .update(invoices)
+      .set(updates)
+      .where(eq(invoices.id, id))
+      .returning();
+    return invoice;
+  }
+
+  async markInvoiceAsPaid(id: number): Promise<Invoice> {
+    const [invoice] = await db
+      .update(invoices)
+      .set({ 
+        status: "paid",
+        paidAt: new Date(),
+      })
+      .where(eq(invoices.id, id))
+      .returning();
+    return invoice;
+  }
+
+  async getInvoicesByDateRange(userId: number, startDate: Date, endDate: Date): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.userId, userId),
+          gte(invoices.dueDate, startDate),
+          lte(invoices.dueDate, endDate)
+        )
+      )
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoicesByAmount(userId: number, minAmount: number, maxAmount: number): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.userId, userId),
+          gte(invoices.amount, minAmount),
+          lte(invoices.amount, maxAmount)
+        )
+      )
+      .orderBy(desc(invoices.createdAt));
   }
 }
 

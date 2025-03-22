@@ -84,28 +84,14 @@ function CreateInvoiceDialog() {
   
   // Query for clients to select for invoice
   const clientsQuery = useQuery({
-    queryKey: ['/api/clients'],
+    queryKey: ['/api/users'],
     queryFn: async () => {
       try {
-        // Using our dedicated clients endpoint
-        const response = await fetch("/api/clients", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch clients: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log("Clients for invoice creation:", data);
-        return data;
+        // Using the standard users endpoint which already has role-based filtering
+        return await apiRequest("GET", "/api/users").then(res => res.json());
       } catch (error) {
         console.error("Error fetching clients:", error);
-        return [];
+        throw error;
       }
     },
     enabled: !!user?.is_admin && open, // Only fetch when dialog is open and user is admin

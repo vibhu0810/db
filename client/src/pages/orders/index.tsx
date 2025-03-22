@@ -1264,7 +1264,7 @@ export default function Orders() {
                                 });
                               }
                             }}
-                            disabled={isActionInProgress}
+                            disabled={isUpdatingStatus || updateOrderStatusMutation.isPending}
                           >
                             <SelectTrigger className="w-[180px]">
                               <SelectValue>{renderStatusBadge(order.status)}</SelectValue>
@@ -1311,7 +1311,7 @@ export default function Orders() {
                                 }
                               }
                             }}
-                            disabled={isActionInProgress}
+                            disabled={isAddingComment}
                             className="relative flex items-center gap-1"
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -1338,7 +1338,7 @@ export default function Orders() {
                                         setOrderToEdit(order);
                                       }
                                     }}
-                                    disabled={isActionInProgress}
+                                    disabled={isUpdatingStatus}
                                   >
                                     <Pencil className="mr-2 h-4 w-4" />
                                     Edit Order
@@ -1351,7 +1351,7 @@ export default function Orders() {
                                         setOrderToCancel(order.id);
                                       }
                                     }}
-                                    disabled={isActionInProgress}
+                                    disabled={isCancellingOrder}
                                     className="text-destructive focus:text-destructive"
                                   >
                                     <X className="mr-2 h-4 w-4" />
@@ -1365,7 +1365,7 @@ export default function Orders() {
                                         setOrderToDelete(order.id);
                                       }
                                     }}
-                                    disabled={isActionInProgress}
+                                    disabled={isDeletingOrder}
                                     className="text-destructive focus:text-destructive"
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" />
@@ -1470,15 +1470,16 @@ export default function Orders() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
-                  if (!isActionInProgress) {
+                  if (!isCancellingOrder) {
+                    setIsCancellingOrder(true);
                     setIsActionInProgress(true);
                     cancelOrderMutation.mutate(orderToCancel);
                     setOrderToCancel(null);
                   }
                 }}
-                disabled={isActionInProgress}
+                disabled={isCancellingOrder || cancelOrderMutation.isPending}
               >
-                {isActionInProgress ? 
+                {(isCancellingOrder || cancelOrderMutation.isPending) ? 
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Confirm
               </AlertDialogAction>
@@ -1498,14 +1499,15 @@ export default function Orders() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (orderToDelete && !isActionInProgress) {
+                if (orderToDelete && !isDeletingOrder) {
+                  setIsDeletingOrder(true);
                   setIsActionInProgress(true);
                   deleteOrderMutation.mutate(orderToDelete);
                 }
               }}
-              disabled={isActionInProgress}
+              disabled={isDeletingOrder || deleteOrderMutation.isPending}
             >
-              {isActionInProgress ? 
+              {(isDeletingOrder || deleteOrderMutation.isPending) ? 
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Delete
             </AlertDialogAction>

@@ -1556,15 +1556,15 @@ export default function Orders() {
                 />
                 <Button
                   onClick={() => {
-                    if (!isActionInProgress && newComment.trim()) {
+                    if (!isAddingComment && newComment.trim()) {
                       setIsActionInProgress(true);
                       addCommentMutation.mutate();
                     }
                   }}
-                  disabled={!newComment.trim() || isActionInProgress || addCommentMutation.isPending}
+                  disabled={!newComment.trim() || isAddingComment || addCommentMutation.isPending}
                   className="w-full"
                 >
-                  {(isActionInProgress || addCommentMutation.isPending) && (
+                  {(isAddingComment || addCommentMutation.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   Add Comment

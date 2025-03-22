@@ -949,8 +949,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all invoices for the current user
   app.get("/api/invoices", async (req, res) => {
     try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      console.log("Accessing /api/invoices route, user:", req.user?.id);
+      if (!req.user) {
+        console.log("No user found, returning 401");
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      console.log("Fetching invoices for user", req.user.id);
       const invoices = await storage.getInvoices(req.user.id);
+      console.log("Invoices found:", invoices.length);
       res.json(invoices);
     } catch (error) {
       console.error("Error fetching invoices:", error);
@@ -1066,11 +1073,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin route to get all invoices
   app.get("/api/invoices/all", async (req, res) => {
     try {
+      console.log("Accessing /api/invoices/all route, user:", req.user);
       if (!req.user?.is_admin) {
+        console.log("User is not admin, access denied");
         return res.status(403).json({ error: "Unauthorized: Admin access required" });
       }
       
+      console.log("Fetching all invoices");
       const invoices = await storage.getAllInvoices();
+      console.log("Invoices fetched:", invoices.length);
+      
+      console.log("Fetching users");
       const users = await storage.getUsers();
       
       // Join invoices with user data

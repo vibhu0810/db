@@ -14,6 +14,7 @@ import ChatPage from "./pages/chat";
 import ReportsPage from "./pages/reports";
 import KanbanPage from "./pages/kanban";
 import InvoicesPage from "./pages/invoices";
+import AuthDebugPage from "./pages/debug/auth";
 
 function App() {
   return (
@@ -89,6 +90,9 @@ function App() {
               <InvoicesPage />
             </DashboardShell>
           </ProtectedRoute>
+        </Route>
+        <Route path="/debug/auth">
+          <AuthDebugPage />
         </Route>
         <Route path="/">
           <ProtectedRoute>

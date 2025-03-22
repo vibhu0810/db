@@ -51,8 +51,12 @@ export async function apiRequest(
     options.body = JSON.stringify(body);
   }
 
+  console.log(`Making ${method} request to ${url}`, body ? 'with body' : 'without body');
+  
   try {
     const res = await fetch(url, options);
+    
+    console.log(`Response from ${url}: status=${res.status}`);
     
     // For unauthorized responses, we don't want to throw immediately
     // So we can handle it gracefully in the calling code

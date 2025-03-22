@@ -34,22 +34,24 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     if (!socket || !user) return;
 
-    // Set up authentication with the WebSocket server only when socket is connected
-    const sendAuth = () => {
-      if (socket.readyState === WebSocket.OPEN) {
-        const authData = {
-          type: 'auth',
-          userId: user.id,
-          username: user.username
-        };
-        socket.send(JSON.stringify(authData));
-      } else if (socket.readyState === WebSocket.CONNECTING) {
-        // If still connecting, wait and try again
-        setTimeout(sendAuth, 100);
+    // Set up authentication with the WebSocket server using safe sendMessage
+    const authData = {
+      type: 'auth',
+      userId: user.id,
+      username: user.username
+    };
+    
+    // Try to send auth data if socket is ready, or retry after a delay
+    const attemptAuth = () => {
+      if (sendMessage(authData)) {
+        console.log('Authentication data sent successfully');
+      } else {
+        // If failed to send (not connected yet), try again after a short delay
+        setTimeout(attemptAuth, 100);
       }
     };
     
-    sendAuth();
+    attemptAuth();
 
     // Set up message handler
     const handleMessage = (event: MessageEvent) => {

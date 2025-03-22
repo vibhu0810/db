@@ -325,14 +325,15 @@ export default function Orders() {
   const [previousOrderStatuses, setPreviousOrderStatuses] = useState<Record<number, string>>({});
   // Track manual status updates with timestamps to know which ones were user-initiated
   const [recentStatusUpdates, setRecentStatusUpdates] = useState<Record<number, number>>({});
+  // General action tracking flag
   const [isActionInProgress, setIsActionInProgress] = useState<boolean>(false);
   
-  // Additional action tracking for specific operations
+  // Specific action flags for more granular control
   const [isAddingComment, setIsAddingComment] = useState<boolean>(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const [isDeletingOrder, setIsDeletingOrder] = useState<boolean>(false);
-  const [isCancellingOrder, setIsCancellingOrder] = useState<boolean>(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState<boolean>(false);
+  const [isCancellingOrder, setIsCancellingOrder] = useState<boolean>(false);
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -429,6 +430,7 @@ export default function Orders() {
   const addCommentMutation = useMutation({
     mutationFn: async () => {
       setIsActionInProgress(true);
+      setIsAddingComment(true);
       if (!selectedOrderId || !newComment.trim()) {
         throw new Error("Please enter a comment");
       }
@@ -445,16 +447,17 @@ export default function Orders() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrderId, 'comments'] });
       
-      // Reset state safely
+      // Reset state safely with longer delay
       setTimeout(() => {
         setNewComment("");
+        setIsAddingComment(false);
         setIsActionInProgress(false);
         
         toast({
           title: "Comment added",
           description: "Your comment has been added successfully.",
         });
-      }, 100);
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
@@ -462,13 +465,19 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      setIsActionInProgress(false);
+      
+      // Ensure action flags are reset even on error
+      setTimeout(() => {
+        setIsAddingComment(false);
+        setIsActionInProgress(false);
+      }, 500);
     },
   });
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
       setIsActionInProgress(true);
+      setIsUpdatingStatus(true);
       const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
       if (!res.ok) {
         const error = await res.json();
@@ -492,10 +501,11 @@ export default function Orders() {
         description: "Order status has been updated successfully.",
       });
       
-      // Reset action flag after a longer delay to prevent UI glitches
+      // Reset action flags after a significant delay to prevent UI glitches
       setTimeout(() => {
+        setIsUpdatingStatus(false);
         setIsActionInProgress(false);
-      }, 500);
+      }, 750); // Using a longer delay for status updates as they're more complex
     },
     onError: (error: Error) => {
       toast({
@@ -504,16 +514,18 @@ export default function Orders() {
         variant: "destructive",
       });
       
-      // Ensure we reset action state on error with delay
+      // Ensure we reset all action states on error with delay
       setTimeout(() => {
+        setIsUpdatingStatus(false);
         setIsActionInProgress(false);
-      }, 300);
+      }, 500);
     },
   });
 
   const deleteOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
       setIsActionInProgress(true);
+      setIsDeletingOrder(true);
       const res = await apiRequest("DELETE", `/api/orders/${orderId}`);
       if (!res.ok) {
         const error = await res.json();
@@ -533,8 +545,9 @@ export default function Orders() {
         setOrderToEdit(null);
         setOrderToCancel(null);
         setSelectedOrderId(null);
+        setIsDeletingOrder(false);
         setIsActionInProgress(false);
-      }, 500);
+      }, 750);
     },
     onError: (error: Error) => {
       toast({
@@ -545,14 +558,16 @@ export default function Orders() {
       // Make sure to reset the state even on error with delay
       setTimeout(() => {
         setOrderToDelete(null);
+        setIsDeletingOrder(false);
         setIsActionInProgress(false);
-      }, 300);
+      }, 500);
     },
   });
 
   const createCustomOrderMutation = useMutation({
     mutationFn: async (data: CustomOrderFormData) => {
       setIsActionInProgress(true);
+      setIsCreatingOrder(true);
       const res = await apiRequest("POST", "/api/orders", data);
       if (!res.ok) {
         const error = await res.json();
@@ -570,8 +585,9 @@ export default function Orders() {
       // Reset states in a consistent manner with longer delay
       setTimeout(() => {
         setShowCustomOrderSheet(false);
+        setIsCreatingOrder(false);
         setIsActionInProgress(false);
-      }, 500);
+      }, 750);
     },
     onError: (error: Error) => {
       toast({
@@ -580,16 +596,18 @@ export default function Orders() {
         variant: "destructive",
       });
       
-      // Ensure we reset action state on error
+      // Ensure we reset all action states on error
       setTimeout(() => {
+        setIsCreatingOrder(false);
         setIsActionInProgress(false);
-      }, 300);
+      }, 500);
     },
   });
 
   const cancelOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
       setIsActionInProgress(true);
+      setIsCancellingOrder(true);
       const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: "Cancelled" });
       if (!res.ok) {
         const error = await res.json();
@@ -618,8 +636,9 @@ export default function Orders() {
         setOrderToEdit(null);
         setOrderToDelete(null);
         setSelectedOrderId(null);
+        setIsCancellingOrder(false);
         setIsActionInProgress(false);
-      }, 500);
+      }, 750);
     },
     onError: (error: Error) => {
       toast({
@@ -630,8 +649,9 @@ export default function Orders() {
       // Make sure to reset the state even on error with delay
       setTimeout(() => {
         setOrderToCancel(null);
+        setIsCancellingOrder(false);
         setIsActionInProgress(false);
-      }, 300);
+      }, 500);
     },
   });
 
@@ -1283,7 +1303,7 @@ export default function Orders() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              if (!isActionInProgress) {
+                              if (!isActionInProgress && !isAddingComment) {
                                 setSelectedOrderId(order.id);
                                 // Mark comments as read when clicked using our mutation
                                 if (unreadCommentCounts[order.id]) {

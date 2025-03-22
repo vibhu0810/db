@@ -427,12 +427,16 @@ export default function ProfilePage() {
                   name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Bio</FormLabel>
+                      <FormLabel>Bio (Required)</FormLabel>
                       <FormControl>
-                        <Textarea {...field} disabled={updateProfileMutation.isPending} />
+                        <Textarea 
+                          {...field} 
+                          disabled={updateProfileMutation.isPending}
+                          placeholder="Share details about your business and link building requirements..."
+                        />
                       </FormControl>
                       <FormDescription>
-                        Tell us about your experience and requirements for link building campaigns
+                        Provide information about your business, website, and specific requirements for link building campaigns (20-500 characters)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

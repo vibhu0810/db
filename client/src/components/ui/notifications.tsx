@@ -14,6 +14,7 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -153,21 +154,23 @@ export function NotificationsDropdown() {
             No notifications
           </div>
         ) : (
-          notifications.map((notification: any) => (
-            <DropdownMenuItem
-              key={notification.id}
-              className={cn(
-                "flex flex-col items-start p-4 cursor-pointer",
-                !notification.read && "bg-muted"
-              )}
-              onClick={() => handleNotificationClick(notification)}
-            >
-              <p className="text-sm">{notification.message}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-              </p>
-            </DropdownMenuItem>
-          ))
+          <ScrollArea className="h-[300px]">
+            {notifications.map((notification: any) => (
+              <DropdownMenuItem
+                key={notification.id}
+                className={cn(
+                  "flex flex-col items-start p-4 cursor-pointer",
+                  !notification.read && "bg-muted"
+                )}
+                onClick={() => handleNotificationClick(notification)}
+              >
+                <p className="text-sm">{notification.message}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                </p>
+              </DropdownMenuItem>
+            ))}
+          </ScrollArea>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

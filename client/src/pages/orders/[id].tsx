@@ -65,12 +65,16 @@ export default function OrderDetailsPage() {
       }
     };
 
-    socket.addEventListener('message', handleMessage);
+    if (socket) {
+      socket.addEventListener('message', handleMessage);
 
-    // Clean up on unmount
-    return () => {
-      socket.removeEventListener('message', handleMessage);
-    };
+      // Clean up on unmount
+      return () => {
+        socket.removeEventListener('message', handleMessage);
+      };
+    }
+    
+    return () => {};
   }, [socket, user, id, refetchComments, toast]);
   
   // Auto-scroll to the bottom of the comments when new comments are added

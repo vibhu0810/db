@@ -344,7 +344,7 @@ export default function Orders() {
   });
 
   // Get the WebSocket connection
-  const socket = useWebSocket();
+  const { socket } = useWebSocket();
 
   // Set up WebSocket connection for real-time updates
   useEffect(() => {
@@ -373,12 +373,16 @@ export default function Orders() {
       }
     };
 
-    socket.addEventListener('message', handleMessage);
+    if (socket) {
+      socket.addEventListener('message', handleMessage);
 
-    // Clean up on unmount
-    return () => {
-      socket.removeEventListener('message', handleMessage);
-    };
+      // Clean up on unmount
+      return () => {
+        socket.removeEventListener('message', handleMessage);
+      };
+    }
+    
+    return () => {};
   }, [socket, user, selectedOrderId, refetchComments, toast]);
 
   const addCommentMutation = useMutation({

@@ -312,6 +312,10 @@ export default function Orders() {
     textEdit: 250,
     status: 180,
     id: 100,
+    price: 100,
+    date: 120,
+    actions: 150,
+    user: 150,
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -335,6 +339,10 @@ export default function Orders() {
       textEdit: 400,
       status: 300,
       id: 150,
+      price: 150,
+      date: 180,
+      actions: 200,
+      user: 200,
     };
 
     const newWidth = Math.min(size.width, maxWidths[column as keyof typeof maxWidths]);
@@ -1104,33 +1112,33 @@ export default function Orders() {
                 <TableHeader>
                   <TableRow>
                     {isAdmin && (
-                      <TableHead className="w-[150px]">
+                      <TableHead style={{ width: columnWidths.user || 150 }}>
                         <SortableHeader field="user.username">User</SortableHeader>
                       </TableHead>
                     )}
-                    <TableHead className="w-[100px]">
+                    <TableHead style={{ width: columnWidths.id }}>
                       <SortableHeader field="id">Order ID</SortableHeader>
                     </TableHead>
-                    <TableHead className="min-w-[200px] max-w-[300px]">
+                    <TableHead style={{ width: columnWidths.sourceUrl }}>
                       <SortableHeader field="sourceUrl">Source URL/Guest Post Title</SortableHeader>
                     </TableHead>
-                    <TableHead className="min-w-[200px] max-w-[300px]">
+                    <TableHead style={{ width: columnWidths.targetUrl }}>
                       <SortableHeader field="targetUrl">Target URL</SortableHeader>
                     </TableHead>
-                    <TableHead className="min-w-[150px] max-w-[250px]">
+                    <TableHead style={{ width: columnWidths.anchorText }}>
                       <SortableHeader field="anchorText">Anchor Text</SortableHeader>
                     </TableHead>
-                    <TableHead className="w-[100px] text-right">
+                    <TableHead style={{ width: columnWidths.price || 100 }} className="text-right">
                       <SortableHeader field="price">Price</SortableHeader>
                     </TableHead>
-                    <TableHead className="min-w-[150px] max-w-[200px]">
+                    <TableHead style={{ width: columnWidths.status || 180 }}>
                       <SortableHeader field="status">Status</SortableHeader>
                     </TableHead>
-                    <TableHead className="w-[120px]">
+                    <TableHead style={{ width: columnWidths.date || 120 }}>
                       <SortableHeader field="dateOrdered">Date</SortableHeader>
                     </TableHead>
-                    <TableHead className="min-w-[200px] max-w-[300px]">Text Edit/Article</TableHead>
-                    <TableHead className="w-[100px]"></TableHead>
+                    <TableHead style={{ width: columnWidths.textEdit || 250 }}>Text Edit/Article</TableHead>
+                    <TableHead style={{ width: columnWidths.actions || 100 }}></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

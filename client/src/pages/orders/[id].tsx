@@ -96,9 +96,18 @@ export default function OrderDetailsPage() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newCommentData) => {
+      console.log("Comment added successfully:", newCommentData);
+      
+      // Update local state immediately for instant UI update
+      setLocalComments(prevComments => [...prevComments, newCommentData]);
+      
+      // Also invalidate query to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
+      
+      // Clear the input field
       setNewComment("");
+      
       toast({
         title: "Success",
         description: "Your comment has been added successfully.",

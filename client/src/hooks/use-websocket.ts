@@ -73,14 +73,16 @@ export function useWebSocket(options?: {
           }
         }
         else if (data.type === 'new_comment') {
-          toast({
-            title: 'New Comment',
-            description: `New comment on Order #${data.payload?.orderId}`,
-          });
+          console.log('Received new comment via WebSocket:', data.payload);
           
           // Call the onNewComment callback if provided
           if (options?.onNewComment && data.payload) {
             options.onNewComment(data.payload.orderId, data.payload.comment);
+            
+            toast({
+              title: 'New Comment',
+              description: `New comment on Order #${data.payload.orderId}`,
+            });
           }
         }
       } catch (error) {

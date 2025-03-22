@@ -116,8 +116,11 @@ export function notifyOrderStatusUpdate(orderId: number, status: string, userId:
  * Send notification about new comment to order owner and admins
  */
 export function notifyNewComment(orderId: number, comment: any, userId: number) {
+  console.log(`Sending WebSocket notification for new comment on order ${orderId}:`, comment);
+  
   // Notify order owner if comment is from admin
   if (comment.user?.is_admin) {
+    console.log(`Comment is from admin, notifying order owner (userId: ${userId})`);
     notifyUser(userId, {
       type: 'new_comment',
       payload: {
@@ -129,7 +132,20 @@ export function notifyNewComment(orderId: number, comment: any, userId: number) 
 
   // Notify admins if comment is from user
   if (!comment.user?.is_admin) {
+    console.log(`Comment is from user, notifying all admins`);
     notifyAllAdmins({
+      type: 'new_comment',
+      payload: {
+        orderId,
+        comment
+      }
+    });
+  }
+  
+  // Also notify the comment author to see their own comment appear immediately
+  if (comment.user && comment.userId) {
+    console.log(`Notifying comment author (userId: ${comment.userId})`);
+    notifyUser(comment.userId, {
       type: 'new_comment',
       payload: {
         orderId,

@@ -130,9 +130,10 @@ export const orderComments = pgTable("order_comments", {
 export const insertOrderCommentSchema = createInsertSchema(orderComments).omit({
   id: true,
   createdAt: true,
-  isFromAdmin: true,
-  readByUser: true,
-  readByAdmin: true,
+}).extend({
+  isFromAdmin: z.boolean().optional(),
+  readByUser: z.boolean().optional(),
+  readByAdmin: z.boolean().optional(),
 });
 
 // Types

@@ -54,10 +54,13 @@ export default function ProfilePage() {
       email: user?.email || "",
       companyName: user?.companyName || "",
       country: user?.country || "",
-      billingAddress: user?.billingAddress || "",
       bio: user?.bio || "",
       profilePicture: user?.profilePicture || "",
       companyLogo: user?.companyLogo || "",
+      dateOfBirth: user?.dateOfBirth || "",
+      phoneNumber: user?.phoneNumber || "",
+      linkedinUrl: user?.linkedinUrl || "",
+      instagramProfile: user?.instagramProfile || "",
     },
   });
 
@@ -174,6 +177,17 @@ export default function ProfilePage() {
                               disabled={isUploading || updateProfileMutation.isPending}
                             />
                           </div>
+                          {field.value && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => form.setValue("profilePicture", "")}
+                              disabled={updateProfileMutation.isPending}
+                            >
+                              Remove
+                            </Button>
+                          )}
                         </div>
                       </FormControl>
                       <FormDescription>
@@ -310,13 +324,58 @@ export default function ProfilePage() {
 
                 <FormField
                   control={form.control}
-                  name="billingAddress"
+                  name="dateOfBirth"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Billing Address</FormLabel>
+                      <FormLabel>Date of Birth</FormLabel>
                       <FormControl>
-                        <Textarea {...field} disabled={updateProfileMutation.isPending} />
+                        <Input {...field} type="date" disabled={updateProfileMutation.isPending} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled={updateProfileMutation.isPending} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="linkedinUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>LinkedIn URL</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="https://www.linkedin.com/in/your-profile" disabled={updateProfileMutation.isPending} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="instagramProfile"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Instagram Profile</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="@yourusername (optional)" disabled={updateProfileMutation.isPending} />
+                      </FormControl>
+                      <FormDescription>
+                        Your Instagram handle is optional
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -15,6 +15,10 @@ export const users = pgTable("users", {
   bio: text("bio"),
   profilePicture: text("profile_picture"),
   companyLogo: text("company_logo"),
+  dateOfBirth: text("date_of_birth"),
+  phoneNumber: text("phone_number"),
+  linkedinUrl: text("linkedin_url"),
+  instagramProfile: text("instagram_profile"),
   is_admin: boolean("is_admin").notNull().default(false),
 });
 
@@ -42,9 +46,13 @@ export const updateProfileSchema = createInsertSchema(users)
     password: true 
   })
   .extend({
-    bio: z.string().optional(),
+    bio: z.string().min(1, "Bio is required"),
     profilePicture: z.string().optional(),
     companyLogo: z.string().optional(),
+    dateOfBirth: z.string().min(1, "Date of birth is required"),
+    phoneNumber: z.string().min(1, "Phone number is required"),
+    linkedinUrl: z.string().min(1, "LinkedIn URL is required").url("Must be a valid URL"),
+    instagramProfile: z.string().optional(),
   });
 
 // Types

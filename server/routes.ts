@@ -64,6 +64,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.json());
 
   setupAuth(app);
+  
+  // Debug authentication endpoint
+  app.get("/api/debug-auth", (req, res) => {
+    console.log("Debug auth endpoint called, session:", req.session);
+    console.log("User in request:", req.user);
+    res.json({
+      authenticated: !!req.user,
+      user: req.user || null,
+      sessionID: req.sessionID,
+      session: req.session
+    });
+  });
 
   // Add check online status endpoint
   app.get("/api/users/online-status", async (req, res) => {
@@ -1195,6 +1207,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Configure UploadThing routes
   app.use("/api/uploadthing", uploadthingHandler);
+  
+  // Debug endpoint to check auth status
+  app.get("/api/auth-status", (req, res) => {
+    const status = {
+      isAuthenticated: !!req.user,
+      userId: req.user?.id || null,
+      isAdmin: req.user?.is_admin || false,
+      sessionID: req.sessionID
+    };
+    console.log("Auth status check:", status);
+    res.json(status);
+  });
 
   const httpServer = createServer(app);
   return httpServer;

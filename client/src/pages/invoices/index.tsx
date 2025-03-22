@@ -135,16 +135,20 @@ function CreateInvoiceDialog() {
     
     console.log("Fetching completed orders for user:", selectedUser);
     
-    // Directly fetch from a simpler endpoint that just gets all orders for the user
-    fetch(`/api/orders?userId=${selectedUser}&status=completed`, {
+    // Directly fetch from the completed-unbilled endpoint with authenticated request
+    // Made specifically for the admin to view unbilled completed orders
+    fetch(`/api/orders/completed-unbilled/${selectedUser}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
+      credentials: "include", // Important to include credentials for auth
     })
       .then(res => {
         console.log("Completed orders fetch status:", res.status);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch orders: ${res.status}`);
+        }
         return res.json();
       })
       .then(data => {
@@ -152,10 +156,12 @@ function CreateInvoiceDialog() {
         
         // If we got an array of orders, use it
         if (Array.isArray(data)) {
-          // Filter to only include orders with a dateCompleted property
+          // We trust the endpoint to return the correct orders
+          // but we'll still double-check that they're completed
           const filteredOrders = data.filter(order => 
             order.dateCompleted || 
-            order.status === 'completed' || 
+            order.status === 'Completed' || // Capital 'C' in Completed
+            order.status === 'completed' ||
             order.status === 'guest_post_published' ||
             order.status === 'niche_edit_published'
           );

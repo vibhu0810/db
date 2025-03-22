@@ -579,7 +579,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send real-time WebSocket notification
       try {
+        console.log("COMMENT DATA BEFORE SENDING VIA WEBSOCKET:", {
+          orderId,
+          comment: commentWithUser,
+          orderUserId: order.userId,
+          currentUserId: req.user.id
+        });
+        
         notifyNewComment(orderId, commentWithUser, order.userId);
+        
+        console.log("WebSocket notification for new comment sent successfully");
       } catch (error) {
         console.error("Failed to send WebSocket notification for new comment:", error);
         // Continue even if notification fails

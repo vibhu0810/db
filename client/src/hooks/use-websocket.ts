@@ -73,15 +73,31 @@ export function useWebSocket(options?: {
           }
         }
         else if (data.type === 'new_comment') {
-          console.log('Received new comment via WebSocket:', data.payload);
+          console.log('🔴 Received new comment via WebSocket:', JSON.stringify(data.payload, null, 2));
           
           // Call the onNewComment callback if provided
           if (options?.onNewComment && data.payload) {
-            options.onNewComment(data.payload.orderId, data.payload.comment);
+            console.log('🔴 Calling onNewComment callback with:', {
+              orderId: data.payload.orderId,
+              comment: data.payload.comment
+            });
+            
+            try {
+              options.onNewComment(data.payload.orderId, data.payload.comment);
+              console.log('🔴 onNewComment callback executed successfully');
+            } catch (err) {
+              console.error('🔴 Error in onNewComment callback:', err);
+            }
             
             toast({
               title: 'New Comment',
               description: `New comment on Order #${data.payload.orderId}`,
+            });
+          } else {
+            console.log('🔴 No onNewComment callback available:', {
+              hasOptions: !!options,
+              hasCallback: !!(options && options.onNewComment),
+              hasPayload: !!data.payload
             });
           }
         }

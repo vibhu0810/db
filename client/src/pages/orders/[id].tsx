@@ -45,19 +45,40 @@ export default function OrderDetailsPage() {
     },
     onNewComment: (orderId: number, comment: any) => {
       // Only update if this is the order we're viewing
+      console.log(`🔵 onNewComment called: orderId=${orderId}, current id=${id}, match=${orderId === parseInt(id as string)}`);
+      console.log(`🔵 Comment data:`, JSON.stringify(comment, null, 2));
+      
       if (orderId === parseInt(id as string)) {
+        console.log('🔵 This comment is for the current order, updating local state');
+        
         // Add comment to local state immediately for real-time update
         if (comment) {
-          setLocalComments(prev => [...prev, comment]);
+          console.log('🔵 Adding comment to local state:', comment);
+          setLocalComments(prevComments => {
+            console.log('🔵 Current comments count:', prevComments.length);
+            // Check if comment already exists to avoid duplicates
+            const exists = prevComments.some(c => c.id === comment.id);
+            if (exists) {
+              console.log('🔵 Comment already exists in state, not adding duplicate');
+              return prevComments;
+            }
+            
+            const newComments = [...prevComments, comment];
+            console.log('🔵 Updated comments count:', newComments.length);
+            return newComments;
+          });
         }
         
         // Also invalidate the query to ensure data consistency
+        console.log('🔵 Invalidating comments query');
         queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
         
         toast({
           title: "New Comment",
           description: `New comment from ${comment?.user?.username || 'another user'}`,
         });
+      } else {
+        console.log('🔵 Comment is for a different order, ignoring');
       }
     }
   });

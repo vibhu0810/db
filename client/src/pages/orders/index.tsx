@@ -1400,7 +1400,7 @@ export default function Orders() {
                             {order.title && order.title !== "not_applicable" 
                               ? (order.sourceUrl !== "not_applicable" 
                                   ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-                                  : `${order.title} - Unknown Domain`)
+                                  : `${order.title} - bookafy.com`)
                               : order.sourceUrl === "not_applicable" 
                                 ? "No title provided" 
                                 : order.sourceUrl}
@@ -1412,7 +1412,7 @@ export default function Orders() {
                             onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
                               ? (order.sourceUrl !== "not_applicable" 
                                   ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-                                  : `${order.title} - Unknown Domain`)
+                                  : `${order.title} - bookafy.com`)
                               : order.sourceUrl === "not_applicable"
                                 ? ""
                                 : order.sourceUrl)}

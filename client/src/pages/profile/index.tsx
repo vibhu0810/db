@@ -36,7 +36,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 // Extend the schema with stricter validation
 const profileFormSchema = updateProfileSchema.extend({
   email: z.string().email("Please enter a valid email address"),
-  bio: z.string().min(20, "Bio must be at least 20 characters long").max(500, "Bio must not exceed 500 characters"),
+  bio: z.string().min(20, "Bio must be at least 20 characters long").max(2000, "Bio must not exceed 2000 characters"),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
   phoneNumber: z.string().min(5, "Phone number is required").max(20, "Phone number is too long"),
   linkedinUrl: z.string().min(1, "LinkedIn URL is required")
@@ -152,12 +152,7 @@ export default function ProfilePage() {
       </div>
 
       <Card className="border-primary/10">
-        <CardHeader className="bg-muted/30">
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-primary">Edit Profile</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
@@ -452,11 +447,11 @@ export default function ProfilePage() {
                         <Textarea 
                           {...field} 
                           disabled={updateProfileMutation.isPending}
-                          placeholder="Share details about your business and link building requirements..."
+                          placeholder="Share something about yourself..."
                         />
                       </FormControl>
                       <FormDescription>
-                        Provide information about your business, website, and specific requirements for link building campaigns (20-500 characters)
+                        20 - 2000 characters
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

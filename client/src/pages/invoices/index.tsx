@@ -524,6 +524,7 @@ function UserInvoicesTab() {
     billingState: "",
     billingZip: "",
     billingCountry: "",
+    billingNotes: "",
   });
   const [isEditingBilling, setIsEditingBilling] = useState(false);
 
@@ -612,7 +613,7 @@ function UserInvoicesTab() {
           <CardHeader>
             <CardTitle>Billing Details</CardTitle>
             <CardDescription>
-              Your payment information and billing history
+              Your billing details for invoicing
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -625,7 +626,6 @@ function UserInvoicesTab() {
                     className="w-full p-2 border rounded"
                     value={billingDetails.paymentMethod}
                     onChange={(e) => setBillingDetails({...billingDetails, paymentMethod: e.target.value})}
-                    required
                   >
                     <option value="">Select payment method</option>
                     <option value="creditCard">Credit Card</option>
@@ -669,10 +669,10 @@ function UserInvoicesTab() {
                 )}
                 
                 <div className="space-y-2">
-                  <Label htmlFor="billingName">Name on Account</Label>
+                  <Label htmlFor="billingName">Person Name / Business Name</Label>
                   <Input 
                     id="billingName"
-                    placeholder="John Doe"
+                    placeholder="John Doe or Acme Inc."
                     value={billingDetails.billingName}
                     onChange={(e) => setBillingDetails({...billingDetails, billingName: e.target.value})}
                   />
@@ -730,6 +730,17 @@ function UserInvoicesTab() {
                   </div>
                 </div>
                 
+                <div className="space-y-2">
+                  <Label htmlFor="billingNotes">Notes</Label>
+                  <textarea 
+                    id="billingNotes"
+                    className="w-full min-h-[100px] p-2 border rounded"
+                    placeholder="Add any additional billing information or special instructions here..."
+                    value={billingDetails.billingNotes}
+                    onChange={(e) => setBillingDetails({...billingDetails, billingNotes: e.target.value})}
+                  />
+                </div>
+                
                 <div className="flex justify-end gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => setIsEditingBilling(false)}>
                     Cancel
@@ -763,7 +774,13 @@ function UserInvoicesTab() {
                         <span className="font-medium">{billingDetails.billingName}</span>
                       </div>
                     )}
-                    <div className="flex justify-between">
+                    {billingDetails.billingNotes && (
+                      <div className="flex flex-col mt-2">
+                        <span className="text-muted-foreground">Notes:</span>
+                        <span className="text-sm mt-1">{billingDetails.billingNotes}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between mt-2">
                       <span className="text-muted-foreground">Next Invoice:</span>
                       <span className="font-medium">{format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "PPP")}</span>
                     </div>

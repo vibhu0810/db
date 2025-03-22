@@ -49,6 +49,7 @@ export interface IStorage {
   // Message operations
   getMessages(userId1: number, userId2: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
+  updateMessage(id: number, update: Partial<Message>): Promise<Message>;
 
   // Session store
   sessionStore: session.Store;
@@ -364,6 +365,15 @@ export class DatabaseStorage implements IStorage {
       createdAt: new Date(),
     });
 
+    return message;
+  }
+  
+  async updateMessage(id: number, update: Partial<Message>): Promise<Message> {
+    const [message] = await db
+      .update(messages)
+      .set(update)
+      .where(eq(messages.id, id))
+      .returning();
     return message;
   }
 }

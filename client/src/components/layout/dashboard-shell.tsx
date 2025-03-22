@@ -4,25 +4,41 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { NotificationsDropdown } from "@/components/ui/notifications";
+import { SidebarProvider, useSidebar } from "@/hooks/use-sidebar";
+import { Menu } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+// Internal component to access the sidebar context
+function DashboardContent({ children }: { children: React.ReactNode }) {
   const { user, logoutMutation } = useAuth();
+  const { toggle, expanded } = useSidebar();
+  const isMobile = useIsMobile();
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Fixed compact sidebar always visible */}
+      {/* Sidebar */}
       <Sidebar />
       
       {/* Main content area */}
       <div className="flex-1 flex flex-col">
         <header className="h-14 border-b flex items-center justify-between px-6">
-          {/* Left side of header - now empty where the toggle button was */}
+          {/* Left side of header with hamburger icon for desktop only */}
           <div className="flex items-center gap-2">
-            {/* Empty space where sidebar toggle was */}
+            {!isMobile && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggle} 
+                aria-label="Toggle sidebar"
+                className="lg:flex hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
           </div>
           
           {/* Right side of header with user info */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 ml-auto">
             <NotificationsDropdown />
             <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-2">
@@ -48,5 +64,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     </div>
+  );
+}
+
+// Wrapper component that provides the sidebar context
+export function DashboardShell({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </SidebarProvider>
   );
 }

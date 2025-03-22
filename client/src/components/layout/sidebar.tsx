@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/ui/logo";
+import { useSidebar } from "@/hooks/use-sidebar";
 
 const userNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -38,27 +39,39 @@ const adminNavigation = [
 export function Sidebar() {
   const [location] = useLocation();
   const { isAdmin, user } = useAuth();
+  const { expanded } = useSidebar();
   
   const navigation = isAdmin ? adminNavigation : userNavigation;
 
   return (
-    <div className="w-16 hover:w-64 transition-all duration-300 ease-in-out border-r bg-sidebar text-sidebar-foreground group">
-      <div className="h-16 border-b flex items-center justify-center group-hover:justify-start px-4">
+    <div 
+      className={cn(
+        "sidebar-container border-r bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out",
+        expanded ? "w-64" : "w-16 hover:w-64 group"
+      )}
+    >
+      <div className="h-16 border-b flex items-center justify-center px-4">
         {user?.companyLogo ? (
-          <div className="flex items-center">
+          <div className="flex items-center w-full">
             <img 
               src={user.companyLogo} 
               alt={user.companyName || "Company Logo"} 
               className="h-10 w-10 object-contain rounded" 
             />
-            <span className="ml-2 text-lg font-semibold truncate hidden group-hover:inline">
+            <span className={cn(
+              "ml-2 text-lg font-semibold truncate transition-opacity duration-300",
+              expanded ? "opacity-100" : "opacity-0 group-hover:opacity-100 hidden group-hover:inline"
+            )}>
               {isAdmin ? "Admin" : user.companyName}
             </span>
           </div>
         ) : (
-          <div className="flex items-center">
+          <div className="flex items-center w-full">
             <Logo size="sm" showText={false} showProduct={false} />
-            <span className="ml-2 text-lg font-semibold hidden group-hover:inline">
+            <span className={cn(
+              "ml-2 text-lg font-semibold transition-opacity duration-300",
+              expanded ? "opacity-100" : "opacity-0 group-hover:opacity-100 hidden group-hover:inline"
+            )}>
               SaaSxLinks
               {isAdmin && (
                 <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
@@ -84,15 +97,18 @@ export function Sidebar() {
               )}
             >
               <Icon className="h-5 w-5 min-w-[20px]" />
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+              <span className={cn(
+                "transition-opacity duration-300 whitespace-nowrap",
+                expanded ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              )}>
                 {item.name}
               </span>
               
               {/* Tooltip for when sidebar is collapsed */}
-              <span className="absolute left-full ml-2 px-2 py-1 bg-black/80 text-white text-xs rounded 
-                pointer-events-none opacity-0 group-hover:opacity-0 hover:opacity-0
-                scale-0 group-hover:scale-0 origin-left transition-all duration-200
-                whitespace-nowrap">
+              <span className={cn(
+                "absolute left-full ml-2 px-2 py-1 bg-black/80 text-white text-xs rounded pointer-events-none transition-all duration-200 whitespace-nowrap",
+                expanded ? "opacity-0 scale-0" : "opacity-0 group-hover:opacity-0 hover:opacity-0 scale-0 group-hover:scale-0 origin-left"
+              )}>
                 {item.name}
               </span>
             </Link>

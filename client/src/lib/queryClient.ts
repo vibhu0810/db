@@ -18,7 +18,8 @@ export async function apiRequest(
   if (typeof urlOrOptions === 'string') {
     // First form: apiRequest(url, data)
     url = urlOrOptions;
-    const method = typeof optionsOrData === 'object' && optionsOrData !== null ? 'POST' : 'GET';
+    // Determine method based on whether we have data
+    const method = (typeof optionsOrData === 'object' && optionsOrData !== null) ? 'POST' : 'GET';
     
     // Create base options
     options = {
@@ -27,8 +28,8 @@ export async function apiRequest(
       credentials: "include",
     };
     
-    // Only add body and Content-Type for non-GET/HEAD requests
-    if (method !== 'GET' && method !== 'HEAD' && optionsOrData) {
+    // Only add body and Content-Type for POST requests
+    if (method === 'POST' && optionsOrData !== undefined) {
       options.headers = { "Content-Type": "application/json" };
       options.body = JSON.stringify(optionsOrData);
     }
@@ -44,8 +45,8 @@ export async function apiRequest(
       credentials: "include",
     };
     
-    // Only add body and Content-Type for non-GET/HEAD requests
-    if (method !== 'GET' && method !== 'HEAD' && urlOrOptions.body) {
+    // Only add body and Content-Type for methods that support body
+    if (method !== 'GET' && method !== 'HEAD' && urlOrOptions.body !== undefined) {
       options.headers = { "Content-Type": "application/json" };
       options.body = urlOrOptions.body;
     }

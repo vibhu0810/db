@@ -1410,9 +1410,7 @@ export default function Orders() {
                             size="icon"
                             className="flex-shrink-0"
                             onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
-                              ? (order.sourceUrl !== "not_applicable" 
-                                  ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-                                  : `${order.title} - bookafy.com`)
+                              ? `${order.title} - ${extractDomainFromUrl(order.targetUrl)}`
                               : order.sourceUrl === "not_applicable"
                                 ? ""
                                 : order.sourceUrl)}

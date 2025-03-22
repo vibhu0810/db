@@ -643,6 +643,47 @@ export default function Orders() {
     createCustomOrderMutation.mutate(orderData);
   };
 
+  // Render status badge based on status value
+  const renderStatusBadge = (status: string) => {
+    if (status === "Completed") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500">
+          Completed
+        </span>
+      );
+    } else if (status === "In Progress" || status === "Content Writing") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-500">
+          {status}
+        </span>
+      );
+    } else if (status === "Title Approval Pending" || status === "Sent" || status === "Sent To Editor") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500">
+          {status}
+        </span>
+      );
+    } else if (status === "Cancelled" || status === "Rejected") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500">
+          {status}
+        </span>
+      );
+    } else if (status === "Title Approved") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-800/30 dark:text-purple-500">
+          {status}
+        </span>
+      );
+    } else {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500">
+          {status}
+        </span>
+      );
+    }
+  };
+
   const getStatusOptions = (isGuestPost: boolean) => {
     if (isGuestPost) {
       return (
@@ -1070,14 +1111,16 @@ export default function Orders() {
                             }}
                           >
                             <SelectTrigger className="w-[180px]">
-                              <SelectValue>{order.status}</SelectValue>
+                              <SelectValue>{renderStatusBadge(order.status)}</SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               {getStatusOptions(!!order.title)}
                             </SelectContent>
                           </Select>
                         ) : (
-                          <div className="truncate max-w-[180px]">{order.status}</div>
+                          <div className="truncate max-w-[180px]">
+                            {renderStatusBadge(order.status)}
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>

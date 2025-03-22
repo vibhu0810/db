@@ -321,6 +321,7 @@ export default function Orders() {
   const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
+  const [previousOrderStatuses, setPreviousOrderStatuses] = useState<Record<number, string>>({});
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -708,6 +709,32 @@ export default function Orders() {
       </>
     );
   };
+
+  // Check for status changes to show toast notifications
+  useEffect(() => {
+    if (!isLoading && orders.length > 0) {
+      // Create a map of current order statuses
+      const currentOrderStatuses: Record<number, string> = {};
+      orders.forEach((order: any) => {
+        currentOrderStatuses[order.id] = order.status;
+        
+        // If we have a previous status and it's different than the current one, show a notification
+        if (
+          previousOrderStatuses[order.id] && 
+          previousOrderStatuses[order.id] !== order.status
+        ) {
+          toast({
+            title: `Order #${order.id} status updated`,
+            description: `Status changed from ${previousOrderStatuses[order.id]} to ${order.status}`,
+            variant: "default",
+          });
+        }
+      });
+      
+      // Update the previous statuses map for the next comparison
+      setPreviousOrderStatuses(currentOrderStatuses);
+    }
+  }, [isLoading, orders, toast]);
 
   useEffect(() => {
     if (!isLoading && orders.length > 0) {

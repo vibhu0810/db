@@ -799,11 +799,11 @@ export default function Orders() {
       order.id,
       order.title && order.title !== "not_applicable" 
         ? (order.sourceUrl !== "not_applicable" 
-            ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
+            ? `${order.title} (${order.sourceUrl})`
             : order.title)
         : order.sourceUrl === "not_applicable"
           ? "No title provided"
-          : extractDomainFromUrl(order.sourceUrl),
+          : order.sourceUrl,
       order.targetUrl,
       order.anchorText,
       order.price,
@@ -1399,11 +1399,11 @@ export default function Orders() {
                           <div className="truncate max-w-[250px]">
                             {order.title && order.title !== "not_applicable" 
                               ? (order.sourceUrl !== "not_applicable" 
-                                  ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
+                                  ? `${order.title} (${order.sourceUrl})`
                                   : order.title)
                               : order.sourceUrl === "not_applicable" 
                                 ? "No title provided" 
-                                : extractDomainFromUrl(order.sourceUrl)}
+                                : order.sourceUrl}
                           </div>
                           <Button
                             variant="ghost"
@@ -1411,11 +1411,11 @@ export default function Orders() {
                             className="flex-shrink-0"
                             onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
                               ? (order.sourceUrl !== "not_applicable" 
-                                  ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
+                                  ? `${order.title} (${order.sourceUrl})`
                                   : order.title)
                               : order.sourceUrl === "not_applicable"
                                 ? ""
-                                : extractDomainFromUrl(order.sourceUrl))}
+                                : order.sourceUrl)}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>

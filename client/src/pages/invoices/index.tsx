@@ -19,7 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { uploadFile } from "@/utils/uploadthing";
 
 interface DateRange {
-  from?: Date;
+  from: Date | undefined;
   to?: Date;
 }
 
@@ -278,9 +278,10 @@ function AdminInvoicesTab() {
 
   const markAsPaidMutation = useMutation({
     mutationFn: async (invoiceId: number) => {
-      return apiRequest(`/api/invoices/${invoiceId}/paid`, {
+      const response = await apiRequest(`/api/invoices/${invoiceId}/paid`, {
         method: 'PATCH',
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -300,9 +301,10 @@ function AdminInvoicesTab() {
 
   const deleteInvoiceMutation = useMutation({
     mutationFn: async (invoiceId: number) => {
-      return apiRequest(`/api/invoices/${invoiceId}`, {
+      const response = await apiRequest(`/api/invoices/${invoiceId}`, {
         method: 'DELETE',
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({

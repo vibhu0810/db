@@ -256,18 +256,44 @@ export default function DomainsPage() {
       return matchesType && matchesSearch && matchesDR && matchesTraffic;
     })
     .sort((a: Domain, b: Domain) => {
-      const aValue = (a as any)[sortField];
-      const bValue = (b as any)[sortField];
-
-      if (typeof aValue === "string") {
-        return sortDirection === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
+      let aValue = (a as any)[sortField];
+      let bValue = (b as any)[sortField];
+      
+      // Handle sorting for price fields
+      if (sortField === 'guestPostPrice' || sortField === 'nicheEditPrice') {
+        // For Guest Post Price, exclude domains that don't offer that service
+        if (sortField === 'guestPostPrice' && a.type === 'niche_edit') aValue = sortDirection === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
+        if (sortField === 'guestPostPrice' && b.type === 'niche_edit') bValue = sortDirection === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
+        
+        // For Niche Edit Price, exclude domains that don't offer that service
+        if (sortField === 'nicheEditPrice' && a.type === 'guest_post') aValue = sortDirection === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
+        if (sortField === 'nicheEditPrice' && b.type === 'guest_post') bValue = sortDirection === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
+        
+        // Convert to numbers for comparison
+        const aNum = aValue ? Number(aValue) : 0;
+        const bNum = bValue ? Number(bValue) : 0;
+        
+        return sortDirection === "asc" ? aNum - bNum : bNum - aNum;
       }
-
+      
+      // Handle sorting for string values with null checks
+      if (typeof aValue === "string" || typeof bValue === "string") {
+        // Convert null/undefined to empty strings for comparison
+        const aStr = aValue ? String(aValue) : '';
+        const bStr = bValue ? String(bValue) : '';
+        
+        return sortDirection === "asc"
+          ? aStr.localeCompare(bStr)
+          : bStr.localeCompare(aStr);
+      }
+      
+      // Handle numeric values with null checks
+      const aNum = aValue !== null && aValue !== undefined ? Number(aValue) : 0;
+      const bNum = bValue !== null && bValue !== undefined ? Number(bValue) : 0;
+      
       return sortDirection === "asc"
-        ? (aValue as number) - (bValue as number)
-        : (bValue as number) - (aValue as number);
+        ? aNum - bNum
+        : bNum - aNum;
     });
 
   // Calculate pagination

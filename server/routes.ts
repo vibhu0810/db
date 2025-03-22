@@ -1017,6 +1017,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get completed orders that have not been invoiced (admin only)
+  app.get("/api/orders/completed-not-invoiced", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      // Get all orders with status "Completed"
+      const allOrders = await storage.getAllOrders();
+      const completedOrders = allOrders.filter(order => order.status === "Completed");
+      
+      // Get all invoices
+      const allInvoices = await storage.getAllInvoices();
+      
+      // Find completed orders that don't have an invoice
+      // We'll check the notes field which should contain the order ID
+      const notInvoicedOrders = completedOrders.filter(order => {
+        return !allInvoices.some(invoice => 
+          invoice.notes && invoice.notes.includes(`Order #${order.id}`)
+        );
+      });
+      
+      // Get user details for each order
+      const users = await storage.getUsers();
+      
+      const ordersWithUserDetails = await Promise.all(notInvoicedOrders.map(async order => {
+        const user = users.find(u => u.id === order.userId);
+        return {
+          ...order,
+          user: user ? {
+            id: user.id,
+            username: user.username,
+            companyName: user.companyName,
+            email: user.email,
+            billingAddress: user.billingAddress
+          } : null
+        };
+      }));
+      
+      res.json(ordersWithUserDetails);
+    } catch (error) {
+      console.error("Error fetching completed orders:", error);
+      res.status(500).json({ error: "Failed to fetch completed orders" });
+    }
+  });
+  
   // Admin route to get all invoices
   app.get("/api/invoices/all", async (req, res) => {
     try {
@@ -1092,6 +1138,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ error: "Invalid invoice ID" });
+      }
       const updates = req.body;
       
       const invoice = await storage.updateInvoice(invoiceId, updates);
@@ -1111,6 +1160,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const invoiceId = parseInt(req.params.id);
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ error: "Invalid invoice ID" });
+      }
       
       // Check if the invoice exists
       const invoice = await storage.getInvoice(invoiceId);

@@ -306,28 +306,32 @@ function CreateInvoiceDialog() {
                 Client <span className="text-red-500">*</span>
               </Label>
               <div className="col-span-3">
-                <Select
+                {/* Debug Info */}
+                <div className="mb-2 p-2 bg-yellow-50 text-xs rounded-md border border-yellow-200">
+                  <p>Debug - Client data available: {Array.isArray(clientsQuery.data) ? 'Yes' : 'No'}</p>
+                  <p>Debug - Client count: {Array.isArray(clientsQuery.data) ? clientsQuery.data.length : 0}</p>
+                </div>
+                
+                <select 
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={selectedUser?.toString() || ""}
-                  onValueChange={(value) => setSelectedUser(Number(value))}
+                  onChange={(e) => setSelectedUser(Number(e.target.value))}
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientsQuery.isLoading ? (
-                      <div className="p-2 text-sm text-center">Loading clients...</div>
-                    ) : clientsQuery.data && clientsQuery.data.length > 0 ? (
-                      clientsQuery.data.map((client: any) => (
-                        <SelectItem key={client.id} value={client.id.toString()}>
-                          {client.companyName || client.username}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-2 text-sm text-center">No clients found</div>
-                    )}
-                  </SelectContent>
-                </Select>
-                {clientsQuery.isSuccess && clientsQuery.data.length === 0 && (
+                  <option value="">Select a client</option>
+                  {Array.isArray(clientsQuery.data) && clientsQuery.data.length > 0 && 
+                    clientsQuery.data.map((client: any) => (
+                      <option key={client.id} value={client.id.toString()}>
+                        {client.companyName || client.username}
+                      </option>
+                    ))
+                  }
+                </select>
+                
+                {clientsQuery.isLoading && (
+                  <p className="text-xs text-muted-foreground mt-1">Loading clients...</p>
+                )}
+                
+                {clientsQuery.isSuccess && Array.isArray(clientsQuery.data) && clientsQuery.data.length === 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
                     No clients found. Make sure there are regular users in the system.
                   </p>

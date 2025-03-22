@@ -121,18 +121,12 @@ export const orderComments = pgTable("order_comments", {
   userId: integer("user_id").notNull(),
   message: text("message").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  isFromAdmin: boolean("is_from_admin").notNull().default(false),
-  readByUser: boolean("read_by_user").notNull().default(false),
-  readByAdmin: boolean("read_by_admin").notNull().default(false),
 });
 
 // Create insert schema for comments
 export const insertOrderCommentSchema = createInsertSchema(orderComments).omit({
   id: true,
   createdAt: true,
-  isFromAdmin: true,
-  readByUser: true,
-  readByAdmin: true,
 });
 
 // Types

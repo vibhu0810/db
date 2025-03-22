@@ -3,7 +3,6 @@ import { useParams, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { useWebSocket } from "@/hooks/use-websocket";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,75 +17,16 @@ export default function OrderDetailsPage() {
   const { user, isAdmin } = useAuth();
   const [newComment, setNewComment] = useState("");
   const commentsEndRef = useRef<HTMLDivElement>(null);
-  const { socket, sendMessage } = useWebSocket();
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['/api/orders', id],
     queryFn: () => apiRequest("GET", `/api/orders/${id}`).then(res => res.json()),
   });
 
-  const { data: comments = [], isLoading: isLoadingComments, refetch: refetchComments } = useQuery({
+  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
     queryKey: ['/api/orders', id, 'comments'],
     queryFn: () => apiRequest("GET", `/api/orders/${id}/comments`).then(res => res.json()),
   });
-  
-  // Set up WebSocket connection for real-time updates
-  useEffect(() => {
-    if (!socket || !user) return;
-
-    // Set up authentication with the WebSocket server using safe sendMessage
-    const authData = {
-      type: 'auth',
-      userId: user.id,
-      username: user.username
-    };
-    
-    // Try to send auth data if socket is ready, or retry after a delay
-    const attemptAuth = () => {
-      if (sendMessage(authData)) {
-        console.log('Authentication data sent successfully');
-      } else {
-        // If failed to send (not connected yet), try again after a short delay
-        setTimeout(attemptAuth, 100);
-      }
-    };
-    
-    attemptAuth();
-
-    // Set up message handler
-    const handleMessage = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        
-        // Check if this is a comment update for this order
-        if (data.type === 'comment_update' && data.data?.orderId === parseInt(id as string)) {
-          // Refetch comments
-          refetchComments();
-          
-          // Show toast notification if the comment is from someone else
-          if (data.data.userId !== user.id) {
-            toast({
-              title: "New Comment",
-              description: `${data.data.username} added a new comment`,
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error handling WebSocket message:", error);
-      }
-    };
-
-    if (socket) {
-      socket.addEventListener('message', handleMessage);
-
-      // Clean up on unmount
-      return () => {
-        socket.removeEventListener('message', handleMessage);
-      };
-    }
-    
-    return () => {};
-  }, [socket, user, id, refetchComments, toast]);
   
   // Auto-scroll to the bottom of the comments when new comments are added
   useEffect(() => {

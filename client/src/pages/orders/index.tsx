@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useWebSocket } from "@/hooks/use-websocket";
-import { useAuth } from "@/hooks/use-auth";
 import {
   Table,
   TableBody,
@@ -33,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { FileDown, Loader2, MessageSquare, Copy, ChevronDown, X } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { useAuth } from "@/hooks/use-auth";
 import { Resizable } from "react-resizable";
 import { cn } from "@/lib/utils";
 import 'react-resizable/css/styles.css';
@@ -337,72 +336,11 @@ export default function Orders() {
     enabled: isAdmin,
   });
 
-  const { data: comments = [], isLoading: isLoadingComments, refetch: refetchComments } = useQuery({
+  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
     queryKey: ['/api/orders', selectedOrderId, 'comments'],
     queryFn: () => apiRequest("GET", `/api/orders/${selectedOrderId}/comments`).then(res => res.json()),
     enabled: selectedOrderId !== null,
   });
-
-  // Get the WebSocket connection and safe send method
-  const { socket, sendMessage } = useWebSocket();
-
-  // Set up WebSocket connection for real-time updates
-  useEffect(() => {
-    if (!socket || !user) return;
-    
-    // Set up authentication with the WebSocket server using safe sendMessage
-    const authData = {
-      type: 'auth',
-      userId: user.id,
-      username: user.username
-    };
-    
-    // Try to send auth data if socket is ready, or retry after a delay
-    const attemptAuth = () => {
-      if (sendMessage(authData)) {
-        console.log('Authentication data sent successfully');
-      } else {
-        // If failed to send (not connected yet), try again after a short delay
-        setTimeout(attemptAuth, 100);
-      }
-    };
-    
-    attemptAuth();
-
-    // Set up message handler for WebSocket
-    const handleMessage = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        
-        // Check if this is a comment update for the currently selected order
-        if (data.type === 'comment_update' && selectedOrderId && data.data?.orderId === selectedOrderId) {
-          // Refetch comments
-          refetchComments();
-          
-          // Show toast notification if the comment is from someone else
-          if (data.data.userId !== user.id) {
-            toast({
-              title: "New Comment",
-              description: `${data.data.username} added a new comment`,
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error handling WebSocket message:", error);
-      }
-    };
-
-    if (socket) {
-      socket.addEventListener('message', handleMessage);
-
-      // Clean up on unmount
-      return () => {
-        socket.removeEventListener('message', handleMessage);
-      };
-    }
-    
-    return () => {};
-  }, [socket, user, selectedOrderId, refetchComments, toast]);
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {

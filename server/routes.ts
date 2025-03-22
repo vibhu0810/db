@@ -12,7 +12,6 @@ import {
   sendChatNotificationEmail
 } from "./email";
 import { uploadthingHandler } from "./uploadthingHandler";
-import { WebSocketServer } from 'ws';
 
 const typingUsers = new Map<number, { isTyping: boolean; timestamp: number }>();
 const onlineUsers = new Map<number, { lastActive: number }>();
@@ -568,43 +567,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user details for response
       const user = await storage.getUser(req.user.id);
-      
-      // Prepare comment data with user details for response and WebSocket
-      const commentWithUser = {
+      res.status(201).json({
         ...comment,
         user: {
           username: user?.username,
           companyName: user?.companyName,
           is_admin: user?.is_admin,
         }
-      };
-      
-      // Broadcast the new comment to all connected clients
-      if (typeof broadcastWebSocketMessage === 'function') {
-        // Send to the order owner if admin commented
-        if (req.user.is_admin && order.userId) {
-          broadcastWebSocketMessage('new_comment', { 
-            comment: commentWithUser,
-            orderId 
-          }, order.userId);
-        }
-        
-        // Send to all admins if user commented
-        if (!req.user.is_admin) {
-          // Get all admin IDs
-          const adminIds = admins.map(admin => admin.id);
-          
-          // Broadcast to each admin individually
-          for (const adminId of adminIds) {
-            broadcastWebSocketMessage('new_comment', { 
-              comment: commentWithUser,
-              orderId 
-            }, adminId);
-          }
-        }
-      }
-      
-      res.status(201).json(commentWithUser);
+      });
 
     } catch (error) {
       console.error("Error creating comment:", error);
@@ -910,54 +880,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/uploadthing", uploadthingHandler);
 
   const httpServer = createServer(app);
-  
-  // Initialize WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  // Store active connections
-  const clients = new Map();
-  
-  wss.on('connection', (ws) => {
-    console.log('WebSocket client connected');
-    
-    // Handle client authentication and store connection
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        
-        if (data.type === 'auth') {
-          // Store user information with WebSocket connection
-          clients.set(ws, {
-            userId: data.userId,
-            username: data.username
-          });
-          console.log(`User ${data.username} (${data.userId}) authenticated WebSocket`);
-        }
-      } catch (error) {
-        console.error('Error processing WebSocket message:', error);
-      }
-    });
-    
-    // Handle disconnection
-    ws.on('close', () => {
-      clients.delete(ws);
-      console.log('WebSocket client disconnected');
-    });
-  });
-  
-  // Add broadcast function to global scope for sending messages
-  global.broadcastWebSocketMessage = (type, data, targetUserId = null) => {
-    const messageStr = JSON.stringify({ type, data });
-    
-    clients.forEach((client, ws) => {
-      if (ws.readyState === ws.OPEN) {
-        // Send to all clients or specific user if targetUserId is provided
-        if (!targetUserId || client.userId === targetUserId) {
-          ws.send(messageStr);
-        }
-      }
-    });
-  };
-  
   return httpServer;
 }

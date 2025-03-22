@@ -255,7 +255,7 @@ export default function ProfilePage() {
                   name="firstName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel>First Name *</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={updateProfileMutation.isPending} />
                       </FormControl>
@@ -269,7 +269,7 @@ export default function ProfilePage() {
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel>Last Name *</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={updateProfileMutation.isPending} />
                       </FormControl>
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email Address</FormLabel>
+                      <FormLabel>Email Address *</FormLabel>
                       <FormControl>
                         <Input 
                           type="email" 
@@ -302,7 +302,7 @@ export default function ProfilePage() {
                   name="companyName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Company Name</FormLabel>
+                      <FormLabel>Company Name *</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={updateProfileMutation.isPending} />
                       </FormControl>
@@ -316,7 +316,7 @@ export default function ProfilePage() {
                   name="country"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Country</FormLabel>
+                      <FormLabel>Country *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -327,25 +327,39 @@ export default function ProfilePage() {
                             <SelectValue placeholder="Select your country" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="max-h-[300px]">
-                          <div className="px-2 pb-2">
+                        <SelectContent className="max-h-[300px] overflow-y-auto">
+                          <div className="sticky top-0 bg-background px-2 py-2 z-10">
                             <Input
                               placeholder="Search countries..."
-                              className="my-2"
+                              className="mb-1"
                               onChange={(e) => {
                                 // Create a search filter on Select content
                                 const value = e.target.value.toLowerCase();
                                 const items = document.querySelectorAll('[data-country-item]');
+                                let hasVisible = false;
+                                
                                 items.forEach((item) => {
-                                  const text = item.textContent?.toLowerCase() || '';
-                                  if (text.includes(value)) {
-                                    (item as HTMLElement).style.display = 'block';
+                                  const text = (item.textContent || '').toLowerCase();
+                                  const shouldShow = text.includes(value);
+                                  
+                                  if (shouldShow) {
+                                    hasVisible = true;
+                                    (item as HTMLElement).style.display = '';
                                   } else {
                                     (item as HTMLElement).style.display = 'none';
                                   }
                                 });
+                                
+                                // Show a "no results" message if needed
+                                const noResults = document.getElementById('no-country-results');
+                                if (noResults) {
+                                  noResults.style.display = hasVisible ? 'none' : 'block';
+                                }
                               }}
                             />
+                          </div>
+                          <div id="no-country-results" className="px-3 py-2 text-muted-foreground text-sm" style={{display: 'none'}}>
+                            No countries found
                           </div>
                           {countries.map((country) => (
                             <SelectItem 
@@ -368,7 +382,7 @@ export default function ProfilePage() {
                   name="dateOfBirth"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Date of Birth</FormLabel>
+                      <FormLabel>Date of Birth *</FormLabel>
                       <FormControl>
                         <Input {...field} type="date" disabled={updateProfileMutation.isPending} />
                       </FormControl>
@@ -382,7 +396,7 @@ export default function ProfilePage() {
                   name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
+                      <FormLabel>Phone Number *</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={updateProfileMutation.isPending} />
                       </FormControl>
@@ -396,7 +410,7 @@ export default function ProfilePage() {
                   name="linkedinUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>LinkedIn URL</FormLabel>
+                      <FormLabel>LinkedIn URL *</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="https://www.linkedin.com/in/your-profile" disabled={updateProfileMutation.isPending} />
                       </FormControl>
@@ -427,7 +441,7 @@ export default function ProfilePage() {
                   name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Bio (Required)</FormLabel>
+                      <FormLabel>Bio *</FormLabel>
                       <FormControl>
                         <Textarea 
                           {...field} 

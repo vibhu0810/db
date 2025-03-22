@@ -132,26 +132,35 @@ function CreateInvoiceDialog() {
     }
   };
   
-  // Update total amount when orders are selected
+  // Automatically select all orders and calculate total when order data changes
   useEffect(() => {
-    if (!completedOrdersQuery.data || !selectedOrders.length) {
+    if (!completedOrdersQuery.data || completedOrdersQuery.data.length === 0) {
       setTotalSelectedAmount(0);
+      setSelectedOrders([]);
+      setAmount("0.00");
+      setDescription("");
       return;
     }
     
-    const total = completedOrdersQuery.data
-      .filter((order: any) => selectedOrders.includes(order.id))
-      .reduce((sum: number, order: any) => {
-        const price = parseFloat(order.price);
-        return sum + (isNaN(price) ? 0 : price);
-      }, 0);
+    // Automatically select all orders
+    const allOrderIds = completedOrdersQuery.data.map((order: any) => order.id);
+    setSelectedOrders(allOrderIds);
+    
+    // Calculate total from all orders
+    const total = completedOrdersQuery.data.reduce((sum: number, order: any) => {
+      const price = parseFloat(order.price);
+      return sum + (isNaN(price) ? 0 : price);
+    }, 0);
     
     setTotalSelectedAmount(total);
     setAmount(total.toFixed(2));
     
-    // Generate and set description based on selected orders
-    setDescription(generateFullDescription());
-  }, [selectedOrders, completedOrdersQuery.data]);
+    // Generate and set description based on all orders
+    const descriptions = completedOrdersQuery.data.map((order: any, index: number) => 
+      `${index + 1}. ${generateInvoiceDescription(order)}`
+    );
+    setDescription(descriptions.join('\n'));
+  }, [completedOrdersQuery.data]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -239,26 +248,23 @@ function CreateInvoiceDialog() {
     createInvoiceMutation.mutate(invoiceData);
   };
 
-  // Toggle order selection
+  // All orders are automatically selected
+  // This is just a placeholder function for the UI to show/hide which orders are included
   const toggleOrderSelection = (orderId: number) => {
-    if (selectedOrders.includes(orderId)) {
-      setSelectedOrders(selectedOrders.filter(id => id !== orderId));
-    } else {
-      setSelectedOrders([...selectedOrders, orderId]);
-    }
+    // No-op, all orders are always included
   };
 
-  // Select all orders
+  // All orders are automatically selected
   const selectAllOrders = () => {
     if (!completedOrdersQuery.data) return;
     
     const allOrderIds = completedOrdersQuery.data.map((order: any) => order.id);
     setSelectedOrders(allOrderIds);
   };
-
-  // Deselect all orders
+  
+  // This function is not used since all orders are always selected
   const deselectAllOrders = () => {
-    setSelectedOrders([]);
+    // No-op, as we should always include all orders
   };
 
   if (!user?.is_admin) return null;
@@ -310,42 +316,22 @@ function CreateInvoiceDialog() {
                 <div className="col-span-3">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">
-                      {selectedOrders.length} of {completedOrdersQuery.data.length} orders selected
+                      All {completedOrdersQuery.data.length} completed unbilled orders will be included
                     </p>
-                    <div className="flex gap-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={selectAllOrders}
-                      >
-                        Select All
-                      </Button>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={deselectAllOrders}
-                      >
-                        Deselect All
-                      </Button>
-                    </div>
                   </div>
                   <div className="border rounded-md max-h-40 overflow-y-auto">
                     {completedOrdersQuery.data.map((order: any) => (
                       <div 
                         key={order.id}
-                        className={`flex items-center justify-between p-2 border-b last:border-0 hover:bg-muted/50 ${
-                          selectedOrders.includes(order.id) ? 'bg-muted' : ''
-                        }`}
+                        className="flex items-center justify-between p-2 border-b last:border-0 hover:bg-muted/50 bg-muted"
                       >
                         <div className="flex items-center gap-2">
-                          <Checkbox 
-                            id={`order-${order.id}`}
-                            checked={selectedOrders.includes(order.id)}
-                            onCheckedChange={() => toggleOrderSelection(order.id)}
-                          />
-                          <Label htmlFor={`order-${order.id}`} className="cursor-pointer">
+                          <div className="w-4 h-4 rounded-sm border border-primary flex items-center justify-center bg-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          </div>
+                          <Label htmlFor={`order-${order.id}`} className="cursor-default">
                             #{order.id} - {order.sourceUrl.substring(0, 30)}...
                           </Label>
                         </div>
@@ -355,6 +341,9 @@ function CreateInvoiceDialog() {
                       </div>
                     ))}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    All completed orders are automatically included in the invoice calculation
+                  </p>
                 </div>
               </div>
             )}
@@ -379,10 +368,11 @@ function CreateInvoiceDialog() {
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
                   required
+                  className="bg-muted/30"
                 />
                 {totalSelectedAmount > 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Total from selected orders: ${totalSelectedAmount.toFixed(2)}
+                    Automatically calculated total from all completed orders: ${totalSelectedAmount.toFixed(2)}
                   </p>
                 )}
               </div>
@@ -399,10 +389,11 @@ function CreateInvoiceDialog() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Invoice description"
                   rows={3}
+                  className="bg-muted/30"
                 />
                 {selectedOrders.length > 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Description generated from selected orders
+                    Automatically generated description for all completed orders, using the standardized format
                   </p>
                 )}
               </div>

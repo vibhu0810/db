@@ -361,21 +361,43 @@ export default function Orders() {
   };
   
   // CSS fix for position:relative needed for Resizable to work properly
-  React.useEffect(() => {
+  useEffect(() => {
     // Add a style to ensure TableHead has position: relative for the resize handle to work
     const style = document.createElement('style');
     style.innerHTML = `
       thead th {
         position: relative !important;
       }
+      table {
+        table-layout: fixed !important;
+        width: auto !important;
+      }
+      .react-resizable {
+        position: relative;
+        background-clip: padding-box;
+      }
       .react-resizable-handle {
         position: absolute;
-        right: 0;
+        right: -5px;
         top: 0;
         height: 100%;
-        width: 5px;
+        width: 10px;
         cursor: col-resize;
         z-index: 10;
+      }
+      /* Create a visible resize handle */
+      .react-resizable-handle::after {
+        content: "";
+        position: absolute;
+        right: 5px;
+        top: 0;
+        height: 100%;
+        width: 1px;
+        background-color: #e5e7eb;
+      }
+      .react-resizable-handle:hover::after {
+        background-color: #60a5fa;
+        width: 2px;
       }
     `;
     document.head.appendChild(style);

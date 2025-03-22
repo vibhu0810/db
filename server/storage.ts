@@ -241,6 +241,9 @@ export class DatabaseStorage implements IStorage {
 
   async getUnreadCommentCount(orderId: number, userId: number): Promise<number> {
     try {
+      const user = await this.getUser(userId);
+      if (!user) return 0;
+      
       const comments = await db
         .select()
         .from(orderComments)
@@ -249,9 +252,13 @@ export class DatabaseStorage implements IStorage {
       // For admin, count unread comments from users
       // For users, count unread comments from admin
       const unreadComments = comments.filter(comment => {
-        const isAdminComment = comment.isFromAdmin;
-        const isUser = !comment.isFromAdmin;
-        return (isAdminComment && !comment.readByUser) || (isUser && !comment.readByAdmin);
+        if (user.is_admin) {
+          // Admin should see unread comments from users (non-admin comments)
+          return !comment.isFromAdmin && !comment.readByAdmin;
+        } else {
+          // Regular users should see unread comments from admins
+          return comment.isFromAdmin && !comment.readByUser;
+        }
       });
 
       return unreadComments.length;

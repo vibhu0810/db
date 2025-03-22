@@ -54,29 +54,43 @@ export default function OrderDetailsPage() {
         // Add comment to local state immediately for real-time update
         if (comment) {
           console.log('🔵 Adding comment to local state:', comment);
+          
+          // Ensure comment has user information for display
+          const commentWithUser = comment.user ? comment : {
+            ...comment,
+            user: {
+              username: comment.userId === user?.id ? user.username : "User"
+            }
+          };
+          
+          // Update local comments state with the new comment
           setLocalComments(prevComments => {
             console.log('🔵 Current comments count:', prevComments.length);
             // Check if comment already exists to avoid duplicates
-            const exists = prevComments.some(c => c.id === comment.id);
+            const exists = prevComments.some(c => c.id === commentWithUser.id);
             if (exists) {
               console.log('🔵 Comment already exists in state, not adding duplicate');
               return prevComments;
             }
             
-            const newComments = [...prevComments, comment];
+            console.log('🔵 Adding new comment to state:', commentWithUser);
+            const newComments = [...prevComments, commentWithUser];
             console.log('🔵 Updated comments count:', newComments.length);
             return newComments;
           });
+          
+          // Also invalidate the query to ensure data consistency but with a delay
+          // to avoid race conditions with the local state update
+          setTimeout(() => {
+            console.log('🔵 Invalidating comments query');
+            queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
+          }, 500);
+          
+          toast({
+            title: "New Comment",
+            description: `New comment from ${comment?.user?.username || 'another user'}`,
+          });
         }
-        
-        // Also invalidate the query to ensure data consistency
-        console.log('🔵 Invalidating comments query');
-        queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
-        
-        toast({
-          title: "New Comment",
-          description: `New comment from ${comment?.user?.username || 'another user'}`,
-        });
       } else {
         console.log('🔵 Comment is for a different order, ignoring');
       }
@@ -95,10 +109,16 @@ export default function OrderDetailsPage() {
     queryKey: ['/api/orders', id, 'comments'],
     queryFn: () => apiRequest("GET", `/api/orders/${id}/comments`).then(res => res.json()),
     onSuccess: (data) => {
+      console.log('💬 Comments loaded from API:', data.length);
       // Update local comments when data is fetched
       setLocalComments(data);
     }
   });
+  
+  // Log the current state of comments for debugging
+  useEffect(() => {
+    console.log('💬 Current localComments state:', localComments.length, 'comments');
+  }, [localComments]);
   
   // Use localComments for rendering
   const comments = localComments;

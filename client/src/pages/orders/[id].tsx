@@ -142,19 +142,6 @@ export default function OrderDetailsPage() {
             <p className="text-muted-foreground">View and manage order details</p>
           </div>
         </div>
-        {!isAdmin && user?.companyLogo && (
-          <div className="hidden md:block">
-            <img 
-              src={user.companyLogo} 
-              alt={user.companyName || 'Company logo'} 
-              className="h-16 object-contain" 
-              onError={(e) => {
-                // Hide the image if it fails to load
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          </div>
-        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

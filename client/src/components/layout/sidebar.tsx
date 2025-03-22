@@ -21,7 +21,7 @@ const userNavigation = [
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Reports", href: "/reports", icon: BarChart },
   { name: "Kanban Board", href: "/kanban", icon: Kanban },
-  { name: "Invoice", href: "/invoice", icon: FileText },
+  { name: "Invoices", href: "/invoices", icon: FileText },
   { name: "Chat with Support", href: "/chat", icon: MessageSquare },
   { name: "Profile", href: "/profile", icon: User },
 ];
@@ -32,6 +32,7 @@ const adminNavigation = [
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Reports", href: "/reports", icon: BarChart },
   { name: "Kanban Board", href: "/kanban", icon: Kanban },
+  { name: "Invoices", href: "/invoices", icon: FileText },
   { name: "Users", href: "/users", icon: Users },
   { name: "Chat Support", href: "/chat", icon: MessageSquare },
 ];

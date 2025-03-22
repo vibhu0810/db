@@ -74,8 +74,8 @@ function CreateInvoiceDialog() {
     setUploading(true);
     
     try {
-      const response = await uploadFile(file, 'pdf');
-      setFileUrl(response.url);
+      const response = await uploadFile(file, 'invoice');
+      setFileUrl(response);
       toast({
         title: "Success",
         description: "File uploaded successfully",
@@ -94,10 +94,11 @@ function CreateInvoiceDialog() {
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (invoiceData: any) => {
-      return apiRequest('/api/invoices', {
+      const response = await apiRequest('/api/invoices', {
         method: 'POST',
         body: JSON.stringify(invoiceData),
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({

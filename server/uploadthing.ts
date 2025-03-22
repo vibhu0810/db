@@ -83,6 +83,20 @@ export const ourFileRouter = {
       console.log("Chat audio upload complete for userId:", metadata.userId);
       return { uploadedBy: metadata.userId, url: file.url };
     }),
+    
+  // Invoice document uploads (PDF, Word, etc.)
+  invoice: f({ pdf: { maxFileSize: "16MB" }, "application/msword": { maxFileSize: "16MB" }, "application/vnd.openxmlformats-officedocument.wordprocessingml.document": { maxFileSize: "16MB" } })
+    .middleware(async ({ req }) => {
+      const user = (req as any).user;
+      if (!user?.is_admin) {
+        throw new Error("Unauthorized: Only admins can upload invoices");
+      }
+      return { userId: user.id, purpose: "invoice" };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log("Invoice document upload complete for userId:", metadata.userId);
+      return { uploadedBy: metadata.userId, url: file.url };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

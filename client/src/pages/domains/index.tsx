@@ -227,7 +227,9 @@ export default function DomainsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-sm"
           />
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <Select 
+            value={typeFilter} 
+            onValueChange={(value: any) => setTypeFilter(value as "all" | "guest_post" | "niche_edit" | "both")}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
@@ -526,7 +528,7 @@ export default function DomainsPage() {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious
+              <ExtendedPaginationPrevious
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               />
@@ -563,7 +565,7 @@ export default function DomainsPage() {
             })}
 
             <PaginationItem>
-              <PaginationNext
+              <ExtendedPaginationNext
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
               />

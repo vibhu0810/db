@@ -24,9 +24,10 @@ export default function OrderDetailsPage() {
     queryFn: () => apiRequest("GET", `/api/orders/${id}`).then(res => res.json()),
   });
 
-  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
+  const { data: comments = [], isLoading: isLoadingComments, refetch: refetchComments } = useQuery({
     queryKey: ['/api/orders', id, 'comments'],
     queryFn: () => apiRequest("GET", `/api/orders/${id}/comments`).then(res => res.json()),
+    refetchInterval: 5000, // Poll every 5 seconds for new comments
   });
   
   // Auto-scroll to the bottom of the comments when new comments are added
@@ -35,6 +36,16 @@ export default function OrderDetailsPage() {
       commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [comments]);
+  
+  // This effect marks comments as read when the page loads
+  useEffect(() => {
+    if (id && comments.length > 0) {
+      // Mark comments as read
+      apiRequest("POST", `/api/orders/${id}/comments/read`).catch(err => {
+        console.error("Failed to mark comments as read:", err);
+      });
+    }
+  }, [id, comments.length]);
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {

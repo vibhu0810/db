@@ -322,12 +322,16 @@ export default function Orders() {
     }));
   };
 
+  // Track unread comments
+  const [unreadCommentCounts, setUnreadCommentCounts] = useState<{[key: number]: number}>({});
+
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['/api/orders'],
     queryFn: () => {
       const endpoint = isAdmin ? '/api/orders/all' : '/api/orders';
       return apiRequest("GET", endpoint).then(res => res.json());
     },
+    refetchInterval: 10000, // Refetch orders every 10 seconds
   });
 
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
@@ -340,6 +344,27 @@ export default function Orders() {
     queryKey: ['/api/orders', selectedOrderId, 'comments'],
     queryFn: () => apiRequest("GET", `/api/orders/${selectedOrderId}/comments`).then(res => res.json()),
     enabled: selectedOrderId !== null,
+    refetchInterval: selectedOrderId ? 3000 : false, // Poll every 3 seconds when a comment modal is open
+  });
+  
+  // Query for unread comment counts across all orders
+  useQuery({
+    queryKey: ['/api/orders/unread-comments'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest("GET", "/api/orders/unread-comments");
+        const data = await response.json();
+        
+        if (response.ok) {
+          setUnreadCommentCounts(data);
+        }
+        return data;
+      } catch (error) {
+        console.error("Failed to fetch unread comments:", error);
+        return {};
+      }
+    },
+    refetchInterval: 5000, // Poll every 5 seconds
   });
 
   const addCommentMutation = useMutation({

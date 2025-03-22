@@ -12,7 +12,6 @@ import {
   sendChatNotificationEmail
 } from "./email";
 import { uploadthingHandler } from "./uploadthingHandler";
-import { notifyOrderStatusUpdate, notifyNewComment } from "./websocket";
 
 const typingUsers = new Map<number, { isTyping: boolean; timestamp: number }>();
 const onlineUsers = new Map<number, { lastActive: number }>();
@@ -568,45 +567,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user details for response
       const user = await storage.getUser(req.user.id);
-      const commentWithUser = {
+      res.status(201).json({
         ...comment,
         user: {
           username: user?.username,
           companyName: user?.companyName,
           is_admin: user?.is_admin,
         }
-      };
-      
-      // Send real-time WebSocket notification
-      try {
-        console.log("✅ COMMENT DATA BEFORE SENDING VIA WEBSOCKET:", {
-          orderId,
-          commentUserId: commentWithUser.userId,
-          commentUserIsAdmin: commentWithUser.user?.is_admin,
-          orderUserId: order.userId,
-          currentUserId: req.user.id
-        });
-        
-        // Make sure the WebSocket message payload has the right structure
-        const commentForWebSocket = {
-          ...commentWithUser,
-          userId: commentWithUser.userId || req.user.id,
-          user: commentWithUser.user || {
-            id: req.user.id,
-            username: req.user.username,
-            is_admin: req.user.is_admin,
-          }
-        };
-        
-        notifyNewComment(orderId, commentForWebSocket, order.userId);
-        
-        console.log("✅ WebSocket notification for new comment sent successfully");
-      } catch (error) {
-        console.error("❌ Failed to send WebSocket notification for new comment:", error);
-        // Continue even if notification fails
-      }
-      
-      res.status(201).json(commentWithUser);
+      });
 
     } catch (error) {
       console.error("Error creating comment:", error);
@@ -687,14 +655,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderId,
         createdAt: new Date(),
       });
-
-      // Send real-time notification via WebSocket
-      try {
-        notifyOrderStatusUpdate(orderId, status, order.userId);
-      } catch (error) {
-        console.error("Failed to send WebSocket notification:", error);
-        // Continue even if notification fails
-      }
 
       res.json(updatedOrder);
     } catch (error) {

@@ -3,7 +3,6 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startMetricsUpdates } from "./services/domain-metrics";
-import { setupWebsocketServer } from "./websocket";
 
 const app = express();
 app.use(express.json());
@@ -26,10 +25,6 @@ app.use((req, res, next) => {
   try {
     log("Initializing server...");
     const server = await registerRoutes(app);
-
-    // Setup WebSocket server for real-time updates
-    setupWebsocketServer(server);
-    log("WebSocket server initialized");
 
     // Start domain metrics update service
     try {

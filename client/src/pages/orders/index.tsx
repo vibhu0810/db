@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useWebSocket } from "@/hooks/use-websocket";
 import {
   Table,
   TableBody,
@@ -304,65 +303,6 @@ export default function Orders() {
   const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
-  
-  // Setup WebSocket for real-time updates
-  useWebSocket({
-    onOrderUpdate: (orderId, status) => {
-      console.log("WebSocket: Order status updated", orderId, status);
-      try {
-        // Highlight the order that was updated
-        setHighlightedOrderId(orderId);
-        
-        // For admin users, refresh the all orders query immediately
-        if (isAdmin) {
-          queryClient.invalidateQueries({ queryKey: ['/api/orders/all'] });
-        }
-        
-        // Always refresh regular orders query
-        queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-        
-        // Clear highlight after 3 seconds
-        setTimeout(() => {
-          setHighlightedOrderId(null);
-        }, 3000);
-      } catch (error) {
-        console.error("Error handling order update:", error);
-        // Fallback refresh in case of error
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-        }, 50);
-      }
-    },
-    onNewComment: (orderId) => {
-      console.log("WebSocket: New comment received", orderId);
-      try {
-        // Highlight the order with new comment
-        setHighlightedOrderId(orderId);
-        
-        // If we're viewing comments for this order, refresh them immediately
-        if (orderId === selectedOrderId) {
-          queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrderId, 'comments'] });
-        }
-        
-        // Refresh order lists to update comment counts
-        if (isAdmin) {
-          queryClient.invalidateQueries({ queryKey: ['/api/orders/all'] });
-        }
-        queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-        
-        // Clear highlight after 3 seconds
-        setTimeout(() => {
-          setHighlightedOrderId(null);
-        }, 3000);
-      } catch (error) {
-        console.error("Error handling new comment:", error);
-        // Fallback refresh
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-        }, 50);
-      }
-    }
-  });
 
   const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
     const maxWidths = {
@@ -486,14 +426,7 @@ export default function Orders() {
 
   const createCustomOrderMutation = useMutation({
     mutationFn: async (data: CustomOrderFormData) => {
-      // Add the type field as "guest_post" by default
-      const orderData = {
-        ...data,
-        type: "guest_post", // Default to guest_post to prevent 404 errors
-      };
-      console.log("Submitting custom order:", orderData);
-      
-      const res = await apiRequest("POST", "/api/orders", orderData);
+      const res = await apiRequest("POST", "/api/orders", data);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to create order");
@@ -655,7 +588,6 @@ export default function Orders() {
       notes: "",
       price: 0,
     },
-    mode: "onChange", // Validate on change for better user experience
   });
 
   const onSubmit = (data: CustomOrderFormData) => {
@@ -767,14 +699,14 @@ export default function Orders() {
                   Create Custom Order
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto max-h-screen">
+              <SheetContent className="w-[400px] sm:w-[540px]">
                 <SheetHeader>
                   <SheetTitle>Create Custom Order</SheetTitle>
                   <SheetDescription>
                     Create a new order for any user
                   </SheetDescription>
                 </SheetHeader>
-                <div className="mt-6 pb-4">
+                <div className="mt-6">
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                       <FormField
@@ -1032,7 +964,7 @@ export default function Orders() {
                       key={order.id}
                       id={`order-${order.id}`}
                       className={cn(
-                        highlightedOrderId === order.id && "bg-primary/10 transition-colors duration-500 animate-pulse"
+                        highlightedOrderId === order.id && "bg-muted transition-colors duration-500"
                       )}
                     >
                       {isAdmin && (

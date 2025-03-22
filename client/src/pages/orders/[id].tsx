@@ -1,128 +1,30 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { useWebSocket } from "@/hooks/use-websocket";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Loader2, Copy, MessageSquare, ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
   const [newComment, setNewComment] = useState("");
-  const [statusHighlight, setStatusHighlight] = useState(false);
-  const [previousStatus, setPreviousStatus] = useState<string | null>(null);
-  
-  // Setup WebSocket to listen for real-time updates
-  useWebSocket({
-    onOrderUpdate: (orderId: number, status: string) => {
-      // Only update if this is the order we're viewing
-      if (orderId === parseInt(id as string)) {
-        // Save the current status before the update
-        if (order) {
-          setPreviousStatus(order.status);
-        }
-        
-        // Update the order data
-        queryClient.invalidateQueries({ queryKey: ['/api/orders', id] });
-        
-        // Activate highlight effect
-        setStatusHighlight(true);
-        
-        // Notify about status change
-        toast({
-          title: "Order Status Updated",
-          description: `Order status updated to ${status}`,
-        });
-      }
-    },
-    onNewComment: (orderId: number, comment: any) => {
-      // Only update if this is the order we're viewing
-      console.log(`🔵 onNewComment called: orderId=${orderId}, current id=${id}, match=${orderId === parseInt(id as string)}`);
-      console.log(`🔵 Comment data:`, JSON.stringify(comment, null, 2));
-      
-      if (orderId === parseInt(id as string)) {
-        console.log('🔵 This comment is for the current order, updating local state');
-        
-        // Add comment to local state immediately for real-time update
-        if (comment) {
-          try {
-            console.log('🔵 Adding comment to local state:', comment);
-            
-            // Create a well-formed comment object with required fields
-            const newComment = {
-              id: comment.id,
-              orderId: comment.orderId || orderId,
-              userId: comment.userId || comment.user?.id,
-              message: comment.message,
-              createdAt: comment.createdAt || new Date().toISOString(),
-              user: comment.user || {
-                id: comment.userId,
-                username: comment.userId === user?.id ? user.username : "User",
-                is_admin: comment.userId === user?.id ? user.is_admin : false
-              }
-            };
-            
-            console.log('🔵 Formatted comment for display:', newComment);
-            
-            // Direct state update - simpler and more reliable
-            const exists = localComments.some(c => c.id === newComment.id);
-            if (!exists) {
-              console.log('🔵 Adding new comment directly to state');
-              setLocalComments([...localComments, newComment]);
-              
-              toast({
-                title: "New Comment",
-                description: `New comment from ${newComment.user?.username || 'another user'}`,
-              });
-            } else {
-              console.log('🔵 Comment already exists in state, not adding duplicate');
-            }
-            
-          } catch (err) {
-            console.error('🔵 Error updating comment state:', err);
-            // Fallback to query invalidation if direct update fails
-            queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
-          }
-        }
-      } else {
-        console.log('🔵 Comment is for a different order, ignoring');
-      }
-    }
-  });
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['/api/orders', id],
     queryFn: () => apiRequest("GET", `/api/orders/${id}`).then(res => res.json()),
   });
 
-  // Keep track of comments locally for real-time updates
-  const [localComments, setLocalComments] = useState<any[]>([]);
-  
-  const { data: fetchedComments = [], isLoading: isLoadingComments } = useQuery({
+  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
     queryKey: ['/api/orders', id, 'comments'],
     queryFn: () => apiRequest("GET", `/api/orders/${id}/comments`).then(res => res.json()),
-    onSuccess: (data) => {
-      console.log('💬 Comments loaded from API:', data.length);
-      // Update local comments when data is fetched
-      setLocalComments(data);
-    }
   });
-  
-  // Log the current state of comments for debugging
-  useEffect(() => {
-    console.log('💬 Current localComments state:', localComments.length, 'comments');
-  }, [localComments]);
-  
-  // Use localComments for rendering
-  const comments = localComments;
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {
@@ -138,18 +40,9 @@ export default function OrderDetailsPage() {
       }
       return res.json();
     },
-    onSuccess: (newCommentData) => {
-      console.log("Comment added successfully:", newCommentData);
-      
-      // Update local state immediately for instant UI update
-      setLocalComments(prevComments => [...prevComments, newCommentData]);
-      
-      // Also invalidate query to ensure data consistency
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
-      
-      // Clear the input field
       setNewComment("");
-      
       toast({
         title: "Success",
         description: "Your comment has been added successfully.",
@@ -164,19 +57,6 @@ export default function OrderDetailsPage() {
     },
   });
 
-  // Effect to reset highlight after animation
-  useEffect(() => {
-    if (statusHighlight) {
-      // Reset highlight after animation completes (3 seconds)
-      const timer = setTimeout(() => {
-        setStatusHighlight(false);
-        setPreviousStatus(null);
-      }, 3000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [statusHighlight]);
-  
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -251,23 +131,6 @@ export default function OrderDetailsPage() {
             <CardTitle>Order Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {order.title && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Post Title</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="truncate">{order.title}</div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="flex-shrink-0"
-                    onClick={() => copyToClipboard(order.title)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-            
             <div>
               <label className="text-sm font-medium text-muted-foreground">Source URL</label>
               <div className="flex items-center gap-2 mt-1">
@@ -330,19 +193,7 @@ export default function OrderDetailsPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
-                <div className="mt-1 font-medium">
-                  <span className={cn(
-                    "inline-flex items-center px-2.5 py-0.5 rounded-full text-sm",
-                    statusHighlight
-                      ? "bg-primary/20 text-primary animate-pulse shadow-lg"
-                      : "bg-primary/10 text-primary",
-                  )}>
-                    {order.status}
-                    {previousStatus && statusHighlight && (
-                      <span className="ml-2 text-xs text-muted-foreground">(was: {previousStatus})</span>
-                    )}
-                  </span>
-                </div>
+                <div className="mt-1">{order.status}</div>
               </div>
             </div>
 

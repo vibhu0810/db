@@ -91,34 +91,7 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size - max 4MB
-    const maxSize = 4 * 1024 * 1024; // 4MB in bytes
-    if (file.size > maxSize) {
-      toast({
-        title: "File too large",
-        description: `File size exceeds 4MB limit. Please select a smaller file.`,
-        variant: "destructive",
-      });
-      // Reset the input field
-      e.target.value = "";
-      return;
-    }
-
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid file type",
-        description: `Please select an image file.`,
-        variant: "destructive",
-      });
-      // Reset the input field
-      e.target.value = "";
-      return;
-    }
-
     setIsUploading(true);
-    console.log(`Uploading ${field} file:`, file.name, file.type, file.size);
-    
     try {
       let url;
       if (field === "profilePicture") {
@@ -127,28 +100,22 @@ export default function ProfilePage() {
         url = await uploadFile(file, "companyLogo");
       }
       
-      console.log(`Upload response for ${field}:`, url);
-      
       if (url) {
         form.setValue(field, url);
         toast({
           title: "Image uploaded",
           description: `Your ${field === "profilePicture" ? "profile picture" : "company logo"} has been uploaded successfully.`,
         });
-      } else {
-        throw new Error("No URL returned from upload");
       }
     } catch (error) {
-      console.error(`Upload error for ${field}:`, error);
       toast({
         title: "Upload failed",
         description: `Failed to upload ${field === "profilePicture" ? "profile picture" : "company logo"}. Please try again.`,
         variant: "destructive",
       });
+      console.error("Upload error:", error);
     } finally {
       setIsUploading(false);
-      // Reset the input field to allow uploading the same file again
-      e.target.value = "";
     }
   };
 
@@ -191,42 +158,22 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>Profile Picture</FormLabel>
                       <FormControl>
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-center gap-4">
-                            {field.value && (
-                              <img
-                                src={field.value}
-                                alt="Profile"
-                                className="h-16 w-16 rounded-full object-cover"
-                              />
-                            )}
-                            <div className="flex-1">
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleFileUpload(e, "profilePicture")}
-                                disabled={isUploading || updateProfileMutation.isPending}
-                              />
-                            </div>
-                          </div>
+                        <div className="flex items-center gap-4">
                           {field.value && (
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              size="sm"
-                              className="w-fit text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => {
-                                form.setValue("profilePicture", "");
-                                toast({
-                                  title: "Profile picture removed",
-                                  description: "Your profile picture has been removed."
-                                });
-                              }}
-                              disabled={isUploading || updateProfileMutation.isPending}
-                            >
-                              Remove profile picture
-                            </Button>
+                            <img
+                              src={field.value}
+                              alt="Profile"
+                              className="h-16 w-16 rounded-full object-cover"
+                            />
                           )}
+                          <div className="flex-1">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleFileUpload(e, "profilePicture")}
+                              disabled={isUploading || updateProfileMutation.isPending}
+                            />
+                          </div>
                         </div>
                       </FormControl>
                       <FormDescription>
@@ -245,42 +192,22 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>Company Logo</FormLabel>
                       <FormControl>
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-center gap-4">
-                            {field.value && (
-                              <img
-                                src={field.value}
-                                alt="Company Logo"
-                                className="h-16 w-16 object-contain"
-                              />
-                            )}
-                            <div className="flex-1">
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleFileUpload(e, "companyLogo")}
-                                disabled={isUploading || updateProfileMutation.isPending}
-                              />
-                            </div>
-                          </div>
+                        <div className="flex items-center gap-4">
                           {field.value && (
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              size="sm"
-                              className="w-fit text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => {
-                                form.setValue("companyLogo", "");
-                                toast({
-                                  title: "Company logo removed",
-                                  description: "Your company logo has been removed."
-                                });
-                              }}
-                              disabled={isUploading || updateProfileMutation.isPending}
-                            >
-                              Remove company logo
-                            </Button>
+                            <img
+                              src={field.value}
+                              alt="Company Logo"
+                              className="h-16 w-16 object-contain"
+                            />
                           )}
+                          <div className="flex-1">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleFileUpload(e, "companyLogo")}
+                              disabled={isUploading || updateProfileMutation.isPending}
+                            />
+                          </div>
                         </div>
                       </FormControl>
                       <FormDescription>

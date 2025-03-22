@@ -65,9 +65,16 @@ function CreateInvoiceDialog() {
 
   const usersQuery = useQuery({
     queryKey: ['/api/users'],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/users");
+      const data = await res.json();
+      console.log("Users for invoice dropdown:", data);
+      return data;
+    },
     enabled: !!user?.is_admin,
     initialData: [],
     refetchOnMount: true,
+    staleTime: 30000,
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

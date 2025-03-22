@@ -200,7 +200,7 @@ function EditOrderSheet({
               name="sourceUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Source URL</FormLabel>
+                  <FormLabel>Source URL/Guest Post Title</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -690,7 +690,7 @@ export default function Orders() {
   const exportToCSV = () => {
     const headers = [
       "Order ID",
-      "Source URL",
+      "Source URL/Guest Post Title",
       "Target URL",
       "Anchor Text",
       "Price",
@@ -700,7 +700,7 @@ export default function Orders() {
 
     const rows = filteredOrders.map((order) => [
       order.id,
-      order.sourceUrl,
+      order.title && order.title !== "not_applicable" ? order.title : order.sourceUrl,
       order.targetUrl,
       order.anchorText,
       order.price,
@@ -917,7 +917,7 @@ export default function Orders() {
                         name="sourceUrl"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Source URL</FormLabel>
+                            <FormLabel>Source URL/Guest Post Title</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>
@@ -1111,7 +1111,7 @@ export default function Orders() {
                       <SortableHeader field="id">Order ID</SortableHeader>
                     </TableHead>
                     <TableHead className="min-w-[200px] max-w-[300px]">
-                      <SortableHeader field="sourceUrl">Source URL</SortableHeader>
+                      <SortableHeader field="sourceUrl">Source URL/Guest Post Title</SortableHeader>
                     </TableHead>
                     <TableHead className="min-w-[200px] max-w-[300px]">
                       <SortableHeader field="targetUrl">Target URL</SortableHeader>
@@ -1157,13 +1157,21 @@ export default function Orders() {
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <div className="truncate max-w-[250px]">
-                            {order.sourceUrl}
+                            {order.title && order.title !== "not_applicable" 
+                              ? order.title 
+                              : order.sourceUrl === "not_applicable" 
+                                ? "No title provided" 
+                                : order.sourceUrl}
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="flex-shrink-0"
-                            onClick={() => copyToClipboard(order.sourceUrl)}
+                            onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
+                              ? order.title 
+                              : order.sourceUrl === "not_applicable"
+                                ? ""
+                                : order.sourceUrl)}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>

@@ -799,7 +799,7 @@ export default function Orders() {
       order.id,
       order.title && order.title !== "not_applicable" 
         ? (order.sourceUrl !== "not_applicable" 
-            ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
+            ? `${order.title} - ${order.sourceUrl}`
             : order.title)
         : order.sourceUrl === "not_applicable"
           ? "No title provided"
@@ -1399,7 +1399,7 @@ export default function Orders() {
                           <div className="truncate max-w-[250px]">
                             {order.title && order.title !== "not_applicable" 
                               ? (order.sourceUrl !== "not_applicable" 
-                                  ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
+                                  ? `${order.title} - ${order.sourceUrl}`
                                   : order.title)
                               : order.sourceUrl === "not_applicable" 
                                 ? "No title provided" 
@@ -1411,7 +1411,7 @@ export default function Orders() {
                             className="flex-shrink-0"
                             onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
                               ? (order.sourceUrl !== "not_applicable" 
-                                  ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
+                                  ? `${order.title} - ${order.sourceUrl}`
                                   : order.title)
                               : order.sourceUrl === "not_applicable"
                                 ? ""

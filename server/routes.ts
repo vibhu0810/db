@@ -559,6 +559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderId,
         userId: req.user.id,
         message: req.body.message,
+        isFromAdmin: req.user.is_admin,
       });
 
       // Get admins and order owner

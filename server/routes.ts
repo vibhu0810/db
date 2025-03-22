@@ -236,6 +236,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: req.body.content,
         senderId: req.user.id,
         receiverId: receiverId,
+        attachmentUrl: req.body.attachmentUrl || null,
+        attachmentType: req.body.attachmentType || null,
       });
 
       const message = await storage.createMessage(messageData);

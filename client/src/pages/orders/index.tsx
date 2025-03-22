@@ -429,7 +429,7 @@ export default function Orders() {
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {
-      setIsActionInProgress(true);
+      // Only set the specific flag, not the generic one
       setIsAddingComment(true);
       if (!selectedOrderId || !newComment.trim()) {
         throw new Error("Please enter a comment");
@@ -445,30 +445,40 @@ export default function Orders() {
       return res.json();
     },
     onSuccess: () => {
+      // Reset the comment flag immediately
+      setIsAddingComment(false);
+      
+      // Clear the comment input right away 
+      setNewComment("");
+      
+      // Refresh the comments
       queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrderId, 'comments'] });
       
-      // Reset state safely with longer delay
+      // Show toast message
+      toast({
+        title: "Comment added",
+        description: "Your comment has been added successfully.",
+      });
+      
+      // Reset other states with a delay for better UX
       setTimeout(() => {
-        setNewComment("");
-        setIsAddingComment(false);
+        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
-        
-        toast({
-          title: "Comment added",
-          description: "Your comment has been added successfully.",
-        });
       }, 500);
     },
     onError: (error: Error) => {
+      // Reset the comment flag immediately
+      setIsAddingComment(false);
+      
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
       
-      // Ensure action flags are reset even on error
+      // Reset other state with a delay for better UX
       setTimeout(() => {
-        setIsAddingComment(false);
+        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
       }, 500);
     },
@@ -476,7 +486,7 @@ export default function Orders() {
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
-      setIsActionInProgress(true);
+      // Only set the specific flag, not the generic one
       setIsUpdatingStatus(true);
       const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
       if (!res.ok) {
@@ -495,15 +505,18 @@ export default function Orders() {
         return newUpdates;
       });
       
+      // Reset the updating flag immediately
+      setIsUpdatingStatus(false);
+      
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Status updated",
         description: "Order status has been updated successfully.",
       });
       
-      // Reset action flags after a significant delay to prevent UI glitches
+      // Reset remaining flags after a delay for better UX
       setTimeout(() => {
-        setIsUpdatingStatus(false);
+        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
       }, 750); // Using a longer delay for status updates as they're more complex
     },
@@ -514,9 +527,12 @@ export default function Orders() {
         variant: "destructive",
       });
       
-      // Ensure we reset all action states on error with delay
+      // Reset the updating flag immediately
+      setIsUpdatingStatus(false);
+      
+      // Reset other flags after a delay for better UX
       setTimeout(() => {
-        setIsUpdatingStatus(false);
+        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
       }, 500);
     },
@@ -524,7 +540,7 @@ export default function Orders() {
 
   const deleteOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
-      setIsActionInProgress(true);
+      // Only set the specific flag, not the generic one
       setIsDeletingOrder(true);
       const res = await apiRequest("DELETE", `/api/orders/${orderId}`);
       if (!res.ok) {
@@ -533,19 +549,22 @@ export default function Orders() {
       }
     },
     onSuccess: () => {
+      // Reset the deleting flag immediately
+      setIsDeletingOrder(false);
+      
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Order deleted",
         description: "The order has been deleted successfully.",
       });
       
-      // Reset all states in a consistent manner with longer delay
+      // Reset other states with a delay for better UX
       setTimeout(() => {
         setOrderToDelete(null);
         setOrderToEdit(null);
         setOrderToCancel(null);
         setSelectedOrderId(null);
-        setIsDeletingOrder(false);
+        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
       }, 750);
     },
@@ -555,10 +574,14 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      // Make sure to reset the state even on error with delay
+      
+      // Reset the deleting flag immediately
+      setIsDeletingOrder(false);
+      
+      // Reset other state with a delay for better UX
       setTimeout(() => {
         setOrderToDelete(null);
-        setIsDeletingOrder(false);
+        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
       }, 500);
     },
@@ -566,7 +589,7 @@ export default function Orders() {
 
   const createCustomOrderMutation = useMutation({
     mutationFn: async (data: CustomOrderFormData) => {
-      setIsActionInProgress(true);
+      // Only set the specific flag, not the generic one
       setIsCreatingOrder(true);
       const res = await apiRequest("POST", "/api/orders", data);
       if (!res.ok) {
@@ -576,16 +599,19 @@ export default function Orders() {
       return res.json();
     },
     onSuccess: () => {
+      // Reset the creating flag immediately
+      setIsCreatingOrder(false);
+      
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Order created",
         description: "Order has been created successfully.",
       });
       
-      // Reset states in a consistent manner with longer delay
+      // Reset other states with a delay for better UX
       setTimeout(() => {
         setShowCustomOrderSheet(false);
-        setIsCreatingOrder(false);
+        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
       }, 750);
     },
@@ -596,9 +622,12 @@ export default function Orders() {
         variant: "destructive",
       });
       
-      // Ensure we reset all action states on error
+      // Reset the creating flag immediately
+      setIsCreatingOrder(false);
+      
+      // Reset other state with a delay for better UX
       setTimeout(() => {
-        setIsCreatingOrder(false);
+        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
       }, 500);
     },
@@ -606,7 +635,7 @@ export default function Orders() {
 
   const cancelOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
-      setIsActionInProgress(true);
+      // Only set the specific flag, not the generic one
       setIsCancellingOrder(true);
       const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: "Cancelled" });
       if (!res.ok) {
@@ -624,6 +653,9 @@ export default function Orders() {
         return newUpdates;
       });
       
+      // Reset the cancelling flag
+      setIsCancellingOrder(false);
+      
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Order cancelled",
@@ -636,7 +668,7 @@ export default function Orders() {
         setOrderToEdit(null);
         setOrderToDelete(null);
         setSelectedOrderId(null);
-        setIsCancellingOrder(false);
+        // We already reset isCancellingOrder above, but keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
       }, 750);
     },
@@ -646,10 +678,14 @@ export default function Orders() {
         description: error.message,
         variant: "destructive",
       });
-      // Make sure to reset the state even on error with delay
+      
+      // Reset the cancelling flag immediately
+      setIsCancellingOrder(false);
+      
+      // Reset other state with a delay for better UX
       setTimeout(() => {
         setOrderToCancel(null);
-        setIsCancellingOrder(false);
+        // Keep setIsActionInProgress for backwards compatibility
         setIsActionInProgress(false);
       }, 500);
     },

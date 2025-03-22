@@ -17,6 +17,7 @@ export default function OrderDetailsPage() {
   const { user, isAdmin } = useAuth();
   const [newComment, setNewComment] = useState("");
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['/api/orders', id],
@@ -52,6 +53,12 @@ export default function OrderDetailsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders', id, 'comments'] });
       setNewComment("");
+      // Focus the textarea again after successful submission
+      if (textareaRef.current) {
+        setTimeout(() => {
+          textareaRef.current?.focus();
+        }, 100);
+      }
       toast({
         title: "Success",
         description: "Your comment has been added successfully.",
@@ -228,29 +235,45 @@ export default function OrderDetailsPage() {
                 </div>
               ) : (
                 <>
-                  <ScrollArea className="h-[300px] mb-4 pr-4">
-                    <div className="space-y-4">
-                      {comments.map((comment: any) => (
-                        <div key={comment.id} className="rounded-lg bg-muted p-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="font-medium">{comment.user?.username}</span>
-                            <span className="text-sm text-muted-foreground">
-                              {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
-                            </span>
+                  <div className="relative mb-4">
+                    <ScrollArea className="h-[350px] pr-4 rounded-md border">
+                      <div className="space-y-4 p-4">
+                        {comments.length === 0 ? (
+                          <div className="text-center text-muted-foreground py-8">
+                            No comments yet. Be the first to add one!
                           </div>
-                          <p className="text-sm">{comment.message}</p>
-                        </div>
-                      ))}
-                      {/* Invisible element at the end to scroll to */}
-                      <div ref={commentsEndRef} />
-                    </div>
-                  </ScrollArea>
+                        ) : (
+                          comments.map((comment: any) => (
+                            <div key={comment.id} className="rounded-lg bg-muted p-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="font-medium">{comment.user?.username}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                                </span>
+                              </div>
+                              <p className="text-sm">{comment.message}</p>
+                            </div>
+                          ))
+                        )}
+                        {/* Invisible element at the end to scroll to */}
+                        <div ref={commentsEndRef} />
+                      </div>
+                    </ScrollArea>
+                  </div>
 
                   <div className="space-y-2">
                     <Textarea
-                      placeholder="Add a comment..."
+                      ref={textareaRef}
+                      placeholder="Add a comment... (Ctrl+Enter to submit)"
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) => {
+                        // Submit comment with Ctrl+Enter
+                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && newComment.trim()) {
+                          e.preventDefault();
+                          addCommentMutation.mutate();
+                        }
+                      }}
                       rows={3}
                     />
                     <Button

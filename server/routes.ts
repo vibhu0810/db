@@ -396,6 +396,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get unread comments counts for all user's orders
+  app.get("/api/orders/unread-comments", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    try {
+      // Get all orders for this user
+      const orders = req.user.is_admin 
+        ? await storage.getAllOrders()
+        : await storage.getOrders(req.user.id);
+      
+      // Create a map of order ID to unread comment count
+      const unreadCounts: Record<number, number> = {};
+      
+      // Fetch unread comment counts for each order
+      for (const order of orders) {
+        const count = await storage.getUnreadCommentCount(order.id, req.user.id);
+        if (count > 0) {
+          unreadCounts[order.id] = count;
+        }
+      }
+      
+      console.log("Retrieved unread comment counts:", unreadCounts);
+      res.json(unreadCounts);
+    } catch (error) {
+      console.error("Error fetching unread comments:", error);
+      res.status(500).json({ error: "Failed to get unread comment counts" });
+    }
+  });
+  
   // Add order comments routes
   app.get("/api/orders/:orderId/comments", async (req, res) => {
     try {
@@ -423,36 +454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch comments" });
     }
   });
-  
-  // Get unread comments counts for all user's orders
-  app.get("/api/orders/unread-comments", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    
-    try {
-      // Get all orders for this user
-      const orders = req.user.is_admin 
-        ? await storage.getAllOrders()
-        : await storage.getOrders(req.user.id);
-      
-      // Create a map of order ID to unread comment count
-      const unreadCounts: Record<number, number> = {};
-      
-      // Fetch unread comment counts for each order
-      for (const order of orders) {
-        const count = await storage.getUnreadCommentCount(order.id, req.user.id);
-        if (count > 0) {
-          unreadCounts[order.id] = count;
-        }
-      }
-      
-      res.json(unreadCounts);
-    } catch (error) {
-      console.error("Error fetching unread comments:", error);
-      res.status(500).json({ error: "Failed to get unread comment counts" });
-    }
-  });
+
   
   // Mark comments as read for an order
   app.post("/api/orders/:orderId/comments/read", async (req, res) => {

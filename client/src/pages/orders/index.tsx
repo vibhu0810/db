@@ -313,6 +313,7 @@ export default function Orders() {
     targetUrl: 250,
     anchorText: 180,
     textEdit: 250,
+    notes: 200,
     status: 180,
     id: 100,
     price: 100,
@@ -340,6 +341,7 @@ export default function Orders() {
       targetUrl: 400,
       anchorText: 300,
       textEdit: 400,
+      notes: 350,
       status: 300,
       id: 150,
       price: 150,
@@ -1313,6 +1315,21 @@ export default function Orders() {
                         </div>
                       </Resizable>
                     </TableHead>
+                    <TableHead style={{ width: columnWidths.notes || 200 }}>
+                      <Resizable
+                        width={columnWidths.notes || 200}
+                        height={38}
+                        onResize={onResize('notes')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center pr-4">
+                          Notes
+                        </div>
+                      </Resizable>
+                    </TableHead>
                     <TableHead style={{ width: columnWidths.actions || 150 }}>
                       <Resizable
                         width={columnWidths.actions || 150}
@@ -1445,6 +1462,21 @@ export default function Orders() {
                             size="icon"
                             className="flex-shrink-0"
                             onClick={() => copyToClipboard(order.textEdit || '')}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <div className="truncate max-w-[200px]">
+                            {order.notes || "No notes"}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="flex-shrink-0"
+                            onClick={() => copyToClipboard(order.notes || '')}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>

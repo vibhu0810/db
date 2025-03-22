@@ -81,6 +81,9 @@ import { z } from "zod";
 import Checkbox from "@/components/ui/checkbox";
 import { Link } from "wouter";
 
+// Make sure our DateRange is compatible with react-day-picker's DateRange
+import { DateRange as DayPickerDateRange } from "react-day-picker";
+
 interface DateRange {
   from?: Date;
   to?: Date;
@@ -834,7 +837,7 @@ export default function Orders() {
 
           setHighlightedOrderId(orderId);
 
-          const orderIndex = filteredOrders.findIndex(order => order.id === orderId);
+          const orderIndex = filteredOrders.findIndex((order: any) => order.id === orderId);
           if (orderIndex !== -1) {
             const pageNumber = Math.floor(orderIndex / itemsPerPage) + 1;
             setCurrentPage(pageNumber);
@@ -1070,8 +1073,8 @@ export default function Orders() {
           </Select>
         )}
         <DatePickerWithRange
-          date={dateRange}
-          setDate={setDateRange}
+          date={dateRange as DayPickerDateRange}
+          setDate={(date) => setDateRange(date || {})}
         />
       </div>
 
@@ -1264,7 +1267,7 @@ export default function Orders() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedOrders.map((order) => (
+                  {paginatedOrders.map((order: any) => (
                     <TableRow
                       key={order.id}
                       id={`order-${order.id}`}
@@ -1618,7 +1621,7 @@ export default function Orders() {
                 ) : comments.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No comments yet</p>
                 ) : (
-                  comments.map((comment) => (
+                  comments.map((comment: any) => (
                     <div
                       key={comment.id}
                       className="rounded-lg border p-4"

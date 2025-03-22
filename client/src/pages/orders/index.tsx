@@ -720,19 +720,7 @@ export default function Orders() {
             Manage and track your orders
           </p>
         </div>
-        {!isAdmin && user?.companyLogo && (
-          <div className="hidden md:block">
-            <img 
-              src={user.companyLogo} 
-              alt={user.companyName || 'Company logo'} 
-              className="h-16 object-contain" 
-              onError={(e) => {
-                // Hide the image if it fails to load
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          </div>
-        )}
+        {/* Company logo removed as requested */}
         <div className="flex gap-2">
           {isAdmin && (
             <Sheet open={showCustomOrderSheet} onOpenChange={setShowCustomOrderSheet}>

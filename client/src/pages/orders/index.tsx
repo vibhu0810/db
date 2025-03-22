@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { FileDown, Loader2, MessageSquare, Copy, ChevronDown, X } from "lucide-react";
+import { FileDown, Loader2, MessageSquare, Copy, ChevronDown, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { useAuth } from "@/hooks/use-auth";
 import { Resizable } from "react-resizable";
@@ -766,32 +766,51 @@ export default function Orders() {
     if (!isLoading && orders.length > 0 && !isActionInProgress) {
       // Create a map of current order statuses
       const currentOrderStatuses: Record<number, string> = {};
+      const now = Date.now();
+      const TIME_THRESHOLD = 10000; // 10 seconds threshold for ignoring recent manual updates
+      
       orders.forEach((order: any) => {
         currentOrderStatuses[order.id] = order.status;
         
-        // If we have a previous status and it's different than the current one, and it's not a recent manual update
+        // If we have a previous status and it's different than the current one
         if (
           previousOrderStatuses[order.id] && 
-          previousOrderStatuses[order.id] !== order.status &&
-          !recentStatusUpdates[order.id]
+          previousOrderStatuses[order.id] !== order.status
         ) {
-          toast({
-            title: `Order #${order.id} status updated`,
-            description: `Status changed from ${previousOrderStatuses[order.id]} to ${order.status}`,
-            variant: "default",
-          });
+          // Check if this was a recent manual update (within threshold)
+          const lastUpdateTime = recentStatusUpdates[order.id] || 0;
+          const isRecentManualUpdate = (now - lastUpdateTime) < TIME_THRESHOLD;
+          
+          // Only show toast if it wasn't a recent manual update
+          if (!isRecentManualUpdate) {
+            toast({
+              title: `Order #${order.id} status updated`,
+              description: `Status changed from ${previousOrderStatuses[order.id]} to ${order.status}`,
+              variant: "default",
+            });
+          }
         }
       });
       
       // Update the previous statuses map for the next comparison
       setPreviousOrderStatuses(currentOrderStatuses);
       
-      // Clear recent status updates after they've been processed
-      // But only if we're not in the middle of an action
+      // Clean up old timestamp entries that are beyond the threshold
       if (Object.keys(recentStatusUpdates).length > 0) {
-        setTimeout(() => {
-          setRecentStatusUpdates({});
-        }, 2000); // Keep recent updates for 2 seconds to avoid race conditions
+        const cleanedUpdates: Record<number, number> = {};
+        
+        // Keep only the recent entries within threshold
+        Object.entries(recentStatusUpdates).forEach(([orderId, timestamp]) => {
+          const numericOrderId = parseInt(orderId);
+          if ((now - (timestamp as number)) < TIME_THRESHOLD) {
+            cleanedUpdates[numericOrderId] = timestamp as number;
+          }
+        });
+        
+        // Only update if there's a change in the tracked updates
+        if (Object.keys(cleanedUpdates).length !== Object.keys(recentStatusUpdates).length) {
+          setRecentStatusUpdates(cleanedUpdates);
+        }
       }
     }
   }, [isLoading, orders, toast, recentStatusUpdates, isActionInProgress, previousOrderStatuses]);
@@ -1319,10 +1338,15 @@ export default function Orders() {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-9 w-9"
                 disabled={currentPage === 1 || isActionInProgress}
-              />
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
             </PaginationItem>
 
             {[...Array(totalPages)].map((_, i) => {
@@ -1334,12 +1358,18 @@ export default function Orders() {
               ) {
                 return (
                   <PaginationItem key={page}>
-                    <PaginationLink
-                      onClick={() => setCurrentPage(page)}
-                      isActive={currentPage === page}
+                    <Button 
+                      variant="outline"
+                      size="icon"
+                      className={cn(
+                        "h-9 w-9",
+                        currentPage === page && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                      )}
+                      onClick={() => !isActionInProgress && setCurrentPage(page)}
+                      disabled={isActionInProgress || currentPage === page}
                     >
                       {page}
-                    </PaginationLink>
+                    </Button>
                   </PaginationItem>
                 );
               } else if (
@@ -1356,10 +1386,15 @@ export default function Orders() {
             })}
 
             <PaginationItem>
-              <PaginationNext
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-9 w-9"
                 disabled={currentPage === totalPages || isActionInProgress}
-              />
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </PaginationItem>
           </PaginationContent>
         </Pagination>

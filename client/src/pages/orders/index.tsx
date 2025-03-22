@@ -643,7 +643,7 @@ export default function Orders() {
   };
 
   const filteredOrders = orders
-    .filter((order) => {
+    .filter((order: any) => {
       const matchesStatus = statusFilter === "all" || order.status === statusFilter;
       const matchesSearch =
         !searchQuery ||
@@ -660,9 +660,9 @@ export default function Orders() {
 
       return matchesStatus && matchesSearch && matchesDateRange && matchesUser;
     })
-    .sort((a, b) => {
-      const aValue = (a as any)[sortField];
-      const bValue = (b as any)[sortField];
+    .sort((a: any, b: any) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
 
       if (typeof aValue === "string") {
         return sortDirection === "asc"
@@ -707,7 +707,7 @@ export default function Orders() {
       "Date Ordered",
     ].join(",");
 
-    const rows = filteredOrders.map((order) => [
+    const rows = filteredOrders.map((order: any) => [
       order.id,
       order.title && order.title !== "not_applicable" ? order.title : order.sourceUrl,
       order.targetUrl,
@@ -1113,32 +1113,154 @@ export default function Orders() {
                   <TableRow>
                     {isAdmin && (
                       <TableHead style={{ width: columnWidths.user || 150 }}>
-                        <SortableHeader field="user.username">User</SortableHeader>
+                        <Resizable
+                          width={columnWidths.user || 150}
+                          height={38}
+                          onResize={onResize('user')}
+                          resizeHandles={['e']}
+                          handle={
+                            <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                          }
+                        >
+                          <div className="h-full flex items-center pr-4">
+                            <SortableHeader field="user.username">User</SortableHeader>
+                          </div>
+                        </Resizable>
                       </TableHead>
                     )}
                     <TableHead style={{ width: columnWidths.id }}>
-                      <SortableHeader field="id">Order ID</SortableHeader>
+                      <Resizable
+                        width={columnWidths.id}
+                        height={38}
+                        onResize={onResize('id')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center pr-4">
+                          <SortableHeader field="id">Order ID</SortableHeader>
+                        </div>
+                      </Resizable>
                     </TableHead>
                     <TableHead style={{ width: columnWidths.sourceUrl }}>
-                      <SortableHeader field="sourceUrl">Source URL/Guest Post Title</SortableHeader>
+                      <Resizable
+                        width={columnWidths.sourceUrl}
+                        height={38}
+                        onResize={onResize('sourceUrl')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center pr-4">
+                          <SortableHeader field="sourceUrl">Source URL/Guest Post Title</SortableHeader>
+                        </div>
+                      </Resizable>
                     </TableHead>
                     <TableHead style={{ width: columnWidths.targetUrl }}>
-                      <SortableHeader field="targetUrl">Target URL</SortableHeader>
+                      <Resizable
+                        width={columnWidths.targetUrl}
+                        height={38}
+                        onResize={onResize('targetUrl')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center pr-4">
+                          <SortableHeader field="targetUrl">Target URL</SortableHeader>
+                        </div>
+                      </Resizable>
                     </TableHead>
                     <TableHead style={{ width: columnWidths.anchorText }}>
-                      <SortableHeader field="anchorText">Anchor Text</SortableHeader>
+                      <Resizable
+                        width={columnWidths.anchorText}
+                        height={38}
+                        onResize={onResize('anchorText')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center pr-4">
+                          <SortableHeader field="anchorText">Anchor Text</SortableHeader>
+                        </div>
+                      </Resizable>
                     </TableHead>
                     <TableHead style={{ width: columnWidths.price || 100 }} className="text-right">
-                      <SortableHeader field="price">Price</SortableHeader>
+                      <Resizable
+                        width={columnWidths.price || 100}
+                        height={38}
+                        onResize={onResize('price')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center justify-end pr-4">
+                          <SortableHeader field="price">Price</SortableHeader>
+                        </div>
+                      </Resizable>
                     </TableHead>
                     <TableHead style={{ width: columnWidths.status || 180 }}>
-                      <SortableHeader field="status">Status</SortableHeader>
+                      <Resizable
+                        width={columnWidths.status || 180}
+                        height={38}
+                        onResize={onResize('status')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center pr-4">
+                          <SortableHeader field="status">Status</SortableHeader>
+                        </div>
+                      </Resizable>
                     </TableHead>
                     <TableHead style={{ width: columnWidths.date || 120 }}>
-                      <SortableHeader field="dateOrdered">Date</SortableHeader>
+                      <Resizable
+                        width={columnWidths.date || 120}
+                        height={38}
+                        onResize={onResize('date')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center pr-4">
+                          <SortableHeader field="dateOrdered">Date</SortableHeader>
+                        </div>
+                      </Resizable>
                     </TableHead>
-                    <TableHead style={{ width: columnWidths.textEdit || 250 }}>Text Edit/Article</TableHead>
-                    <TableHead style={{ width: columnWidths.actions || 100 }}></TableHead>
+                    <TableHead style={{ width: columnWidths.textEdit || 250 }}>
+                      <Resizable
+                        width={columnWidths.textEdit || 250}
+                        height={38}
+                        onResize={onResize('textEdit')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center pr-4">
+                          Text Edit/Article
+                        </div>
+                      </Resizable>
+                    </TableHead>
+                    <TableHead style={{ width: columnWidths.actions || 150 }}>
+                      <Resizable
+                        width={columnWidths.actions || 150}
+                        height={38}
+                        onResize={onResize('actions')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full"></div>
+                      </Resizable>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

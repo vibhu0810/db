@@ -1172,11 +1172,14 @@ export default function Orders() {
                           <Select
                             value={order.status}
                             onValueChange={(newStatus) => {
-                              updateOrderStatusMutation.mutate({
-                                orderId: order.id,
-                                status: newStatus
-                              });
+                              if (!isActionInProgress) {
+                                updateOrderStatusMutation.mutate({
+                                  orderId: order.id,
+                                  status: newStatus
+                                });
+                              }
                             }}
+                            disabled={isActionInProgress}
                           >
                             <SelectTrigger className="w-[180px]">
                               <SelectValue>{renderStatusBadge(order.status)}</SelectValue>
@@ -1241,7 +1244,14 @@ export default function Orders() {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 {isAdmin && (
-                                  <DropdownMenuItem onClick={() => setOrderToEdit(order)}>
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      if (!isActionInProgress) {
+                                        setOrderToEdit(order);
+                                      }
+                                    }}
+                                    disabled={isActionInProgress}
+                                  >
                                     <Pencil className="mr-2 h-4 w-4" />
                                     Edit Order
                                   </DropdownMenuItem>

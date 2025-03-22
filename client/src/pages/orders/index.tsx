@@ -640,7 +640,8 @@ export default function Orders() {
       const matchesSearch =
         !searchQuery ||
         order.sourceUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.targetUrl.toLowerCase().includes(searchQuery.toLowerCase());
+        order.targetUrl.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.id.toString().includes(searchQuery);
 
       const matchesDateRange = !dateRange.from || !dateRange.to || (
         new Date(order.dateOrdered) >= dateRange.from &&
@@ -1020,7 +1021,7 @@ export default function Orders() {
 
       <div className="flex flex-wrap gap-4">
         <Input
-          placeholder="Search orders..."
+          placeholder="Search by Order ID, Source URL, or Target URL..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="max-w-sm"

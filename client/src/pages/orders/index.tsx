@@ -801,7 +801,9 @@ export default function Orders() {
         ? (order.sourceUrl !== "not_applicable" 
             ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
             : order.title)
-        : order.sourceUrl,
+        : order.sourceUrl === "not_applicable"
+          ? "No title provided"
+          : extractDomainFromUrl(order.sourceUrl),
       order.targetUrl,
       order.anchorText,
       order.price,
@@ -1401,7 +1403,7 @@ export default function Orders() {
                                   : order.title)
                               : order.sourceUrl === "not_applicable" 
                                 ? "No title provided" 
-                                : order.sourceUrl}
+                                : extractDomainFromUrl(order.sourceUrl)}
                           </div>
                           <Button
                             variant="ghost"
@@ -1413,7 +1415,7 @@ export default function Orders() {
                                   : order.title)
                               : order.sourceUrl === "not_applicable"
                                 ? ""
-                                : order.sourceUrl)}
+                                : extractDomainFromUrl(order.sourceUrl))}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>

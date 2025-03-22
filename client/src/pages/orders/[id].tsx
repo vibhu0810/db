@@ -184,14 +184,23 @@ export default function OrderDetailsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Source URL</label>
+              <label className="text-sm font-medium text-muted-foreground">Source URL / Guest Post Title</label>
               <div className="flex items-center gap-2 mt-1">
-                <div className="truncate">{order.sourceUrl}</div>
+                <div className="truncate">
+                  {order.sourceUrl === "not_applicable" 
+                    ? (order.title && order.title !== "not_applicable" ? order.title : "No source URL provided")
+                    : order.sourceUrl
+                  }
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="flex-shrink-0"
-                  onClick={() => copyToClipboard(order.sourceUrl)}
+                  onClick={() => copyToClipboard(
+                    order.sourceUrl === "not_applicable"
+                      ? (order.title && order.title !== "not_applicable" ? order.title : "")
+                      : order.sourceUrl
+                  )}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>

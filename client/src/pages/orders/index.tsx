@@ -740,14 +740,14 @@ export default function Orders() {
                   Create Custom Order
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-[400px] sm:w-[540px]">
+              <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto max-h-screen">
                 <SheetHeader>
                   <SheetTitle>Create Custom Order</SheetTitle>
                   <SheetDescription>
                     Create a new order for any user
                   </SheetDescription>
                 </SheetHeader>
-                <div className="mt-6">
+                <div className="mt-6 pb-4">
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                       <FormField

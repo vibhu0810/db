@@ -49,11 +49,11 @@ function getTurnaroundTime(domain: Domain, orderType: OrderType | null) {
 
 const formSchema = z.object({
   sourceUrl: z.string()
-    .optional()
-    .refine(val => !val || val.startsWith('http'), "Must be a valid URL if provided"),
+    .min(1, "Source URL is required")
+    .url("Must be a valid URL starting with http:// or https://"),
   targetUrl: z.string()
     .min(1, "Target URL is required")
-    .url("Must be a valid URL"),
+    .url("Must be a valid URL starting with http:// or https://"),
   anchorText: z.string().min(1, "Anchor text is required"),
   title: z.string().optional(),
   content: z.string().optional(),

@@ -168,8 +168,8 @@ function CreateInvoiceDialog() {
     }
     
     // Find the selected client's details
-    if (selectedUser && usersQuery.data) {
-      const client = usersQuery.data.find((u: any) => u.id === selectedUser);
+    if (selectedUser && clientsQuery.data) {
+      const client = clientsQuery.data.find((u: any) => u.id === selectedUser);
       setSelectedClient(client);
     }
     
@@ -191,7 +191,7 @@ function CreateInvoiceDialog() {
     if (completedOrdersQuery.data.length > 0) {
       setPreviewStep(true);
     }
-  }, [completedOrdersQuery.data, selectedUser, usersQuery.data]);
+  }, [completedOrdersQuery.data, selectedUser, clientsQuery.data]);
 
   // Reset form and go back to client selection
   const resetForm = () => {
@@ -284,12 +284,12 @@ function CreateInvoiceDialog() {
                     <SelectValue placeholder="Select a client" />
                   </SelectTrigger>
                   <SelectContent>
-                    {usersQuery.isLoading ? (
+                    {clientsQuery.isLoading ? (
                       <div className="p-2 text-sm text-center">Loading clients...</div>
-                    ) : usersQuery.data && usersQuery.data.length > 0 ? (
-                      usersQuery.data.map((user: any) => (
-                        <SelectItem key={user.id} value={user.id.toString()}>
-                          {user.companyName || user.username}
+                    ) : clientsQuery.data && clientsQuery.data.length > 0 ? (
+                      clientsQuery.data.map((client: any) => (
+                        <SelectItem key={client.id} value={client.id.toString()}>
+                          {client.companyName || client.username}
                         </SelectItem>
                       ))
                     ) : (
@@ -297,7 +297,7 @@ function CreateInvoiceDialog() {
                     )}
                   </SelectContent>
                 </Select>
-                {usersQuery.isSuccess && usersQuery.data.length === 0 && (
+                {clientsQuery.isSuccess && clientsQuery.data.length === 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
                     No clients found. Make sure there are regular users in the system.
                   </p>

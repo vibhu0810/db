@@ -23,6 +23,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { Resizable } from "react-resizable";
+import 'react-resizable/css/styles.css';
+// Import the Button type to extend the PaginationLink component
+import type { ButtonProps } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -38,6 +42,20 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+
+// Extend the PaginationLink component to accept the disabled property
+interface ExtendedPaginationLinkProps extends React.ComponentPropsWithoutRef<typeof PaginationLink> {
+  disabled?: boolean;
+}
+
+// Re-export the PaginationLink component with the extended props
+const ExtendedPaginationPrevious = ({ disabled, ...props }: ExtendedPaginationLinkProps) => (
+  <PaginationPrevious className={disabled ? 'pointer-events-none opacity-50' : ''} {...props} />
+);
+
+const ExtendedPaginationNext = ({ disabled, ...props }: ExtendedPaginationLinkProps) => (
+  <PaginationNext className={disabled ? 'pointer-events-none opacity-50' : ''} {...props} />
+);
 
 interface Domain {
   id: number;
@@ -79,6 +97,20 @@ export default function DomainsPage() {
   const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  // Column width states
+  const [columnWidths, setColumnWidths] = useState({
+    website: 200,
+    dr: 80,
+    traffic: 100,
+    type: 150,
+    guestPostPrice: 120,
+    nicheEditPrice: 120,
+    guestPostTat: 120,
+    nicheEditTat: 120,
+    guidelines: 200,
+    action: 100,
+  });
 
   const { data: domains = [], isLoading } = useQuery({
     queryKey: ['/api/domains'],
@@ -102,6 +134,18 @@ export default function DomainsPage() {
       title: "Copied to clipboard",
       description: "Text has been copied to your clipboard.",
     });
+  };
+
+  // Resizable column handler
+  const onResize = (column: keyof typeof columnWidths) => (_e: React.SyntheticEvent, { size }: { size: { width: number } }) => {
+    // Set a maximum column width to prevent excessive stretching
+    const maxWidth = 500;
+    const newWidth = Math.min(size.width, maxWidth);
+    
+    setColumnWidths(prev => ({
+      ...prev,
+      [column]: newWidth
+    }));
   };
 
   const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
@@ -255,24 +299,158 @@ export default function DomainsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[200px]">
-                <SortableHeader field="websiteUrl">Website</SortableHeader>
+              <TableHead style={{ width: columnWidths.website }}>
+                <Resizable
+                  width={columnWidths.website}
+                  height={38}
+                  onResize={onResize('website')}
+                  resizeHandles={['e']}
+                  handle={
+                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                  }
+                >
+                  <div className="h-full flex items-center pr-4">
+                    <SortableHeader field="websiteUrl">Website</SortableHeader>
+                  </div>
+                </Resizable>
               </TableHead>
-              <TableHead className="w-[80px]">
-                <SortableHeader field="domainRating">DR</SortableHeader>
+              <TableHead style={{ width: columnWidths.dr }}>
+                <Resizable
+                  width={columnWidths.dr}
+                  height={38}
+                  onResize={onResize('dr')}
+                  resizeHandles={['e']}
+                  handle={
+                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                  }
+                >
+                  <div className="h-full flex items-center pr-4">
+                    <SortableHeader field="domainRating">DR</SortableHeader>
+                  </div>
+                </Resizable>
               </TableHead>
-              <TableHead className="w-[100px]">
-                <SortableHeader field="websiteTraffic">Traffic</SortableHeader>
+              <TableHead style={{ width: columnWidths.traffic }}>
+                <Resizable
+                  width={columnWidths.traffic}
+                  height={38}
+                  onResize={onResize('traffic')}
+                  resizeHandles={['e']}
+                  handle={
+                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                  }
+                >
+                  <div className="h-full flex items-center pr-4">
+                    <SortableHeader field="websiteTraffic">Traffic</SortableHeader>
+                  </div>
+                </Resizable>
               </TableHead>
-              <TableHead className="w-[150px]">
-                <SortableHeader field="type">Type</SortableHeader>
+              <TableHead style={{ width: columnWidths.type }}>
+                <Resizable
+                  width={columnWidths.type}
+                  height={38}
+                  onResize={onResize('type')}
+                  resizeHandles={['e']}
+                  handle={
+                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                  }
+                >
+                  <div className="h-full flex items-center pr-4">
+                    <SortableHeader field="type">Type</SortableHeader>
+                  </div>
+                </Resizable>
               </TableHead>
-              <TableHead className="w-[120px]">Guest Post Price</TableHead>
-              <TableHead className="w-[120px]">Niche Edit Price</TableHead>
-              <TableHead className="w-[120px]">Guest Post TAT</TableHead>
-              <TableHead className="w-[120px]">Niche Edit TAT</TableHead>
-              <TableHead className="min-w-[200px]">Guidelines</TableHead>
-              {!isAdmin && <TableHead className="w-[100px]">Action</TableHead>}
+              <TableHead style={{ width: columnWidths.guestPostPrice }}>
+                <Resizable
+                  width={columnWidths.guestPostPrice}
+                  height={38}
+                  onResize={onResize('guestPostPrice')}
+                  resizeHandles={['e']}
+                  handle={
+                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                  }
+                >
+                  <div className="h-full flex items-center pr-4">
+                    Guest Post Price
+                  </div>
+                </Resizable>
+              </TableHead>
+              <TableHead style={{ width: columnWidths.nicheEditPrice }}>
+                <Resizable
+                  width={columnWidths.nicheEditPrice}
+                  height={38}
+                  onResize={onResize('nicheEditPrice')}
+                  resizeHandles={['e']}
+                  handle={
+                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                  }
+                >
+                  <div className="h-full flex items-center pr-4">
+                    Niche Edit Price
+                  </div>
+                </Resizable>
+              </TableHead>
+              <TableHead style={{ width: columnWidths.guestPostTat }}>
+                <Resizable
+                  width={columnWidths.guestPostTat}
+                  height={38}
+                  onResize={onResize('guestPostTat')}
+                  resizeHandles={['e']}
+                  handle={
+                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                  }
+                >
+                  <div className="h-full flex items-center pr-4">
+                    Guest Post TAT
+                  </div>
+                </Resizable>
+              </TableHead>
+              <TableHead style={{ width: columnWidths.nicheEditTat }}>
+                <Resizable
+                  width={columnWidths.nicheEditTat}
+                  height={38}
+                  onResize={onResize('nicheEditTat')}
+                  resizeHandles={['e']}
+                  handle={
+                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                  }
+                >
+                  <div className="h-full flex items-center pr-4">
+                    Niche Edit TAT
+                  </div>
+                </Resizable>
+              </TableHead>
+              <TableHead style={{ width: columnWidths.guidelines }}>
+                <Resizable
+                  width={columnWidths.guidelines}
+                  height={38}
+                  onResize={onResize('guidelines')}
+                  resizeHandles={['e']}
+                  handle={
+                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                  }
+                >
+                  <div className="h-full flex items-center pr-4">
+                    Guidelines
+                  </div>
+                </Resizable>
+              </TableHead>
+              {!isAdmin && (
+                <TableHead style={{ width: columnWidths.action }}>
+                  <Resizable
+                    width={columnWidths.action}
+                    height={38}
+                    onResize={onResize('action')}
+                    resizeHandles={['e']}
+                    handle={
+                      <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                    }
+                  >
+                    <div className="h-full flex items-center pr-4">
+                      Action
+                    </div>
+                  </Resizable>
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>

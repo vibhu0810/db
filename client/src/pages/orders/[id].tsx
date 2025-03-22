@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { format } from "date-fns";
 import { Loader2, Copy, MessageSquare, ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -56,18 +57,31 @@ export default function OrderDetailsPage() {
     }
   }, [comments]);
   
+  // Mutation for marking comments as read
+  const markCommentsAsReadMutation = useMutation({
+    mutationFn: async () => {
+      if (!id) return;
+      const response = await apiRequest("POST", `/api/orders/${id}/comments/read`);
+      if (!response.ok) {
+        throw new Error("Failed to mark comments as read");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate related queries to update the server data
+      queryClient.invalidateQueries({ queryKey: ['/api/orders/unread-comments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+    },
+    onError: (error) => {
+      console.error("Failed to mark comments as read:", error);
+    }
+  });
+
   // This effect marks comments as read when the page loads
   useEffect(() => {
     if (id && comments.length > 0) {
-      // Mark comments as read
-      apiRequest("POST", `/api/orders/${id}/comments/read`)
-        .then(() => {
-          // Invalidate unread comments counts query
-          queryClient.invalidateQueries({ queryKey: ['/api/orders/unread-comments'] });
-        })
-        .catch(err => {
-          console.error("Failed to mark comments as read:", err);
-        });
+      // Mark comments as read using the mutation
+      markCommentsAsReadMutation.mutate();
     }
   }, [id, comments.length]);
 
@@ -232,31 +246,7 @@ export default function OrderDetailsPage() {
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
                 <div className="mt-1">
-                  {order.status === "completed" ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500">
-                      Completed
-                    </span>
-                  ) : order.status === "in_progress" ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-500">
-                      In Progress
-                    </span>
-                  ) : order.status === "pending" ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500">
-                      Pending
-                    </span>
-                  ) : order.status === "cancelled" ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500">
-                      Cancelled
-                    </span>
-                  ) : order.status === "rejected" ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500">
-                      Rejected
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-500">
-                      {order.status}
-                    </span>
-                  )}
+                  <StatusBadge status={order.status} />
                 </div>
               </div>
             </div>

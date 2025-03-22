@@ -1189,15 +1189,9 @@ export default function Orders() {
                             size="icon"
                             onClick={() => {
                               setSelectedOrderId(order.id);
-                              // Mark comments as read when clicked
+                              // Mark comments as read when clicked using our mutation
                               if (unreadCommentCounts[order.id]) {
-                                apiRequest("POST", `/api/orders/${order.id}/comments/read`);
-                                // Update the local state immediately to remove the badge
-                                const updatedCounts = {...unreadCommentCounts};
-                                delete updatedCounts[order.id];
-                                setUnreadCommentCounts(updatedCounts);
-                                // Also invalidate the query to update the server data
-                                queryClient.invalidateQueries({ queryKey: ['/api/orders/unread-comments'] });
+                                markCommentsAsReadMutation.mutate(order.id);
                               }
                             }}
                             className="relative"

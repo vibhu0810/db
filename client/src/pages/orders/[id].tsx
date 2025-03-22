@@ -41,9 +41,14 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     if (id && comments.length > 0) {
       // Mark comments as read
-      apiRequest("POST", `/api/orders/${id}/comments/read`).catch(err => {
-        console.error("Failed to mark comments as read:", err);
-      });
+      apiRequest("POST", `/api/orders/${id}/comments/read`)
+        .then(() => {
+          // Invalidate unread comments counts query
+          queryClient.invalidateQueries({ queryKey: ['/api/orders/unread-comments'] });
+        })
+        .catch(err => {
+          console.error("Failed to mark comments as read:", err);
+        });
     }
   }, [id, comments.length]);
 

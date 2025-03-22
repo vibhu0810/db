@@ -1115,9 +1115,22 @@ export default function Orders() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setSelectedOrderId(order.id)}
+                            onClick={() => {
+                              setSelectedOrderId(order.id);
+                              // Mark comments as read when clicked
+                              if (unreadCommentCounts[order.id]) {
+                                apiRequest("POST", `/api/orders/${order.id}/comments/read`);
+                                queryClient.invalidateQueries({ queryKey: ['/api/orders/unread-comments'] });
+                              }
+                            }}
+                            className="relative"
                           >
                             <MessageSquare className="h-4 w-4" />
+                            {unreadCommentCounts[order.id] > 0 && (
+                              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                                {unreadCommentCounts[order.id]}
+                              </span>
+                            )}
                           </Button>
                           {(!["Sent", "Cancelled"].includes(order.status) || isAdmin) && (
                             <DropdownMenu>

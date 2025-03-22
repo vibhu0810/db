@@ -623,7 +623,30 @@ function UserInvoicesTab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h2 className="text-2xl font-bold tracking-tight">My Invoices</h2>
+        <Card className="w-full md:w-96">
+          <CardHeader>
+            <CardTitle>Billing Details</CardTitle>
+            <CardDescription>
+              Your payment information and billing history
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Payment Method:</span>
+                <span className="font-medium">Credit Card</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Billing Cycle:</span>
+                <span className="font-medium">Monthly</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Next Invoice:</span>
+                <span className="font-medium">{format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "PPP")}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
           <Card className="w-full md:w-auto">
@@ -844,7 +867,7 @@ export default function InvoicesPage() {
         <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
           {user?.is_admin && <TabsTrigger value="admin">Admin View</TabsTrigger>}
           <TabsTrigger value="user" className={user?.is_admin ? "" : "col-span-2"}>
-            My Invoices
+            Invoices
           </TabsTrigger>
         </TabsList>
         {user?.is_admin && (

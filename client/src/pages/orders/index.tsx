@@ -310,36 +310,56 @@ export default function Orders() {
     onOrderUpdate: (orderId, status) => {
       console.log("WebSocket: Order status updated", orderId, status);
       try {
-        // Use a safer approach to refresh queries that won't cause React errors
+        // Highlight the order that was updated
+        setHighlightedOrderId(orderId);
+        
+        // For admin users, refresh the all orders query immediately
+        if (isAdmin) {
+          queryClient.invalidateQueries({ queryKey: ['/api/orders/all'] });
+        }
+        
+        // Always refresh regular orders query
+        queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+        
+        // Clear highlight after 3 seconds
         setTimeout(() => {
-          // For admin users, refresh the all orders query
-          if (isAdmin) {
-            queryClient.invalidateQueries({ queryKey: ['/api/orders/all'] });
-          }
-          // Always refresh regular orders query
-          queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-          
-          // If we're viewing comments for this order, highlight it briefly
-          if (orderId === selectedOrderId) {
-            setHighlightedOrderId(orderId);
-            setTimeout(() => setHighlightedOrderId(null), 2000);
-          }
-        }, 100);
+          setHighlightedOrderId(null);
+        }, 3000);
       } catch (error) {
         console.error("Error handling order update:", error);
+        // Fallback refresh in case of error
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+        }, 50);
       }
     },
     onNewComment: (orderId) => {
       console.log("WebSocket: New comment received", orderId);
       try {
-        // If we're viewing comments for this order, refresh them
+        // Highlight the order with new comment
+        setHighlightedOrderId(orderId);
+        
+        // If we're viewing comments for this order, refresh them immediately
         if (orderId === selectedOrderId) {
-          setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrderId, 'comments'] });
-          }, 100);
+          queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrderId, 'comments'] });
         }
+        
+        // Refresh order lists to update comment counts
+        if (isAdmin) {
+          queryClient.invalidateQueries({ queryKey: ['/api/orders/all'] });
+        }
+        queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+        
+        // Clear highlight after 3 seconds
+        setTimeout(() => {
+          setHighlightedOrderId(null);
+        }, 3000);
       } catch (error) {
         console.error("Error handling new comment:", error);
+        // Fallback refresh
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+        }, 50);
       }
     }
   });
@@ -466,7 +486,14 @@ export default function Orders() {
 
   const createCustomOrderMutation = useMutation({
     mutationFn: async (data: CustomOrderFormData) => {
-      const res = await apiRequest("POST", "/api/orders", data);
+      // Add the type field as "guest_post" by default
+      const orderData = {
+        ...data,
+        type: "guest_post", // Default to guest_post to prevent 404 errors
+      };
+      console.log("Submitting custom order:", orderData);
+      
+      const res = await apiRequest("POST", "/api/orders", orderData);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to create order");

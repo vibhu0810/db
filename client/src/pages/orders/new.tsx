@@ -187,7 +187,16 @@ export default function NewOrder() {
         // Validate that the source URL belongs to the selected domain
         try {
           const sourceUrlHost = new URL(data.sourceUrl).hostname;
-          const domainHostname = domain.websiteUrl;
+          const domainHostname = domain?.websiteUrl || "";
+          
+          if (!domainHostname) {
+            toast({
+              title: "Error",
+              description: "Domain information is missing. Please try again.",
+              variant: "destructive",
+            });
+            return;
+          }
           
           // Check if source URL is from the domain website
           if (!sourceUrlHost.includes(domainHostname)) {

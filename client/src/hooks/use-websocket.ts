@@ -12,6 +12,10 @@ export function useWebSocket(options?: {
   onOrderUpdate?: (orderId: number, status: string) => void;
   onNewComment?: (orderId: number, comment: any) => void;
 }) {
+  console.log("useWebSocket hook called with options:", options ? 
+    `onOrderUpdate: ${!!options.onOrderUpdate}, onNewComment: ${!!options.onNewComment}` : 
+    "no options"
+  );
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -75,15 +79,22 @@ export function useWebSocket(options?: {
         else if (data.type === 'new_comment') {
           console.log('🔴 Received new comment via WebSocket:', JSON.stringify(data.payload, null, 2));
           
+          // Extract the correct values
+          const orderId = data.payload?.orderId;
+          // The comment might be nested inside data.payload.comment or directly in data.payload
+          const comment = data.payload?.comment || data.payload;
+          
+          console.log(`🔴 Extracted orderId=${orderId}, comment:`, comment);
+          
           // Call the onNewComment callback if provided
-          if (options?.onNewComment && data.payload) {
+          if (options?.onNewComment && orderId && comment) {
             console.log('🔴 Calling onNewComment callback with:', {
-              orderId: data.payload.orderId,
-              comment: data.payload.comment
+              orderId,
+              comment
             });
             
             try {
-              options.onNewComment(data.payload.orderId, data.payload.comment);
+              options.onNewComment(orderId, comment);
               console.log('🔴 onNewComment callback executed successfully');
             } catch (err) {
               console.error('🔴 Error in onNewComment callback:', err);
@@ -91,13 +102,14 @@ export function useWebSocket(options?: {
             
             toast({
               title: 'New Comment',
-              description: `New comment on Order #${data.payload.orderId}`,
+              description: `New comment on Order #${orderId}`,
             });
           } else {
-            console.log('🔴 No onNewComment callback available:', {
+            console.log('🔴 No onNewComment callback or missing data:', {
               hasOptions: !!options,
               hasCallback: !!(options && options.onNewComment),
-              hasPayload: !!data.payload
+              hasOrderId: !!orderId,
+              hasComment: !!comment
             });
           }
         }

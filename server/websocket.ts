@@ -115,24 +115,32 @@ export function notifyOrderStatusUpdate(orderId: number, status: string, userId:
 /**
  * Send notification about new comment to order owner and admins
  */
-export function notifyNewComment(orderId: number, comment: any, userId: number) {
-  console.log(`Sending WebSocket notification for new comment on order ${orderId}:`, comment);
+export function notifyNewComment(orderId: number, comment: any, orderOwnerId: number) {
+  console.log(`Sending WebSocket notification for new comment on order ${orderId}, orderOwnerId: ${orderOwnerId}`);
+  console.log(`Comment data:`, JSON.stringify(comment, null, 2));
   
-  // Notify order owner if comment is from admin
-  if (comment.user?.is_admin) {
-    console.log(`Comment is from admin, notifying order owner (userId: ${userId})`);
-    notifyUser(userId, {
+  // Get the comment author's user ID
+  const commentAuthorId = comment.userId || comment.user?.id;
+  
+  console.log(`Comment author ID: ${commentAuthorId}, is admin: ${comment.user?.is_admin}`);
+  
+  // Always notify the order owner (unless they're the one who made the comment)
+  if (orderOwnerId !== commentAuthorId) {
+    console.log(`Notifying order owner (userId: ${orderOwnerId})`);
+    notifyUser(orderOwnerId, {
       type: 'new_comment',
       payload: {
         orderId,
         comment
       }
     });
+  } else {
+    console.log(`Order owner is the comment author, not sending duplicate notification`);
   }
 
-  // Notify admins if comment is from user
+  // Notify all admins if the comment is from a regular user
   if (!comment.user?.is_admin) {
-    console.log(`Comment is from user, notifying all admins`);
+    console.log(`Comment is from regular user, notifying all admins`);
     notifyAllAdmins({
       type: 'new_comment',
       payload: {
@@ -140,12 +148,14 @@ export function notifyNewComment(orderId: number, comment: any, userId: number) 
         comment
       }
     });
+  } else {
+    console.log(`Comment is from admin, skipping admin notification`);
   }
   
-  // Also notify the comment author to see their own comment appear immediately
-  if (comment.user && comment.userId) {
-    console.log(`Notifying comment author (userId: ${comment.userId})`);
-    notifyUser(comment.userId, {
+  // Always notify the comment author to see their own comment appear immediately
+  if (commentAuthorId) {
+    console.log(`Notifying comment author (userId: ${commentAuthorId})`);
+    notifyUser(commentAuthorId, {
       type: 'new_comment',
       payload: {
         orderId,
@@ -153,6 +163,9 @@ export function notifyNewComment(orderId: number, comment: any, userId: number) 
       }
     });
   }
+  
+  // Log the notification completion
+  console.log(`Comment notification process completed for order ${orderId}`);
 }
 
 /**

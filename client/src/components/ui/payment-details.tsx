@@ -7,7 +7,7 @@ interface PaymentDetailsProps {
 
 export function PaymentDetails({ paymentMethod }: PaymentDetailsProps) {
   return (
-    <div className="rounded-md bg-muted p-4 mt-2">
+    <>
       {paymentMethod === 'wire' ? (
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:justify-between">
@@ -51,6 +51,6 @@ export function PaymentDetails({ paymentMethod }: PaymentDetailsProps) {
           </div>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }

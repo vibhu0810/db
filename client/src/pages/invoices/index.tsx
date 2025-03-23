@@ -475,243 +475,132 @@ function CreateInvoiceDialog() {
                 )}
                 
                 {clientsQuery.isSuccess && Array.isArray(clientsQuery.data) && clientsQuery.data.length === 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    No clients found. Make sure there are regular users in the system.
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">No clients found</p>
                 )}
               </div>
             </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4 mt-4">
-              <Label htmlFor="dueDate" className="text-right">
-                Due Date <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3">
-                <input
-                  id="dueDate"
-                  type="date"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={dueDate.toISOString().slice(0, 10)}
-                  onChange={(e) => {
-                    const newDate = new Date(e.target.value);
-                    if (!isNaN(newDate.getTime())) {
-                      setDueDate(newDate);
-                    }
-                  }}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Default is 30 days from today
-                </p>
-              </div>
-            </div>
-            
-            {completedOrdersQuery.isLoading && selectedUser && (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <span className="ml-2">Loading completed orders...</span>
-              </div>
-            )}
-            
-            {!completedOrdersQuery.isLoading && selectedUser && completedOrdersQuery.data.length === 0 && (
-              <div className="text-center my-8 p-4 bg-muted rounded-lg">
-                <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
-                <h3 className="font-medium">No Billable Orders</h3>
-                <p className="text-muted-foreground">
-                  This client doesn't have any completed unbilled orders. Only completed orders can be billed.
-                </p>
-              </div>
-            )}
           </div>
         )}
         
-        {/* Step 2: Invoice Preview */}
-        {previewStep && selectedClient && (
-          <div className="space-y-6 py-4">
-            <div className="bg-muted p-5 rounded-lg">
-              <div className="flex justify-between items-center border-b pb-3 mb-4">
+        {/* Step 2: Order Preview */}
+        {previewStep && (
+          <div className="py-6">
+            {/* Basic Invoice Details */}
+            <div className="grid grid-cols-1 gap-4 mb-4">
+              <h3 className="text-base font-medium">Invoice Details</h3>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="font-semibold text-lg">Invoice Preview</h3>
-                  <p className="text-sm text-muted-foreground">Invoice #{new Date().getTime().toString().slice(-6)}</p>
+                  <p className="text-sm font-medium">From</p>
+                  <p className="text-sm">{adminDetails.companyName}</p>
+                  <p className="text-sm">{adminDetails.email}</p>
                 </div>
-                <div className="font-mono text-sm bg-primary/10 text-primary px-3 py-1 rounded-full">
-                  ${totalAmount.toFixed(2)}
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-6 mb-6">
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold uppercase text-gray-500">Bill From</h4>
-                  <div className="border-l-2 border-primary pl-3">
-                    <p className="font-medium">{adminDetails.companyName}</p>
-                    <p className="text-sm text-muted-foreground">{adminDetails.email}</p>
-                    {adminDetails.billingAddress && (
-                      <p className="text-sm text-muted-foreground">{adminDetails.billingAddress}</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold uppercase text-gray-500">Bill To</h4>
-                  <div className="border-l-2 border-primary pl-3">
-                    <p className="font-medium">{selectedClient.companyName || selectedClient.username}</p>
-                    <p className="text-sm text-muted-foreground">{selectedClient.email}</p>
-                    {selectedClient.billingAddress && (
-                      <p className="text-sm text-muted-foreground">{selectedClient.billingAddress}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border rounded-md bg-white divide-y">
-                <div className="grid grid-cols-3 p-3 bg-muted/40 font-medium text-sm">
-                  <div>DETAILS</div>
-                  <div className="text-center">QUANTITY</div>
-                  <div className="text-right">AMOUNT</div>
-                </div>
-                
-                <div className="p-3">
-                  <div className="grid grid-cols-3">
-                    <div>
-                      <p className="font-medium">Completed Orders</p>
-                      <p className="text-xs text-muted-foreground mt-1">{completedOrdersQuery.data.length} orders</p>
-                    </div>
-                    <div className="text-center">{completedOrdersQuery.data.length}</div>
-                    <div className="text-right font-medium">${totalAmount.toFixed(2)}</div>
-                  </div>
-                </div>
-                
-                <div className="p-3 bg-muted/20">
-                  <div className="grid grid-cols-3">
-                    <div className="col-span-2 text-right font-medium">Total:</div>
-                    <div className="text-right font-bold">${totalAmount.toFixed(2)}</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <div className="text-sm">
-                  <span className="font-medium">Issue Date:</span> {new Date().toLocaleDateString()}
-                </div>
-                <div className="text-sm text-right">
-                  <span className="font-medium">Due Date:</span> {dueDate.toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-            
-            {/* Billing Details */}
-            <div className="space-y-4">
-              <h4 className="font-medium">Billing Details</h4>
-              
-              {/* Client Email (Required) */}
-              <div className="grid grid-cols-4 gap-2 items-center">
-                <Label htmlFor="clientEmail" className="text-right">
-                  Client Email <span className="text-red-500">*</span>
-                </Label>
-                <div className="col-span-3">
-                  <Input 
-                    id="clientEmail"
-                    type="email"
-                    placeholder="client@example.com"
-                    value={clientEmail}
-                    onChange={(e) => {
-                      setClientEmail(e.target.value);
-                      setEmailError(e.target.value ? "" : "Email is required");
-                    }}
-                    className={emailError ? "border-red-500" : ""}
-                  />
-                  {emailError && (
-                    <p className="text-xs text-red-500 mt-1">{emailError}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Invoice will be sent to this email address
-                  </p>
-                </div>
-              </div>
-              
-              {/* Payment Options (Required) */}
-              <div className="grid grid-cols-4 gap-2 items-center">
-                <Label htmlFor="paymentOption" className="text-right">
-                  Payment Option <span className="text-red-500">*</span>
-                </Label>
-                <div className="col-span-3">
-                  <Select
-                    value={paymentOption}
-                    onValueChange={(value) => {
-                      setPaymentOption(value);
-                      setPaymentOptionError(value ? "" : "Payment option is required");
-                    }}
-                  >
-                    <SelectTrigger className={paymentOptionError ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="paypal">PayPal (5% fee)</SelectItem>
-                      <SelectItem value="wire">Wire Transfer/Wise (0% fee)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {paymentOptionError && (
-                    <p className="text-xs text-red-500 mt-1">{paymentOptionError}</p>
-                  )}
+                <div>
+                  <p className="text-sm font-medium">To</p>
+                  <p className="text-sm">{selectedClient?.companyName || selectedClient?.username}</p>
                   
-                  {/* Show fee calculation if PayPal selected */}
-                  {paymentOption === "paypal" && (
-                    <div className="bg-muted p-2 rounded mt-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Subtotal:</span>
-                        <span>${totalAmount.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>PayPal Fee (5%):</span>
-                        <span>${(totalAmount * 0.05).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between font-medium pt-1 border-t mt-1">
-                        <span>Total with Fee:</span>
-                        <span>${(totalAmount * 1.05).toFixed(2)}</span>
-                      </div>
-                    </div>
-                  )}
+                  {/* Client Email Input (NEW) */}
+                  <div className="mt-2">
+                    <Label htmlFor="clientEmail">Client Email <span className="text-red-500">*</span></Label>
+                    <Input 
+                      id="clientEmail"
+                      type="email" 
+                      value={clientEmail} 
+                      onChange={(e) => setClientEmail(e.target.value)}
+                      placeholder="client@example.com"
+                      className={emailError ? "border-red-500" : ""}
+                    />
+                    {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            {/* Orders Included */}
-            <div>
-              <h4 className="font-medium mb-2">Orders Included</h4>
-              <div className="border rounded-md max-h-60 overflow-y-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/30">
-                    <tr>
-                      <th className="text-left p-2 text-xs font-medium">Order ID</th>
-                      <th className="text-left p-2 text-xs font-medium">Domain</th>
-                      <th className="text-right p-2 text-xs font-medium">Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {completedOrdersQuery.data.map((order: any) => (
-                      <tr 
-                        key={order.id}
-                        className="border-b last:border-0 hover:bg-muted/20"
-                      >
-                        <td className="p-2 text-sm">#{order.id}</td>
-                        <td className="p-2 text-sm">
-                          <div className="max-w-xs overflow-hidden">
-                            <div className="truncate">{getDomainName(order.sourceUrl)}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(order.dateCompleted).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-2 text-sm text-right font-medium">
-                          ${parseFloat(order.price).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+              {/* Amount and Date */}
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div>
+                  <Label htmlFor="amount">Total Amount</Label>
+                  <p className="text-lg font-bold">{formatCurrency(totalAmount)}</p>
+                </div>
+                <div>
+                  <Label htmlFor="dueDate">Due Date</Label>
+                  <Input 
+                    id="dueDate"
+                    type="date" 
+                    value={dueDate.toISOString().split('T')[0]}
+                    onChange={(e) => setDueDate(new Date(e.target.value))}
+                  />
+                </div>
+              </div>
+              
+              {/* Payment Options (NEW) */}
+              <div className="mt-2">
+                <Label htmlFor="paymentOption">Payment Method <span className="text-red-500">*</span></Label>
+                <select
+                  id="paymentOption"
+                  className={`flex h-10 w-full rounded-md border ${paymentOptionError ? 'border-red-500' : 'border-input'} bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+                  value={paymentOption}
+                  onChange={(e) => setPaymentOption(e.target.value)}
+                >
+                  <option value="">Select payment method</option>
+                  <option value="paypal">PayPal (5% fee)</option>
+                  <option value="wire">Wire Transfer / Wise (0% fee)</option>
+                </select>
+                {paymentOptionError && <p className="text-red-500 text-xs mt-1">{paymentOptionError}</p>}
+                
+                {/* Show payment fee if PayPal is selected */}
+                {paymentOption === 'paypal' && (
+                  <div className="mt-2 text-sm">
+                    <span className="text-muted-foreground">Service Fee (5%):</span> {formatCurrency(totalAmount * 0.05)}
+                    <p className="font-medium mt-1">Final Amount: {formatCurrency(totalAmount * 1.05)}</p>
+                  </div>
+                )}
+
+                {/* Show payment details based on selected method */}
+                {paymentOption && (
+                  <div className="mt-4 rounded-md bg-muted p-4">
+                    <PaymentDetails paymentMethod={paymentOption} />
+                  </div>
+                )}
+              </div>
+
+              {/* Invoice Description */}
+              <div className="mt-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea 
+                  id="description"
+                  value={invoiceDescription} 
+                  onChange={(e) => setInvoiceDescription(e.target.value)}
+                  rows={8}
+                />
               </div>
             </div>
             
-
+            {/* Orders Summary */}
+            <div className="border rounded-md p-4 mt-4">
+              <h3 className="text-base font-medium mb-2">Orders Included ({completedOrdersQuery.data.length})</h3>
+              <div className="max-h-40 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Service</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {completedOrdersQuery.data.map((order: any) => (
+                      <TableRow key={order.id}>
+                        <TableCell>#{order.id}</TableCell>
+                        <TableCell>
+                          {getDomainName(order.sourceUrl)}
+                          {order.title && ` (${order.title})`}
+                        </TableCell>
+                        <TableCell className="text-right">${order.price}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           </div>
         )}
         
@@ -728,28 +617,38 @@ function CreateInvoiceDialog() {
                 {createInvoiceMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
+                    Creating...
                   </>
                 ) : (
-                  <>
-                    Approve & Send Invoice
-                  </>
+                  "Create & Send Invoice"
                 )}
               </Button>
             </>
           ) : (
-            <>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                disabled={!selectedUser || completedOrdersQuery.isLoading || completedOrdersQuery.data.length === 0}
-                onClick={() => setPreviewStep(true)}
-              >
-                {completedOrdersQuery.isLoading ? "Loading..." : "Continue"}
-              </Button>
-            </>
+            <Button 
+              onClick={() => {
+                if (selectedUser) {
+                  if (completedOrdersQuery.data && completedOrdersQuery.data.length > 0) {
+                    setPreviewStep(true);
+                  } else {
+                    toast({
+                      title: "No Completed Orders",
+                      description: "This client has no completed unbilled orders to invoice",
+                      variant: "destructive",
+                    });
+                  }
+                } else {
+                  toast({
+                    title: "Select a Client",
+                    description: "Please select a client to continue",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              disabled={!selectedUser}
+            >
+              Continue
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>
@@ -759,18 +658,63 @@ function CreateInvoiceDialog() {
 
 function AdminInvoicesTab() {
   const { toast } = useToast();
-  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceWithUser | null>(null);
+  const [invoices, setInvoices] = useState<InvoiceWithUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange>({ from: undefined });
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   
-  const invoicesQuery = useQuery({
-    queryKey: ['/api/invoices/all'],
-    refetchInterval: 10000, // Refresh every 10 seconds
-    initialData: [],
-  });
-
+  // Function to get country name from country code
+  const getCountryName = (countryCode: string) => {
+    const country = countries.find(c => 
+      typeof c === 'object' && c.value === countryCode
+    );
+    return country ? country.label : countryCode;
+  };
+  
+  // Fetch all invoices from API
+  useEffect(() => {
+    setIsLoading(true);
+    fetch("/api/invoices/all", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch invoices: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          setInvoices(data);
+        } else {
+          console.error("Expected array of invoices but got:", data);
+          setInvoices([]);
+        }
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error("Error fetching invoices:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load invoices",
+          variant: "destructive",
+        });
+        setInvoices([]);
+        setIsLoading(false);
+      });
+  }, [toast]);
+  
+  // Mark invoice as paid mutation
   const markAsPaidMutation = useMutation({
     mutationFn: async (invoiceId: number) => {
-      const response = await apiRequest(`/api/invoices/${invoiceId}/paid`, {
-        method: 'PATCH',
+      const response = await apiRequest(`/api/invoices/${invoiceId}/mark-paid`, {
+        method: 'POST',
       });
       return response.json();
     },
@@ -779,7 +723,24 @@ function AdminInvoicesTab() {
         title: "Success",
         description: "Invoice marked as paid",
       });
+      // Refresh invoices list
       queryClient.invalidateQueries({ queryKey: ['/api/invoices/all'] });
+      
+      // Update the local state
+      setInvoices(invoices.map(inv => 
+        inv.id === selectedInvoice?.id 
+          ? { ...inv, status: "paid", paidAt: new Date().toISOString() } 
+          : inv
+      ));
+      
+      // Update selected invoice if it's still open
+      if (selectedInvoice) {
+        setSelectedInvoice({
+          ...selectedInvoice,
+          status: "paid",
+          paidAt: new Date().toISOString()
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -789,7 +750,8 @@ function AdminInvoicesTab() {
       });
     },
   });
-
+  
+  // Delete invoice mutation
   const deleteInvoiceMutation = useMutation({
     mutationFn: async (invoiceId: number) => {
       const response = await apiRequest(`/api/invoices/${invoiceId}`, {
@@ -802,7 +764,12 @@ function AdminInvoicesTab() {
         title: "Success",
         description: "Invoice deleted successfully",
       });
+      // Refresh invoices list
       queryClient.invalidateQueries({ queryKey: ['/api/invoices/all'] });
+      
+      // Update local state
+      setInvoices(invoices.filter(inv => inv.id !== selectedInvoice?.id));
+      setSelectedInvoice(null);
     },
     onError: (error: Error) => {
       toast({
@@ -812,172 +779,270 @@ function AdminInvoicesTab() {
       });
     },
   });
-
-  if (invoicesQuery.isLoading) {
-    return <div className="flex items-center justify-center p-8">Loading invoices...</div>;
-  }
-
-  if (invoicesQuery.isError) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <p className="text-red-500">Error loading invoices</p>
-        <Button onClick={() => invoicesQuery.refetch()} className="mt-4">
-          Retry
-        </Button>
-      </div>
-    );
-  }
-
-  const invoices = invoicesQuery.data || [];
-
+  
+  // Apply filters
+  const filteredInvoices = invoices
+    .filter(invoice => {
+      // Apply search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const username = invoice.user?.username?.toLowerCase() || '';
+        const companyName = invoice.user?.companyName?.toLowerCase() || '';
+        const email = invoice.user?.email?.toLowerCase() || '';
+        const invoiceId = invoice.id.toString();
+        
+        return username.includes(query) || 
+               companyName.includes(query) || 
+               email.includes(query) ||
+               invoiceId.includes(query);
+      }
+      return true;
+    })
+    .filter(invoice => {
+      // Apply date filter
+      if (dateRange.from) {
+        const invoiceDate = new Date(invoice.createdAt);
+        if (dateRange.to) {
+          return invoiceDate >= dateRange.from && invoiceDate <= dateRange.to;
+        }
+        return invoiceDate >= dateRange.from;
+      }
+      return true;
+    })
+    .filter(invoice => {
+      // Apply status filter
+      if (statusFilter) {
+        return invoice.status === statusFilter;
+      }
+      return true;
+    });
+  
   return (
-    <div className="space-y-6">
-      <div className="flex justify-end items-center">
-        <CreateInvoiceDialog />
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+        <div className="flex items-center w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search invoices..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+          <DatePickerWithRange
+            date={dateRange}
+            setDate={setDateRange}
+            className="w-full sm:w-auto"
+          />
+          
+          <Select
+            value={statusFilter || ""}
+            onValueChange={(value) => setStatusFilter(value || null)}
+          >
+            <SelectTrigger className="w-full sm:w-32">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <CreateInvoiceDialog />
+        </div>
       </div>
-
-      {invoices.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center p-6">
-            <FileText className="h-12 w-12 mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">No invoices found</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Create an invoice to send to a client
-            </p>
-          </CardContent>
-        </Card>
+      
+      {/* Invoices Table */}
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filteredInvoices.length === 0 ? (
+        <div className="py-10 text-center">
+          <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+          <h3 className="mt-4 text-lg font-medium">No Invoices Found</h3>
+          <p className="text-muted-foreground">
+            {searchQuery || dateRange.from || statusFilter
+              ? "Try adjusting your search or filters"
+              : "Create your first invoice to get started"}
+          </p>
+        </div>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Invoice #</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoices.map((invoice: InvoiceWithUser) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell>INV-{invoice.id}</TableCell>
-                    <TableCell>{invoice.user?.companyName || 'Unknown'}</TableCell>
-                    <TableCell>{formatCurrency(invoice.amount / 100)}</TableCell>
-                    <TableCell>{invoice.notes || 'No description'}</TableCell>
-                    <TableCell>{format(new Date(invoice.dueDate), "PPP")}</TableCell>
-                    <TableCell>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredInvoices.map((invoice: InvoiceWithUser) => (
+                <TableRow key={invoice.id}>
+                  <TableCell>#{invoice.id}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{invoice.user?.companyName || invoice.user?.username || "Unknown"}</div>
+                    <div className="text-sm text-muted-foreground">{invoice.user?.email || ""}</div>
+                  </TableCell>
+                  <TableCell>{formatCurrency(invoice.amount / 100)}</TableCell>
+                  <TableCell>{format(new Date(invoice.createdAt), 'MMM d, yyyy')}</TableCell>
+                  <TableCell>
+                    {format(new Date(invoice.dueDate), 'MMM d, yyyy')}
+                    {new Date(invoice.dueDate) < new Date() && invoice.status === 'pending' && (
+                      <Badge variant="destructive" className="ml-2">
+                        Overdue
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        invoice.status === 'paid' ? 'outline' :
+                        invoice.status === 'overdue' ? 'destructive' : 'default'
+                      }
+                    >
                       {invoice.status === 'paid' ? (
-                        <Badge variant="success" className="bg-green-100 text-green-800">
+                        <span className="flex items-center">
+                          <Check className="mr-1 h-3 w-3" />
                           Paid
-                        </Badge>
+                        </span>
                       ) : invoice.status === 'overdue' ? (
-                        <Badge variant="destructive">
+                        <span className="flex items-center">
+                          <AlertTriangle className="mr-1 h-3 w-3" />
                           Overdue
-                        </Badge>
+                        </span>
                       ) : (
-                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                        <span className="flex items-center">
+                          <Clock className="mr-1 h-3 w-3" />
                           Pending
-                        </Badge>
+                        </span>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        {invoice.status === 'pending' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => markAsPaidMutation.mutate(invoice.id)}
-                            disabled={markAsPaidMutation.isPending}
-                          >
-                            <FileCheck className="h-4 w-4" />
-                            <span className="sr-only">Mark as Paid</span>
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedInvoice(invoice)}
-                        >
-                          <FileText className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            if (window.confirm("Are you sure you want to delete this invoice?")) {
-                              deleteInvoiceMutation.mutate(invoice.id);
-                            }
-                          }}
-                          disabled={deleteInvoiceMutation.isPending}
-                        >
-                          <Trash className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setSelectedInvoice(invoice)}
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span className="sr-only">View</span>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
-
-      {/* Invoice Details Dialog */}
+      
+      {/* Invoice details dialog */}
       {selectedInvoice && (
-        <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
+        <Dialog open={!!selectedInvoice} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Invoice #INV-{selectedInvoice.id}</DialogTitle>
+              <DialogTitle>Invoice #{selectedInvoice.id}</DialogTitle>
               <DialogDescription>
-                Issued on {format(new Date(selectedInvoice.createdAt), "PPP")}
+                {selectedInvoice.status === 'paid' 
+                  ? `Paid on ${selectedInvoice.paidAt ? format(new Date(selectedInvoice.paidAt), 'MMMM d, yyyy') : 'Unknown date'}`
+                  : `Due on ${format(new Date(selectedInvoice.dueDate), 'MMMM d, yyyy')}`}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+            
+            <div className="py-4">
+              <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h3 className="font-medium">Client</h3>
-                  <p>{selectedInvoice.user?.companyName || 'Unknown'}</p>
-                  <p className="text-sm text-muted-foreground">{selectedInvoice.user?.email}</p>
+                  <h3 className="font-semibold">From</h3>
+                  <p>Digital Gratified FZ-LLC</p>
+                  <p>Dubai Silicon Oasis</p>
+                  <p>United Arab Emirates</p>
                 </div>
                 <div className="text-right">
-                  <h3 className="font-medium">Amount</h3>
-                  <p className="text-lg font-bold">{formatCurrency(selectedInvoice.amount / 100)}</p>
-                  <p className={`text-sm ${
-                    selectedInvoice.status === 'paid' ? 'text-green-600' : 
-                    selectedInvoice.status === 'overdue' ? 'text-red-600' : 'text-yellow-600'
-                  }`}>
-                    {selectedInvoice.status === 'paid' ? 'Paid' : 
-                     selectedInvoice.status === 'overdue' ? 'Overdue' : 'Pending'}
+                  <h3 className="font-semibold">To</h3>
+                  <p>{selectedInvoice.user?.companyName || selectedInvoice.user?.username || "Unknown"}</p>
+                  <p>{selectedInvoice.clientEmail || selectedInvoice.user?.email || ""}</p>
+                  <p>{selectedInvoice.user?.country ? getCountryName(selectedInvoice.user.country) : ""}</p>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="whitespace-pre-line">
+                          {selectedInvoice.notes || "Link Building Services"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(selectedInvoice.amount / 100)}
+                        </TableCell>
+                      </TableRow>
+                      {selectedInvoice.paymentFee ? (
+                        <TableRow>
+                          <TableCell>PayPal Service Fee (5%)</TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(selectedInvoice.paymentFee)}
+                          </TableCell>
+                        </TableRow>
+                      ) : null}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <Badge 
+                    variant={
+                      selectedInvoice.status === 'paid' ? 'outline' :
+                      selectedInvoice.status === 'overdue' ? 'destructive' : 'default'
+                    }
+                    className="text-base py-1 px-3"
+                  >
+                    {selectedInvoice.status === 'paid' ? (
+                      <span className="flex items-center">
+                        <Check className="mr-1 h-4 w-4" />
+                        Paid
+                      </span>
+                    ) : selectedInvoice.status === 'overdue' ? (
+                      <span className="flex items-center">
+                        <AlertTriangle className="mr-1 h-4 w-4" />
+                        Overdue
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <Clock className="mr-1 h-4 w-4" />
+                        Pending
+                      </span>
+                    )}
+                  </Badge>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(selectedInvoice.amount / 100)}
                   </p>
                 </div>
               </div>
-              <div>
-                <h3 className="font-medium">Notes</h3>
-                <p>{selectedInvoice.notes || 'No description provided'}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium">Due Date</h3>
-                  <p>{format(new Date(selectedInvoice.dueDate), "PPP")}</p>
-                </div>
-                <div className="text-right">
-                  {selectedInvoice.fileUrl && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={selectedInvoice.fileUrl} target="_blank" rel="noopener noreferrer">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Invoice
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </div>
-
+              
               {/* Payment Method Information */}
               {selectedInvoice.paymentMethod && (
                 <div className="pt-2">
@@ -991,41 +1056,7 @@ function AdminInvoicesTab() {
                     
                     {/* Payment Details Box */}
                     <div className="rounded-md bg-muted p-4 mt-2">
-                      {selectedInvoice.paymentMethod === 'wire' ? (
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">Account Holder:</span>
-                            <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">IBAN:</span>
-                            <span className="font-medium col-span-2">AE070260001024344251201</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">BIC/SWIFT:</span>
-                            <span className="font-medium col-span-2">EBILAEAD</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">Bank:</span>
-                            <span className="font-medium col-span-2">Emirates NBD</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">Address:</span>
-                            <span className="font-medium col-span-2">Dubai, United Arab Emirates</span>
-                          </div>
-                        </div>
-                      ) : selectedInvoice.paymentMethod === 'paypal' ? (
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">Email:</span>
-                            <span className="font-medium col-span-2">accounts@digitalgratified.com</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">Name:</span>
-                            <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
-                          </div>
-                        </div>
-                      ) : null}
+                      <PaymentDetails paymentMethod={selectedInvoice.paymentMethod} />
                     </div>
                   </div>
                 </div>
@@ -1037,15 +1068,44 @@ function AdminInvoicesTab() {
               </Button>
               {selectedInvoice.status === 'pending' && (
                 <Button
-                  onClick={() => {
-                    markAsPaidMutation.mutate(selectedInvoice.id);
-                    setSelectedInvoice(null);
-                  }}
+                  variant="default"
+                  onClick={() => markAsPaidMutation.mutate(selectedInvoice.id)}
                   disabled={markAsPaidMutation.isPending}
                 >
-                  Mark as Paid
+                  {markAsPaidMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Banknote className="mr-2 h-4 w-4" />
+                      Mark as Paid
+                    </>
+                  )}
                 </Button>
               )}
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
+                    deleteInvoiceMutation.mutate(selectedInvoice.id);
+                  }
+                }}
+                disabled={deleteInvoiceMutation.isPending}
+              >
+                {deleteInvoiceMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash className="mr-2 h-4 w-4" />
+                    Delete
+                  </>
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1055,569 +1115,318 @@ function AdminInvoicesTab() {
 }
 
 function UserInvoicesTab() {
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: undefined,
-    to: undefined,
-  });
-  const [isFilteringByDate, setIsFilteringByDate] = useState(false);
-  const [billingDetails, setBillingDetails] = useState({
-    billingName: "",
-    billingAddress: "",
-    billingCity: "",
-    billingState: "",
-    billingZip: "",
-    billingCountry: "",
-    billingEmail: "", // Added required email field
-    billingPaymentMethod: "", // Added required payment method field
-    billingNotes: "",
-  });
-  const [isEditingBilling, setIsEditingBilling] = useState(false);
-
-  const baseInvoicesQuery = useQuery({
-    queryKey: ['/api/invoices'],
-    refetchInterval: 10000, // Refresh every 10 seconds
-    enabled: !isFilteringByDate,
-    initialData: [],
-  });
-
-  const dateFilteredInvoicesQuery = useQuery({
-    queryKey: [
-      '/api/invoices/filter/date',
-      dateRange?.from?.toISOString(),
-      dateRange?.to?.toISOString(),
-    ],
-    enabled: isFilteringByDate && !!dateRange?.from,
-    initialData: [],
-  });
-
-  const invoices = isFilteringByDate
-    ? dateFilteredInvoicesQuery.data || []
-    : baseInvoicesQuery.data || [];
-
-  const isLoading =
-    (baseInvoicesQuery.isLoading && !isFilteringByDate) ||
-    (dateFilteredInvoicesQuery.isLoading && isFilteringByDate);
-
-  const isError =
-    (baseInvoicesQuery.isError && !isFilteringByDate) ||
-    (dateFilteredInvoicesQuery.isError && isFilteringByDate);
-
-  const applyDateFilter = () => {
-    if (!dateRange?.from) {
-      toast({
-        title: "Error",
-        description: "Please select a start date",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsFilteringByDate(true);
-  };
-
-  const clearFilters = () => {
-    setIsFilteringByDate(false);
-    setDateRange({ from: undefined, to: undefined });
-  };
-
-  // Load billing details from localStorage on component mount
-  useEffect(() => {
-    const savedBillingDetails = localStorage.getItem('billingDetails');
-    if (savedBillingDetails) {
-      try {
-        const parsedDetails = JSON.parse(savedBillingDetails);
-        setBillingDetails(parsedDetails);
-      } catch (error) {
-        console.error('Error parsing saved billing details:', error);
-      }
-    }
-  }, []);
-
-  const handleBillingSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Save billing details to localStorage for persistence
-    localStorage.setItem('billingDetails', JSON.stringify(billingDetails));
-    
-    toast({
-      title: "Success",
-      description: "Billing details updated successfully",
-    });
-    setIsEditingBilling(false);
-  };
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center p-8">Loading invoices...</div>;
-  }
-
-  if (isError) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <p className="text-red-500">Error loading invoices</p>
-        <Button onClick={() => {
-          if (isFilteringByDate) {
-            dateFilteredInvoicesQuery.refetch();
-          } else {
-            baseInvoicesQuery.refetch();
-          }
-        }} className="mt-4">
-          Retry
-        </Button>
-      </div>
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange>({ from: undefined });
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  
+  // Function to get country name from country code
+  const getCountryName = (countryCode: string) => {
+    const country = countries.find(c => 
+      typeof c === 'object' && c.value === countryCode
     );
-  }
-
+    return country ? country.label : countryCode;
+  };
+  
+  // Fetch user's invoices
+  useEffect(() => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    fetch("/api/invoices", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch invoices: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          setInvoices(data);
+        } else {
+          console.error("Expected array of invoices but got:", data);
+          setInvoices([]);
+        }
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error("Error fetching invoices:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load invoices",
+          variant: "destructive",
+        });
+        setInvoices([]);
+        setIsLoading(false);
+      });
+  }, [user, toast]);
+  
+  // Apply filters
+  const filteredInvoices = invoices
+    .filter(invoice => {
+      // Apply search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const invoiceId = invoice.id.toString();
+        const notes = invoice.notes?.toLowerCase() || '';
+        
+        return invoiceId.includes(query) || notes.includes(query);
+      }
+      return true;
+    })
+    .filter(invoice => {
+      // Apply date filter
+      if (dateRange.from) {
+        const invoiceDate = new Date(invoice.createdAt);
+        if (dateRange.to) {
+          return invoiceDate >= dateRange.from && invoiceDate <= dateRange.to;
+        }
+        return invoiceDate >= dateRange.from;
+      }
+      return true;
+    })
+    .filter(invoice => {
+      // Apply status filter
+      if (statusFilter) {
+        return invoice.status === statusFilter;
+      }
+      return true;
+    });
+  
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-        <div className="flex flex-col gap-4 w-full md:w-auto">
-          <Card className="w-full md:w-96">
-            <CardHeader>
-              <CardTitle>Billing Details</CardTitle>
-              <CardDescription>
-                Your billing details for invoicing
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isEditingBilling ? (
-                <form onSubmit={handleBillingSubmit} className="space-y-4">
-
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="billingName">Person Name / Business Name <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="billingName"
-                      placeholder="John Doe or Acme Inc."
-                      value={billingDetails.billingName}
-                      onChange={(e) => setBillingDetails({...billingDetails, billingName: e.target.value})}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="billingAddress">Billing Address <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="billingAddress"
-                      placeholder="123 Main St"
-                      value={billingDetails.billingAddress}
-                      onChange={(e) => setBillingDetails({...billingDetails, billingAddress: e.target.value})}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="billingCity">City <span className="text-red-500">*</span></Label>
-                      <Input 
-                        id="billingCity"
-                        placeholder="New York"
-                        value={billingDetails.billingCity}
-                        onChange={(e) => setBillingDetails({...billingDetails, billingCity: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="billingState">State <span className="text-red-500">*</span></Label>
-                      <Input 
-                        id="billingState"
-                        placeholder="NY"
-                        value={billingDetails.billingState}
-                        onChange={(e) => setBillingDetails({...billingDetails, billingState: e.target.value})}
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="billingZip">ZIP Code <span className="text-red-500">*</span></Label>
-                      <Input 
-                        id="billingZip"
-                        placeholder="10001"
-                        value={billingDetails.billingZip}
-                        onChange={(e) => setBillingDetails({...billingDetails, billingZip: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="billingCountry">Country <span className="text-red-500">*</span></Label>
-                      <Select
-                        value={billingDetails.billingCountry}
-                        onValueChange={(value) => setBillingDetails({...billingDetails, billingCountry: value})}
-                        required
-                      >
-                        <SelectTrigger id="billingCountry">
-                          <SelectValue placeholder="Select a country" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {countries.map((country) => (
-                            <SelectItem key={country.value} value={country.value}>
-                              {country.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="billingEmail">Email Address <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="billingEmail"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={billingDetails.billingEmail}
-                      onChange={(e) => setBillingDetails({...billingDetails, billingEmail: e.target.value})}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="billingPaymentMethod">Preferred Payment Method <span className="text-red-500">*</span></Label>
-                    <Select
-                      value={billingDetails.billingPaymentMethod}
-                      onValueChange={(value) => setBillingDetails({...billingDetails, billingPaymentMethod: value})}
-                      required
-                    >
-                      <SelectTrigger id="billingPaymentMethod">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="paypal">PayPal (5% fee)</SelectItem>
-                        <SelectItem value="wire">Wire Transfer / Wise (0% fee)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="billingNotes">Notes</Label>
-                    <textarea 
-                      id="billingNotes"
-                      className="w-full min-h-[100px] p-2 border rounded"
-                      placeholder="Add any additional billing information or special instructions here..."
-                      value={billingDetails.billingNotes}
-                      onChange={(e) => setBillingDetails({...billingDetails, billingNotes: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button type="button" variant="outline" onClick={() => setIsEditingBilling(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit">
-                      Save
-                    </Button>
-                  </div>
-                </form>
-              ) : (
-                <div className="space-y-4">
-                  {billingDetails.billingName ? (
-                    <div className="space-y-2">
-                      {billingDetails.billingName && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Name:</span>
-                          <span className="font-medium">{billingDetails.billingName}</span>
-                        </div>
-                      )}
-                      {billingDetails.billingAddress && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Address:</span>
-                          <span className="font-medium">{billingDetails.billingAddress}</span>
-                        </div>
-                      )}
-                      {(billingDetails.billingCity || billingDetails.billingState) && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">City/State:</span>
-                          <span className="font-medium">
-                            {billingDetails.billingCity}{billingDetails.billingCity && billingDetails.billingState ? ', ' : ''}{billingDetails.billingState}
-                          </span>
-                        </div>
-                      )}
-                      {billingDetails.billingZip && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">ZIP:</span>
-                          <span className="font-medium">{billingDetails.billingZip}</span>
-                        </div>
-                      )}
-                      {billingDetails.billingCountry && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Country:</span>
-                          <span className="font-medium">
-                            {countries.find(c => c.value === billingDetails.billingCountry)?.label || billingDetails.billingCountry}
-                          </span>
-                        </div>
-                      )}
-                      {billingDetails.billingEmail && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Email:</span>
-                          <span className="font-medium">{billingDetails.billingEmail}</span>
-                        </div>
-                      )}
-                      {billingDetails.billingPaymentMethod && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Payment Method:</span>
-                          <span className="font-medium">
-                            {billingDetails.billingPaymentMethod === 'paypal' 
-                              ? 'PayPal (5% fee)' 
-                              : 'Wire Transfer (0% fee)'}
-                          </span>
-                        </div>
-                      )}
-                      {billingDetails.billingNotes && (
-                        <div className="flex flex-col mt-2">
-                          <span className="text-muted-foreground">Notes:</span>
-                          <span className="text-sm mt-1">{billingDetails.billingNotes}</span>
-                        </div>
-                      )}
-
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-2">No billing details provided yet</p>
-                  )}
-                  <Button 
-                    className="w-full" 
-                    onClick={() => setIsEditingBilling(true)}
-                  >
-                    {billingDetails.billingName ? 'Edit Billing Details' : 'Add Billing Details'}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Payment Details Card */}
-          <Card className="w-full md:w-96">
-            <CardHeader>
-              <CardTitle>Payment Details</CardTitle>
-              <CardDescription>
-                Payment information for your invoices
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {billingDetails.billingPaymentMethod === 'wire' ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="font-medium">Wire Transfer / Wise</h3>
-                    <div className="rounded-md bg-muted p-4 space-y-2">
-                      <div className="grid grid-cols-3 gap-1">
-                        <span className="text-muted-foreground col-span-1">Account Holder:</span>
-                        <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1">
-                        <span className="text-muted-foreground col-span-1">IBAN:</span>
-                        <span className="font-medium col-span-2">AE070260001024344251201</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1">
-                        <span className="text-muted-foreground col-span-1">BIC/SWIFT:</span>
-                        <span className="font-medium col-span-2">EBILAEAD</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1">
-                        <span className="text-muted-foreground col-span-1">Bank:</span>
-                        <span className="font-medium col-span-2">Emirates NBD</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1">
-                        <span className="text-muted-foreground col-span-1">Address:</span>
-                        <span className="font-medium col-span-2">Dubai, United Arab Emirates</span>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2">0% transaction fee when using wire transfers or Wise.</p>
-                  </div>
-                </div>
-              ) : billingDetails.billingPaymentMethod === 'paypal' ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="font-medium">PayPal</h3>
-                    <div className="rounded-md bg-muted p-4 space-y-2">
-                      <div className="grid grid-cols-3 gap-1">
-                        <span className="text-muted-foreground col-span-1">Email:</span>
-                        <span className="font-medium col-span-2">accounts@digitalgratified.com</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1">
-                        <span className="text-muted-foreground col-span-1">Name:</span>
-                        <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2">5% transaction fee applies to all PayPal payments to cover processing fees.</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-6">
-                  <Banknote className="h-12 w-12 mb-2 text-muted-foreground" />
-                  <p className="text-muted-foreground text-center">Select a payment method in your billing details to view payment information</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+        <div className="flex items-center w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search invoices..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
         
-        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-          <Card className="w-full md:w-auto">
-            <CardContent className="p-3">
-              <div className="flex flex-col sm:flex-row gap-4 items-end">
-                <div>
-                  <Label htmlFor="date-filter" className="text-sm">Date Range</Label>
-                  <DatePickerWithRange
-                    date={dateRange}
-                    setDate={setDateRange}
-                    className="w-full sm:w-auto"
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={applyDateFilter}
-                  disabled={!dateRange?.from}
-                >
-                  Filter
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex items-center gap-2">
+          <DatePickerWithRange
+            date={dateRange}
+            setDate={setDateRange}
+          />
           
-          {isFilteringByDate && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="mt-2 md:mt-6"
-            >
-              Clear Filters
-            </Button>
-          )}
+          <Select
+            value={statusFilter || ""}
+            onValueChange={(value) => setStatusFilter(value || null)}
+          >
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
-
-      {invoices.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center p-6">
-            <FileText className="h-12 w-12 mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">No invoices found</p>
-            {isFilteringByDate && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Try adjusting your filters
-              </p>
-            )}
-          </CardContent>
-        </Card>
+      
+      {/* Invoices Table */}
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filteredInvoices.length === 0 ? (
+        <div className="py-10 text-center">
+          <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+          <h3 className="mt-4 text-lg font-medium">No Invoices Found</h3>
+          <p className="text-muted-foreground">
+            {searchQuery || dateRange.from || statusFilter
+              ? "Try adjusting your search or filters"
+              : "You don't have any invoices yet"}
+          </p>
+        </div>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Invoice #</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoices.map((invoice: Invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell>INV-{invoice.id}</TableCell>
-                    <TableCell>{formatCurrency(invoice.amount / 100)}</TableCell>
-                    <TableCell>{invoice.notes || 'No description'}</TableCell>
-                    <TableCell>{format(new Date(invoice.dueDate), "PPP")}</TableCell>
-                    <TableCell>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredInvoices.map((invoice: Invoice) => (
+                <TableRow key={invoice.id}>
+                  <TableCell>#{invoice.id}</TableCell>
+                  <TableCell>
+                    {invoice.notes 
+                      ? (invoice.notes.length > 50 ? `${invoice.notes.substring(0, 50)}...` : invoice.notes)
+                      : "Link Building Services"}
+                  </TableCell>
+                  <TableCell>{formatCurrency(invoice.amount / 100)}</TableCell>
+                  <TableCell>{format(new Date(invoice.createdAt), 'MMM d, yyyy')}</TableCell>
+                  <TableCell>
+                    {format(new Date(invoice.dueDate), 'MMM d, yyyy')}
+                    {new Date(invoice.dueDate) < new Date() && invoice.status === 'pending' && (
+                      <Badge variant="destructive" className="ml-2">
+                        Overdue
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        invoice.status === 'paid' ? 'outline' :
+                        invoice.status === 'overdue' ? 'destructive' : 'default'
+                      }
+                    >
                       {invoice.status === 'paid' ? (
-                        <Badge variant="success" className="bg-green-100 text-green-800">
+                        <span className="flex items-center">
+                          <Check className="mr-1 h-3 w-3" />
                           Paid
-                        </Badge>
+                        </span>
+                      ) : invoice.status === 'overdue' ? (
+                        <span className="flex items-center">
+                          <AlertTriangle className="mr-1 h-3 w-3" />
+                          Overdue
+                        </span>
                       ) : (
-                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                        <span className="flex items-center">
+                          <Clock className="mr-1 h-3 w-3" />
                           Pending
-                        </Badge>
+                        </span>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedInvoice(invoice)}
-                        >
-                          <FileText className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                        {invoice.fileUrl && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            asChild
-                          >
-                            <a href={invoice.fileUrl} target="_blank" rel="noopener noreferrer">
-                              <Download className="h-4 w-4" />
-                              <span className="sr-only">Download</span>
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setSelectedInvoice(invoice)}
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span className="sr-only">View</span>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
-
-      {/* Invoice Details Dialog */}
+      
+      {/* Invoice details dialog */}
       {selectedInvoice && (
-        <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
+        <Dialog open={!!selectedInvoice} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Invoice #INV-{selectedInvoice.id}</DialogTitle>
+              <DialogTitle>Invoice #{selectedInvoice.id}</DialogTitle>
               <DialogDescription>
-                Issued on {format(new Date(selectedInvoice.createdAt), "PPP")}
+                {selectedInvoice.status === 'paid' 
+                  ? `Paid on ${selectedInvoice.paidAt ? format(new Date(selectedInvoice.paidAt), 'MMMM d, yyyy') : 'Unknown date'}`
+                  : `Due on ${format(new Date(selectedInvoice.dueDate), 'MMMM d, yyyy')}`}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+            
+            <div className="py-4">
+              <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h3 className="font-medium">Amount</h3>
-                  <p className="text-lg font-bold">{formatCurrency(selectedInvoice.amount / 100)}</p>
-                  {selectedInvoice.paymentFee && selectedInvoice.paymentFee > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      (Includes {formatCurrency(selectedInvoice.paymentFee / 100)} PayPal fee)
-                    </p>
-                  )}
+                  <h3 className="font-semibold">From</h3>
+                  <p>Digital Gratified FZ-LLC</p>
+                  <p>Dubai Silicon Oasis</p>
+                  <p>United Arab Emirates</p>
                 </div>
                 <div className="text-right">
-                  <h3 className="font-medium">Status</h3>
-                  <p className={`text-sm ${
-                    selectedInvoice.status === 'paid' ? 'text-green-600' : 
-                    selectedInvoice.status === 'overdue' ? 'text-red-600' : 'text-yellow-600'
-                  }`}>
-                    {selectedInvoice.status === 'paid' ? 'Paid' : 
-                     selectedInvoice.status === 'overdue' ? 'Overdue' : 'Pending'}
+                  <h3 className="font-semibold">To</h3>
+                  <p>{user?.companyName || user?.username}</p>
+                  <p>{selectedInvoice.clientEmail || user?.email}</p>
+                  <p>{user?.country ? getCountryName(user.country) : ""}</p>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="whitespace-pre-line">
+                          {selectedInvoice.notes || "Link Building Services"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(selectedInvoice.amount / 100)}
+                        </TableCell>
+                      </TableRow>
+                      {selectedInvoice.paymentFee ? (
+                        <TableRow>
+                          <TableCell>PayPal Service Fee (5%)</TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(selectedInvoice.paymentFee)}
+                          </TableCell>
+                        </TableRow>
+                      ) : null}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <Badge 
+                    variant={
+                      selectedInvoice.status === 'paid' ? 'outline' :
+                      selectedInvoice.status === 'overdue' ? 'destructive' : 'default'
+                    }
+                    className="text-base py-1 px-3"
+                  >
+                    {selectedInvoice.status === 'paid' ? (
+                      <span className="flex items-center">
+                        <Check className="mr-1 h-4 w-4" />
+                        Paid
+                      </span>
+                    ) : selectedInvoice.status === 'overdue' ? (
+                      <span className="flex items-center">
+                        <AlertTriangle className="mr-1 h-4 w-4" />
+                        Overdue
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <Clock className="mr-1 h-4 w-4" />
+                        Pending
+                      </span>
+                    )}
+                  </Badge>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(selectedInvoice.amount / 100)}
                   </p>
                 </div>
               </div>
-              <div>
-                <h3 className="font-medium">Notes</h3>
-                <p>{selectedInvoice.notes || 'No description provided'}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium">Due Date</h3>
-                  <p>{format(new Date(selectedInvoice.dueDate), "PPP")}</p>
-                </div>
-                <div className="text-right">
-                  {selectedInvoice.fileUrl && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={selectedInvoice.fileUrl} target="_blank" rel="noopener noreferrer">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Invoice
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </div>
-
+              
               {/* Payment Method Information */}
               {selectedInvoice.paymentMethod && (
                 <div className="pt-2">
@@ -1631,43 +1440,21 @@ function UserInvoicesTab() {
                     
                     {/* Payment Details Box */}
                     <div className="rounded-md bg-muted p-4 mt-2">
-                      {selectedInvoice.paymentMethod === 'wire' ? (
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">Account Holder:</span>
-                            <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">IBAN:</span>
-                            <span className="font-medium col-span-2">AE070260001024344251201</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">BIC/SWIFT:</span>
-                            <span className="font-medium col-span-2">EBILAEAD</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">Bank:</span>
-                            <span className="font-medium col-span-2">Emirates NBD</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">Address:</span>
-                            <span className="font-medium col-span-2">Dubai, United Arab Emirates</span>
-                          </div>
-                        </div>
-                      ) : selectedInvoice.paymentMethod === 'paypal' ? (
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">Email:</span>
-                            <span className="font-medium col-span-2">accounts@digitalgratified.com</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            <span className="text-muted-foreground col-span-1">Name:</span>
-                            <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
-                          </div>
-                        </div>
-                      ) : null}
+                      <PaymentDetails paymentMethod={selectedInvoice.paymentMethod} />
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {/* Download Invoice Button (if file is available) */}
+              {selectedInvoice.fileUrl && (
+                <div className="mt-4 flex justify-center">
+                  <Button variant="outline" asChild>
+                    <a href={selectedInvoice.fileUrl} target="_blank" rel="noopener noreferrer" download>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download Invoice PDF
+                    </a>
+                  </Button>
                 </div>
               )}
             </div>
@@ -1675,6 +1462,23 @@ function UserInvoicesTab() {
               <Button variant="outline" onClick={() => setSelectedInvoice(null)}>
                 Close
               </Button>
+              {selectedInvoice.status === 'pending' && selectedInvoice.paymentMethod && (
+                <Button variant="default" asChild>
+                  {selectedInvoice.paymentMethod === 'paypal' ? (
+                    <a href="https://paypal.me/vibhu216" target="_blank" rel="noopener noreferrer">
+                      <Banknote className="mr-2 h-4 w-4" />
+                      Pay Now
+                    </a>
+                  ) : (
+                    <a
+                      href={`mailto:payments@digitalgratified.com?subject=Invoice %23${selectedInvoice.id} Payment Confirmation&body=Hello,%0A%0AI have completed the wire transfer for Invoice %23${selectedInvoice.id} for the amount of ${formatCurrency(selectedInvoice.amount / 100)}.%0A%0APlease confirm receipt.%0A%0AThank you.`}
+                    >
+                      <Banknote className="mr-2 h-4 w-4" />
+                      Notify Payment
+                    </a>
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1684,32 +1488,46 @@ function UserInvoicesTab() {
 }
 
 export default function InvoicesPage() {
-  const { user } = useAuth();
-
-  if (!user) {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <p>Please login to view invoices</p>
-      </div>
+      <DashboardShell>
+        <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardShell>
     );
   }
-
+  
   return (
-    <Tabs defaultValue={user?.is_admin ? "admin" : "user"} className="w-full">
-      <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-        {user?.is_admin && <TabsTrigger value="admin">Admin View</TabsTrigger>}
-        <TabsTrigger value="user" className={user?.is_admin ? "" : "col-span-2"}>
-          My Billing
-        </TabsTrigger>
-      </TabsList>
-      {user?.is_admin && (
-        <TabsContent value="admin" className="mt-6">
-          <AdminInvoicesTab />
-        </TabsContent>
-      )}
-      <TabsContent value="user" className="mt-6">
-        <UserInvoicesTab />
-      </TabsContent>
-    </Tabs>
+    <DashboardShell>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
+          <p className="text-muted-foreground">
+            {user?.is_admin 
+              ? "Manage all client invoices and payments" 
+              : "View and manage your invoice history"}
+          </p>
+        </div>
+        
+        <Tabs defaultValue={user?.is_admin ? "admin" : "client"}>
+          {user?.is_admin && (
+            <TabsList>
+              <TabsTrigger value="admin">All Invoices</TabsTrigger>
+            </TabsList>
+          )}
+          
+          <TabsContent value="admin" className="space-y-4">
+            <AdminInvoicesTab />
+          </TabsContent>
+          
+          <TabsContent value="client" className="space-y-4">
+            <UserInvoicesTab />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </DashboardShell>
   );
 }

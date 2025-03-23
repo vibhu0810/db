@@ -44,7 +44,7 @@ export function DatePickerWithRange({
                   {format(date.to, "MMM d, yy")}
                 </>
               ) : (
-                format(date.from, "LLL dd, y")
+                format(date.from, "MMM d, yy")
               )
             ) : (
               <span>Filter by date range</span>

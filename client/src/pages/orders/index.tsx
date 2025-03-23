@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { FileDown, Loader2, MessageSquare, Copy, ChevronDown, X } from "lucide-react";
+import { FileDown, Loader2, MessageSquare, Copy, ChevronDown, X, Check } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { useAuth } from "@/hooks/use-auth";
 import { Resizable } from "react-resizable";
@@ -446,6 +446,32 @@ export default function Orders() {
       document.head.removeChild(style);
     };
   }, []);
+
+  // Utility function for copying text to clipboard
+  const [copiedFields, setCopiedFields] = useState<Record<string, boolean>>({});
+  
+  const copyToClipboard = (text: string, fieldId: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopiedFields(prev => ({ ...prev, [fieldId]: true }));
+        setTimeout(() => {
+          setCopiedFields(prev => ({ ...prev, [fieldId]: false }));
+        }, 2000);
+        toast({
+          title: "Copied!",
+          description: "Text copied to clipboard.",
+        });
+      },
+      (err) => {
+        console.error('Could not copy text: ', err);
+        toast({
+          title: "Error",
+          description: "Could not copy text to clipboard",
+          variant: "destructive",
+        });
+      }
+    );
+  };
 
   // Track unread comments
   const [unreadCommentCounts, setUnreadCommentCounts] = useState<{[key: number]: number}>({});
@@ -1365,42 +1391,87 @@ export default function Orders() {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <div className="max-w-xs truncate">
-                          {order.sourceUrl === "not_applicable" ? (
-                            <div className="font-medium">{sourceDisplay}</div>
-                          ) : (
+                        <div className="max-w-xs truncate flex justify-between group">
+                          <div className="flex-1 truncate">
+                            {order.sourceUrl === "not_applicable" ? (
+                              <div className="font-medium">{sourceDisplay}</div>
+                            ) : (
+                              <a 
+                                href={order.sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium hover:underline truncate-cell block"
+                              >
+                                {sourceDisplay}
+                              </a>
+                            )}
+                            {isGuestPost && order.website && (
+                              <span className="text-sm text-muted-foreground block truncate-cell">
+                                {order.website.url}
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                            onClick={() => copyToClipboard(order.sourceUrl === "not_applicable" ? 
+                              (order.title || "Untitled") : order.sourceUrl, `source-${order.id}`)}
+                          >
+                            {copiedFields[`source-${order.id}`] ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-between group">
+                          <div className="flex-1 truncate">
                             <a 
-                              href={order.sourceUrl}
+                              href={order.targetUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="font-medium hover:underline truncate-cell block"
                             >
-                              {sourceDisplay}
+                              {extractDomainFromUrl(order.targetUrl)}
                             </a>
-                          )}
-                          {isGuestPost && order.website && (
                             <span className="text-sm text-muted-foreground block truncate-cell">
-                              {order.website.url}
+                              {order.targetUrl}
                             </span>
-                          )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                            onClick={() => copyToClipboard(order.targetUrl, `target-${order.id}`)}
+                          >
+                            {copiedFields[`target-${order.id}`] ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <a 
-                          href={order.targetUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium hover:underline truncate-cell block"
-                        >
-                          {extractDomainFromUrl(order.targetUrl)}
-                        </a>
-                        <span className="text-sm text-muted-foreground block truncate-cell">
-                          {order.targetUrl}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate-cell">
-                          {order.anchorText || "N/A"}
+                        <div className="max-w-xs truncate-cell flex justify-between group">
+                          <div className="flex-1 truncate">{order.anchorText || "N/A"}</div>
+                          {order.anchorText && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                              onClick={() => copyToClipboard(order.anchorText, `anchor-${order.id}`)}
+                            >
+                              {copiedFields[`anchor-${order.id}`] ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>

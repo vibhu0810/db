@@ -342,9 +342,9 @@ export default function Orders() {
     status: 150,
     id: 100,
     price: 100,
-    date: 120,
-    comments: 150,
-    actions: 150,
+    date: 160,
+    comments: 120,
+    actions: 120,
     user: 150,
   });
   const [currentPage, setCurrentPage] = useState(1);

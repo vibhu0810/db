@@ -628,14 +628,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Set initial status based on type (if not already set in req.body)
-      const initialStatus = orderType === "guest_post" ? "In Progress" : "In Progress";
+      const initialStatus = "In Progress";
 
-      const orderData = {
+      // Prepare order data
+      let orderData = {
         ...req.body,
         userId,
-        status: req.body.status || initialStatus, // Use provided status or fallback to initialStatus
+        status: req.body.status || initialStatus,
         dateOrdered: new Date(),
       };
+
+      // For guest posts, ensure sourceUrl is set to not_applicable
+      if (orderType === "guest_post") {
+        orderData.sourceUrl = "not_applicable";
+        
+        // For guest posts using the new form format, copy textEdit to title for backwards compatibility
+        if (!orderData.title && orderData.textEdit) {
+          orderData.title = orderData.textEdit;
+        }
+      }
 
       console.log('Creating order with data:', orderData);
 

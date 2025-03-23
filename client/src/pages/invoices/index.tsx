@@ -28,6 +28,7 @@ import {
   Loader2,
   Check, 
   Clock,
+  Banknote,
   MoreHorizontal,
   Pencil,
   Search
@@ -1117,219 +1118,285 @@ function UserInvoicesTab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-        <Card className="w-full md:w-96">
-          <CardHeader>
-            <CardTitle>Billing Details</CardTitle>
-            <CardDescription>
-              Your billing details for invoicing
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isEditingBilling ? (
-              <form onSubmit={handleBillingSubmit} className="space-y-4">
+        <div className="flex flex-col gap-4 w-full md:w-auto">
+          <Card className="w-full md:w-96">
+            <CardHeader>
+              <CardTitle>Billing Details</CardTitle>
+              <CardDescription>
+                Your billing details for invoicing
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isEditingBilling ? (
+                <form onSubmit={handleBillingSubmit} className="space-y-4">
 
-                
-                <div className="space-y-2">
-                  <Label htmlFor="billingName">Person Name / Business Name <span className="text-red-500">*</span></Label>
-                  <Input 
-                    id="billingName"
-                    placeholder="John Doe or Acme Inc."
-                    value={billingDetails.billingName}
-                    onChange={(e) => setBillingDetails({...billingDetails, billingName: e.target.value})}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="billingAddress">Billing Address <span className="text-red-500">*</span></Label>
-                  <Input 
-                    id="billingAddress"
-                    placeholder="123 Main St"
-                    value={billingDetails.billingAddress}
-                    onChange={(e) => setBillingDetails({...billingDetails, billingAddress: e.target.value})}
-                    required
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2">
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="billingCity">City <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="billingName">Person Name / Business Name <span className="text-red-500">*</span></Label>
                     <Input 
-                      id="billingCity"
-                      placeholder="New York"
-                      value={billingDetails.billingCity}
-                      onChange={(e) => setBillingDetails({...billingDetails, billingCity: e.target.value})}
+                      id="billingName"
+                      placeholder="John Doe or Acme Inc."
+                      value={billingDetails.billingName}
+                      onChange={(e) => setBillingDetails({...billingDetails, billingName: e.target.value})}
                       required
                     />
                   </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="billingState">State <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="billingAddress">Billing Address <span className="text-red-500">*</span></Label>
                     <Input 
-                      id="billingState"
-                      placeholder="NY"
-                      value={billingDetails.billingState}
-                      onChange={(e) => setBillingDetails({...billingDetails, billingState: e.target.value})}
+                      id="billingAddress"
+                      placeholder="123 Main St"
+                      value={billingDetails.billingAddress}
+                      onChange={(e) => setBillingDetails({...billingDetails, billingAddress: e.target.value})}
                       required
                     />
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2">
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="billingCity">City <span className="text-red-500">*</span></Label>
+                      <Input 
+                        id="billingCity"
+                        placeholder="New York"
+                        value={billingDetails.billingCity}
+                        onChange={(e) => setBillingDetails({...billingDetails, billingCity: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="billingState">State <span className="text-red-500">*</span></Label>
+                      <Input 
+                        id="billingState"
+                        placeholder="NY"
+                        value={billingDetails.billingState}
+                        onChange={(e) => setBillingDetails({...billingDetails, billingState: e.target.value})}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="billingZip">ZIP Code <span className="text-red-500">*</span></Label>
+                      <Input 
+                        id="billingZip"
+                        placeholder="10001"
+                        value={billingDetails.billingZip}
+                        onChange={(e) => setBillingDetails({...billingDetails, billingZip: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="billingCountry">Country <span className="text-red-500">*</span></Label>
+                      <Select
+                        value={billingDetails.billingCountry}
+                        onValueChange={(value) => setBillingDetails({...billingDetails, billingCountry: value})}
+                        required
+                      >
+                        <SelectTrigger id="billingCountry">
+                          <SelectValue placeholder="Select a country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {countries.map((country) => (
+                            <SelectItem key={country.value} value={country.value}>
+                              {country.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="billingZip">ZIP Code <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="billingEmail">Email Address <span className="text-red-500">*</span></Label>
                     <Input 
-                      id="billingZip"
-                      placeholder="10001"
-                      value={billingDetails.billingZip}
-                      onChange={(e) => setBillingDetails({...billingDetails, billingZip: e.target.value})}
+                      id="billingEmail"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={billingDetails.billingEmail}
+                      onChange={(e) => setBillingDetails({...billingDetails, billingEmail: e.target.value})}
                       required
                     />
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="billingCountry">Country <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="billingPaymentMethod">Preferred Payment Method <span className="text-red-500">*</span></Label>
                     <Select
-                      value={billingDetails.billingCountry}
-                      onValueChange={(value) => setBillingDetails({...billingDetails, billingCountry: value})}
+                      value={billingDetails.billingPaymentMethod}
+                      onValueChange={(value) => setBillingDetails({...billingDetails, billingPaymentMethod: value})}
                       required
                     >
-                      <SelectTrigger id="billingCountry">
-                        <SelectValue placeholder="Select a country" />
+                      <SelectTrigger id="billingPaymentMethod">
+                        <SelectValue placeholder="Select payment method" />
                       </SelectTrigger>
                       <SelectContent>
-                        {countries.map((country) => (
-                          <SelectItem key={country.value} value={country.value}>
-                            {country.label}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="paypal">PayPal (5% fee)</SelectItem>
+                        <SelectItem value="wire">Wire Transfer / Wise (0% fee)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="billingEmail">Email Address <span className="text-red-500">*</span></Label>
-                  <Input 
-                    id="billingEmail"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={billingDetails.billingEmail}
-                    onChange={(e) => setBillingDetails({...billingDetails, billingEmail: e.target.value})}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="billingPaymentMethod">Preferred Payment Method <span className="text-red-500">*</span></Label>
-                  <Select
-                    value={billingDetails.billingPaymentMethod}
-                    onValueChange={(value) => setBillingDetails({...billingDetails, billingPaymentMethod: value})}
-                    required
-                  >
-                    <SelectTrigger id="billingPaymentMethod">
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="paypal">PayPal (5% fee)</SelectItem>
-                      <SelectItem value="wire">Wire Transfer / Wise (0% fee)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="billingNotes">Notes</Label>
-                  <textarea 
-                    id="billingNotes"
-                    className="w-full min-h-[100px] p-2 border rounded"
-                    placeholder="Add any additional billing information or special instructions here..."
-                    value={billingDetails.billingNotes}
-                    onChange={(e) => setBillingDetails({...billingDetails, billingNotes: e.target.value})}
-                  />
-                </div>
-                
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setIsEditingBilling(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    Save
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              <div className="space-y-4">
-                {billingDetails.billingName ? (
+                  
                   <div className="space-y-2">
-                    {billingDetails.billingName && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Name:</span>
-                        <span className="font-medium">{billingDetails.billingName}</span>
-                      </div>
-                    )}
-                    {billingDetails.billingAddress && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Address:</span>
-                        <span className="font-medium">{billingDetails.billingAddress}</span>
-                      </div>
-                    )}
-                    {(billingDetails.billingCity || billingDetails.billingState) && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">City/State:</span>
-                        <span className="font-medium">
-                          {billingDetails.billingCity}{billingDetails.billingCity && billingDetails.billingState ? ', ' : ''}{billingDetails.billingState}
-                        </span>
-                      </div>
-                    )}
-                    {billingDetails.billingZip && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">ZIP:</span>
-                        <span className="font-medium">{billingDetails.billingZip}</span>
-                      </div>
-                    )}
-                    {billingDetails.billingCountry && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Country:</span>
-                        <span className="font-medium">
-                          {countries.find(c => c.value === billingDetails.billingCountry)?.label || billingDetails.billingCountry}
-                        </span>
-                      </div>
-                    )}
-                    {billingDetails.billingEmail && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Email:</span>
-                        <span className="font-medium">{billingDetails.billingEmail}</span>
-                      </div>
-                    )}
-                    {billingDetails.billingPaymentMethod && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Payment Method:</span>
-                        <span className="font-medium">
-                          {billingDetails.billingPaymentMethod === 'paypal' 
-                            ? 'PayPal (5% fee)' 
-                            : 'Wire Transfer (0% fee)'}
-                        </span>
-                      </div>
-                    )}
-                    {billingDetails.billingNotes && (
-                      <div className="flex flex-col mt-2">
-                        <span className="text-muted-foreground">Notes:</span>
-                        <span className="text-sm mt-1">{billingDetails.billingNotes}</span>
-                      </div>
-                    )}
-
+                    <Label htmlFor="billingNotes">Notes</Label>
+                    <textarea 
+                      id="billingNotes"
+                      className="w-full min-h-[100px] p-2 border rounded"
+                      placeholder="Add any additional billing information or special instructions here..."
+                      value={billingDetails.billingNotes}
+                      onChange={(e) => setBillingDetails({...billingDetails, billingNotes: e.target.value})}
+                    />
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-2">No billing details provided yet</p>
-                )}
-                <Button 
-                  className="w-full" 
-                  onClick={() => setIsEditingBilling(true)}
-                >
-                  {billingDetails.billingName ? 'Edit Billing Details' : 'Add Billing Details'}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button type="button" variant="outline" onClick={() => setIsEditingBilling(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      Save
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  {billingDetails.billingName ? (
+                    <div className="space-y-2">
+                      {billingDetails.billingName && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Name:</span>
+                          <span className="font-medium">{billingDetails.billingName}</span>
+                        </div>
+                      )}
+                      {billingDetails.billingAddress && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Address:</span>
+                          <span className="font-medium">{billingDetails.billingAddress}</span>
+                        </div>
+                      )}
+                      {(billingDetails.billingCity || billingDetails.billingState) && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">City/State:</span>
+                          <span className="font-medium">
+                            {billingDetails.billingCity}{billingDetails.billingCity && billingDetails.billingState ? ', ' : ''}{billingDetails.billingState}
+                          </span>
+                        </div>
+                      )}
+                      {billingDetails.billingZip && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">ZIP:</span>
+                          <span className="font-medium">{billingDetails.billingZip}</span>
+                        </div>
+                      )}
+                      {billingDetails.billingCountry && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Country:</span>
+                          <span className="font-medium">
+                            {countries.find(c => c.value === billingDetails.billingCountry)?.label || billingDetails.billingCountry}
+                          </span>
+                        </div>
+                      )}
+                      {billingDetails.billingEmail && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Email:</span>
+                          <span className="font-medium">{billingDetails.billingEmail}</span>
+                        </div>
+                      )}
+                      {billingDetails.billingPaymentMethod && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Payment Method:</span>
+                          <span className="font-medium">
+                            {billingDetails.billingPaymentMethod === 'paypal' 
+                              ? 'PayPal (5% fee)' 
+                              : 'Wire Transfer (0% fee)'}
+                          </span>
+                        </div>
+                      )}
+                      {billingDetails.billingNotes && (
+                        <div className="flex flex-col mt-2">
+                          <span className="text-muted-foreground">Notes:</span>
+                          <span className="text-sm mt-1">{billingDetails.billingNotes}</span>
+                        </div>
+                      )}
+
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-2">No billing details provided yet</p>
+                  )}
+                  <Button 
+                    className="w-full" 
+                    onClick={() => setIsEditingBilling(true)}
+                  >
+                    {billingDetails.billingName ? 'Edit Billing Details' : 'Add Billing Details'}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Payment Details Card */}
+          <Card className="w-full md:w-96">
+            <CardHeader>
+              <CardTitle>Payment Details</CardTitle>
+              <CardDescription>
+                Payment information for your invoices
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {billingDetails.billingPaymentMethod === 'wire' ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="font-medium">Wire Transfer / Wise</h3>
+                    <div className="rounded-md bg-muted p-4 space-y-2">
+                      <div className="grid grid-cols-3 gap-1">
+                        <span className="text-muted-foreground col-span-1">Account Holder:</span>
+                        <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <span className="text-muted-foreground col-span-1">IBAN:</span>
+                        <span className="font-medium col-span-2">AE070260001024344251201</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <span className="text-muted-foreground col-span-1">BIC/SWIFT:</span>
+                        <span className="font-medium col-span-2">EBILAEAD</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <span className="text-muted-foreground col-span-1">Bank:</span>
+                        <span className="font-medium col-span-2">Emirates NBD</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <span className="text-muted-foreground col-span-1">Address:</span>
+                        <span className="font-medium col-span-2">Dubai, United Arab Emirates</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">0% transaction fee when using wire transfers or Wise.</p>
+                  </div>
+                </div>
+              ) : billingDetails.billingPaymentMethod === 'paypal' ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="font-medium">PayPal</h3>
+                    <div className="rounded-md bg-muted p-4 space-y-2">
+                      <div className="grid grid-cols-3 gap-1">
+                        <span className="text-muted-foreground col-span-1">Email:</span>
+                        <span className="font-medium col-span-2">accounts@digitalgratified.com</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <span className="text-muted-foreground col-span-1">Name:</span>
+                        <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">5% transaction fee applies to all PayPal payments to cover processing fees.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <Banknote className="h-12 w-12 mb-2 text-muted-foreground" />
+                  <p className="text-muted-foreground text-center">Select a payment method in your billing details to view payment information</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
         
         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
           <Card className="w-full md:w-auto">

@@ -510,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (matchingDomain) {
           websiteInfo = {
-            name: matchingDomain.websiteName,
+            name: matchingDomain.websiteName || matchingDomain.websiteUrl,
             url: matchingDomain.websiteUrl
           };
         }

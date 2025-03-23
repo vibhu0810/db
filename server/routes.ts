@@ -38,10 +38,9 @@ setInterval(() => {
 }, 60000); // Clean up every minute
 
 const GUEST_POST_STATUSES = [
-  "Title Approval Pending",
-  "Title Approved",
-  "Content Writing",
-  "Sent To Editor",
+  "In Progress",
+  "Approved",
+  "Sent to Editor",
   "Completed",
   "Rejected",
   "Cancelled"

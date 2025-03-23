@@ -32,7 +32,7 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "h-10 w-[300px] justify-start text-left font-normal",
+              "h-10 w-full sm:w-[300px] justify-start text-left font-normal",
               !date && "text-muted-foreground"
             )}
           >
@@ -40,14 +40,14 @@ export function DatePickerWithRange({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, "LLL dd, y")} -{" "}
-                  {format(date.to, "LLL dd, y")}
+                  {format(date.from, "MMM dd, yyyy")} -{" "}
+                  {format(date.to, "MMM dd, yyyy")}
                 </>
               ) : (
-                format(date.from, "LLL dd, y")
+                format(date.from, "MMM dd, yyyy")
               )
             ) : (
-              <span>Filter by date range</span>
+              <span>Filter by date</span>
             )}
           </Button>
         </PopoverTrigger>

@@ -1024,9 +1024,6 @@ export default function Orders() {
               </SheetContent>
             </Sheet>
           )}
-          <Button variant="outline" asChild>
-            <Link href="/orders/new">New Order</Link>
-          </Button>
         </div>
       </div>
 

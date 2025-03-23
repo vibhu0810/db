@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { countries } from "@/lib/countries";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1186,14 +1187,52 @@ function UserInvoicesTab() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="billingCountry">Country <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="billingCountry"
-                      placeholder="United States"
+                    <Select
                       value={billingDetails.billingCountry}
-                      onChange={(e) => setBillingDetails({...billingDetails, billingCountry: e.target.value})}
+                      onValueChange={(value) => setBillingDetails({...billingDetails, billingCountry: value})}
                       required
-                    />
+                    >
+                      <SelectTrigger id="billingCountry">
+                        <SelectValue placeholder="Select a country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countries.map((country) => (
+                          <SelectItem key={country} value={country}>
+                            {country}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="billingEmail">Email Address <span className="text-red-500">*</span></Label>
+                  <Input 
+                    id="billingEmail"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={billingDetails.billingEmail}
+                    onChange={(e) => setBillingDetails({...billingDetails, billingEmail: e.target.value})}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="billingPaymentMethod">Preferred Payment Method <span className="text-red-500">*</span></Label>
+                  <Select
+                    value={billingDetails.billingPaymentMethod}
+                    onValueChange={(value) => setBillingDetails({...billingDetails, billingPaymentMethod: value})}
+                    required
+                  >
+                    <SelectTrigger id="billingPaymentMethod">
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="paypal">PayPal (5% fee)</SelectItem>
+                      <SelectItem value="wire">Wire Transfer / Wise (0% fee)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">
@@ -1250,6 +1289,22 @@ function UserInvoicesTab() {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Country:</span>
                         <span className="font-medium">{billingDetails.billingCountry}</span>
+                      </div>
+                    )}
+                    {billingDetails.billingEmail && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Email:</span>
+                        <span className="font-medium">{billingDetails.billingEmail}</span>
+                      </div>
+                    )}
+                    {billingDetails.billingPaymentMethod && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Payment Method:</span>
+                        <span className="font-medium">
+                          {billingDetails.billingPaymentMethod === 'paypal' 
+                            ? 'PayPal (5% fee)' 
+                            : 'Wire Transfer (0% fee)'}
+                        </span>
                       </div>
                     )}
                     {billingDetails.billingNotes && (

@@ -128,13 +128,10 @@ export default function NewOrderPage() {
     message: "",
     path: ["contentOption"]
   }).refine((data) => {
-    // For upload option, either document or Google Doc link must be provided
-    if (data.type === "guest_post" && data.contentOption === "upload") {
-      return !!data.contentDocument || (data.googleDocLink && data.googleDocLink.length > 0);
-    }
+    // Document upload is optional, Google Doc link is also optional
     return true;
   }, {
-    message: "Please provide either a document upload or a Google Doc link",
+    message: "",
     path: ["contentDocument"]
   });
 
@@ -665,7 +662,7 @@ export default function NewOrderPage() {
                   {customOrderForm.watch("contentOption") === "upload" && (
                     <div className="space-y-4 mt-3">
                       <div>
-                        <FormLabel className="block mb-2">Upload Content Document <span className="text-red-500">*</span></FormLabel>
+                        <FormLabel className="block mb-2">Upload Content Document</FormLabel>
                         <input 
                           type="file" 
                           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"

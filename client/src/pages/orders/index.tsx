@@ -680,7 +680,7 @@ export default function Orders() {
   const cancelOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
       setIsActionInProgress(true);
-      const res = await apiRequest("PATCH", `/api/orders/${orderId}`, { status: "Cancelled" });
+      const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: "Cancelled" });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to cancel order");

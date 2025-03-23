@@ -20,7 +20,7 @@ function App() {
   return (
     <div className="min-h-screen bg-background">
       <Switch>
-        <Route path="/auth" component={AuthPage} />
+        <Route path="/login" component={AuthPage} />
         <Route path="/domains">
           <ProtectedRoute>
             <DashboardShell>

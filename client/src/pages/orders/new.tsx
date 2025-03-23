@@ -660,7 +660,7 @@ export default function NewOrderPage() {
                               <FormLabel className="font-normal cursor-pointer">
                                 We will write the content at additional cost
                                 <Badge className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
-                                  <InfoIcon className="h-3 w-3 mr-1" />
+                                  <Info className="h-3 w-3 mr-1" />
                                   Cost varies by domain
                                 </Badge>
                               </FormLabel>

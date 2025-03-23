@@ -530,14 +530,25 @@ export default function OrderDetailsPage() {
                           </div>
                         ) : (
                           comments.map((comment: any) => (
-                            <div key={comment.id} className="rounded-lg bg-muted p-3">
+                            <div 
+                              key={comment.id} 
+                              className={`rounded-lg p-3 ${
+                                comment.isSystemMessage 
+                                  ? "bg-secondary/50 border border-secondary" 
+                                  : "bg-muted"
+                              }`}
+                            >
                               <div className="flex items-center gap-2 mb-2">
-                                <span className="font-medium">{comment.user?.username}</span>
+                                {comment.isSystemMessage ? (
+                                  <span className="font-medium text-secondary-foreground">System</span>
+                                ) : (
+                                  <span className="font-medium">{comment.user?.username}</span>
+                                )}
                                 <span className="text-sm text-muted-foreground">
                                   {comment.createdAt ? format(new Date(comment.createdAt), "MMM d, yyyy h:mm a") : "Unknown time"}
                                 </span>
                               </div>
-                              <p className="text-sm">{comment.message}</p>
+                              <p className={`text-sm ${comment.isSystemMessage ? "italic" : ""}`}>{comment.message}</p>
                             </div>
                           ))
                         )}
@@ -596,7 +607,7 @@ export default function OrderDetailsPage() {
                       <div>
                         <h3 className="font-medium">{supportTicket.title}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Created on {format(new Date(supportTicket.createdAt), "MMMM d, yyyy")}
+                          Created on {supportTicket.createdAt ? format(new Date(supportTicket.createdAt), "MMMM d, yyyy") : "Unknown date"}
                         </p>
                       </div>
                       <StatusBadge status={supportTicket.status} />

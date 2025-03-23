@@ -423,6 +423,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ tickets: [], error: "Failed to fetch support tickets" });
     }
   });
+  
+  // Get comments for a specific support ticket
+  app.get("/api/support-tickets/:id/comments", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const ticketId = parseInt(req.params.id);
+      if (isNaN(ticketId)) {
+        return res.status(400).json({ error: "Invalid ticket ID" });
+      }
+      
+      // First check if user has access to this ticket
+      const ticket = await storage.getSupportTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ error: "Support ticket not found" });
+      }
+      
+      // Only allow access to ticket comments if user is the owner or an admin
+      if (ticket.userId !== req.user.id && !req.user.is_admin) {
+        return res.status(403).json({ error: "Unauthorized access to support ticket comments" });
+      }
+      
+      // Get comments for this ticket
+      const comments = await storage.getOrderComments(ticket.orderId, ticketId);
+      const users = await storage.getUsers();
+      
+      // Map user details to comments
+      const commentsWithUserDetails = comments.map(comment => {
+        // For system user with ID -1, don't try to look up the user
+        if (comment.userId === -1) {
+          return {
+            ...comment,
+            user: { username: "System", is_admin: true }
+          };
+        }
+        
+        const user = users.find(u => u.id === comment.userId);
+        return {
+          ...comment,
+          user: user ? {
+            username: user.username,
+            companyName: user.companyName,
+            is_admin: user.is_admin
+          } : null
+        };
+      });
+      
+      res.json(commentsWithUserDetails);
+    } catch (error) {
+      console.error("Error fetching ticket comments:", error);
+      res.status(500).json({ error: "Failed to fetch ticket comments" });
+    }
+  });
 
   app.get("/api/support-tickets/:id", async (req, res) => {
     try {

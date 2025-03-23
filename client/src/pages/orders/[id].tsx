@@ -75,8 +75,8 @@ export default function OrderDetailsPage() {
   // Mutation for marking comments as read
   const markCommentsAsReadMutation = useMutation({
     mutationFn: async () => {
-      if (!id) return;
-      const response = await apiRequest("POST", `/api/orders/${id}/comments/read`);
+      if (!id || isNaN(orderId)) return;
+      const response = await apiRequest("POST", `/api/orders/${orderId}/comments/read`);
       if (!response.ok) {
         throw new Error("Failed to mark comments as read");
       }
@@ -102,10 +102,10 @@ export default function OrderDetailsPage() {
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {
-      if (!newComment.trim()) {
+      if (!newComment.trim() || isNaN(orderId)) {
         throw new Error("Please enter a comment");
       }
-      const res = await apiRequest("POST", `/api/orders/${id}/comments`, {
+      const res = await apiRequest("POST", `/api/orders/${orderId}/comments`, {
         message: newComment.trim(),
       });
       if (!res.ok) {

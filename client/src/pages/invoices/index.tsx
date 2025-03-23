@@ -270,19 +270,17 @@ function CreateInvoiceDialog() {
   const generateInvoiceDescription = (order: any) => {
     const orderId = order.id;
     const price = order.price;
+    const domainName = getDomainName(order.sourceUrl);
     
-    // For Guest Post orders (source URL is "not_applicable")
-    if (order.sourceUrl === "not_applicable") {
-      // Get the domain from the domains table using domainId
-      const domain = domains.find(d => d.id.toString() === order.domainId?.toString());
-      const domainName = domain ? domain.websiteUrl : "Unknown Domain";
-      
-      return `${orderId} - ${domainName} (${order.title || 'Guest Post'}) - $${price}`;
+    // Check if it's a guest post
+    if (order.status === "guest_post_published" || 
+        (order.type === "guest_post" && order.status === "completed") ||
+        order.status === "Completed") {
+      return `Link Building Services - #${orderId} - ${domainName} (${order.title || 'Guest Post'}) - $${price}`;
     } 
-    // For Niche Edit orders
+    // Otherwise it's a niche edit
     else {
-      const sourceUrl = order.sourceUrl;
-      return `Link Building Services - ${orderId} - ${sourceUrl} - $${price}`;
+      return `Link Building Services - #${orderId} - ${domainName} - $${price}`;
     }
   };
   
@@ -564,12 +562,7 @@ function CreateInvoiceDialog() {
                         <td className="p-2 text-sm">#{order.id}</td>
                         <td className="p-2 text-sm">
                           <div className="max-w-xs overflow-hidden">
-                            <div className="truncate">
-                              {order.sourceUrl === "not_applicable" 
-                                ? domains.find(d => d.id.toString() === order.domainId?.toString())?.websiteUrl || "Unknown Domain"
-                                : getDomainName(order.sourceUrl)
-                              }
-                            </div>
+                            <div className="truncate">{getDomainName(order.sourceUrl)}</div>
                             <div className="text-xs text-muted-foreground">
                               {new Date(order.dateCompleted).toLocaleDateString()}
                             </div>

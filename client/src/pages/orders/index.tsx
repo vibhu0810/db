@@ -479,12 +479,6 @@ export default function Orders() {
     refetchInterval: 10000, // Refetch orders every 10 seconds
   });
 
-  // Fetch domains for reference when displaying guest post titles
-  const { data: domains = [] } = useQuery({
-    queryKey: ['/api/domains'],
-    queryFn: () => apiRequest("GET", "/api/domains").then(res => res.json()),
-  });
-
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: () => apiRequest("GET", "/api/users").then(res => res.json()),
@@ -805,11 +799,11 @@ export default function Orders() {
       order.id,
       order.title && order.title !== "not_applicable" 
         ? (order.sourceUrl !== "not_applicable" 
-            ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-            : `${order.title} - ${domains.find(d => d.id.toString() === order.domainId?.toString())?.websiteUrl || "unknown domain"}`)
+            ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
+            : order.title)
         : order.sourceUrl === "not_applicable"
           ? "No title provided"
-          : order.sourceUrl,
+          : extractDomainFromUrl(order.sourceUrl),
       order.targetUrl,
       order.anchorText,
       order.price,
@@ -1403,25 +1397,25 @@ export default function Orders() {
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <div className="truncate max-w-[250px]">
-                            {/* For guest post orders, the source URL is "not_applicable" */}
-                            {order.sourceUrl === "not_applicable" 
-                              ? (order.title 
-                                  ? `${order.title} - ${domains.find(d => d.type.includes("guest_post"))?.websiteUrl || "Guest Post Domain"}`
-                                  : "Guest Post (No title provided)")
-                              : /* For niche edit orders, display the source URL */
-                                order.sourceUrl}
+                            {order.title && order.title !== "not_applicable" 
+                              ? (order.sourceUrl !== "not_applicable" 
+                                  ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
+                                  : order.title)
+                              : order.sourceUrl === "not_applicable" 
+                                ? "No title provided" 
+                                : extractDomainFromUrl(order.sourceUrl)}
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="flex-shrink-0"
-                            onClick={() => copyToClipboard(
-                              order.sourceUrl === "not_applicable" 
-                              ? (order.title 
-                                  ? `${order.title} - ${domains.find(d => d.type.includes("guest_post"))?.websiteUrl || "Guest Post Domain"}`
-                                  : "Guest Post (No title provided)")
-                              : order.sourceUrl
-                            )}
+                            onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
+                              ? (order.sourceUrl !== "not_applicable" 
+                                  ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
+                                  : order.title)
+                              : order.sourceUrl === "not_applicable"
+                                ? ""
+                                : extractDomainFromUrl(order.sourceUrl))}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>

@@ -1073,8 +1073,8 @@ export default function Orders() {
         </div>
 
         {/* Orders Table */}
-        <div className="overflow-auto">
-          <Table>
+        <div className="overflow-x-auto" style={{ maxWidth: '100vw' }}>
+          <Table style={{ minWidth: '1400px' }}>
             <TableHeader>
               <TableRow>
                 <Resizable

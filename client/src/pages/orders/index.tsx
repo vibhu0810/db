@@ -847,18 +847,32 @@ export default function Orders() {
     return <StatusBadge status={status} />;
   };
 
-  // Use the same status options for both guest posts and niche edits
-  const getStatusOptions = () => {
-    return (
-      <>
-        <SelectItem value="In Progress">In Progress</SelectItem>
-        <SelectItem value="Approved">Approved</SelectItem>
-        <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
-        <SelectItem value="Completed">Completed</SelectItem>
-        <SelectItem value="Rejected">Rejected</SelectItem>
-        <SelectItem value="Cancelled">Cancelled</SelectItem>
-      </>
-    );
+  // Get status options based on order type
+  const getStatusOptions = (isGuestPost: boolean = false) => {
+    if (isGuestPost) {
+      return (
+        <>
+          <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
+          <SelectItem value="Title Approved">Title Approved</SelectItem>
+          <SelectItem value="Content Writing">Content Writing</SelectItem>
+          <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
+          <SelectItem value="Completed">Completed</SelectItem>
+          <SelectItem value="Rejected">Rejected</SelectItem>
+          <SelectItem value="Cancelled">Cancelled</SelectItem>
+        </>
+      );
+    } else {
+      // Niche Edit statuses - no "Approved" option
+      return (
+        <>
+          <SelectItem value="In Progress">In Progress</SelectItem>
+          <SelectItem value="Sent">Sent</SelectItem>
+          <SelectItem value="Completed">Completed</SelectItem>
+          <SelectItem value="Rejected">Rejected</SelectItem>
+          <SelectItem value="Cancelled">Cancelled</SelectItem>
+        </>
+      );
+    }
   };
 
   // Check for status changes to show toast notifications
@@ -1135,9 +1149,18 @@ export default function Orders() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
+            
+            {/* Niche Edit Statuses */}
             <SelectItem value="In Progress">In Progress</SelectItem>
-            <SelectItem value="Approved">Approved</SelectItem>
-            <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
+            <SelectItem value="Sent">Sent</SelectItem>
+            
+            {/* Guest Post Statuses */}
+            <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
+            <SelectItem value="Title Approved">Title Approved</SelectItem>
+            <SelectItem value="Content Writing">Content Writing</SelectItem>
+            <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
+            
+            {/* Common Statuses */}
             <SelectItem value="Completed">Completed</SelectItem>
             <SelectItem value="Rejected">Rejected</SelectItem>
             <SelectItem value="Cancelled">Cancelled</SelectItem>
@@ -1465,7 +1488,7 @@ export default function Orders() {
                               <SelectValue>{renderStatusBadge(order.status)}</SelectValue>
                             </SelectTrigger>
                             <SelectContent>
-                              {getStatusOptions()}
+                              {getStatusOptions(order.title !== null)}
                             </SelectContent>
                           </Select>
                         ) : (

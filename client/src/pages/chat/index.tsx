@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { User } from "@shared/schema";
 import { uploadFile } from "@/utils/uploadthing";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface ChatUser extends User {
   companyName: string;
@@ -29,6 +30,34 @@ export default function ChatPage() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [location] = useLocation();
+  
+  // Parse URL query parameters to get ticket ID if present
+  const getTicketIdFromUrl = () => {
+    const searchParams = new URLSearchParams(location.split('?')[1]);
+    const ticketId = searchParams.get('ticket');
+    return ticketId ? parseInt(ticketId, 10) : null;
+  };
+  
+  // Get ticket ID from URL if available
+  const ticketId = getTicketIdFromUrl();
+  
+  // Query for ticket details if ticketId is available
+  const { data: ticketData, isLoading: ticketLoading } = useQuery({
+    queryKey: ['/api/support-tickets', ticketId],
+    queryFn: async () => {
+      if (!ticketId) return null;
+      try {
+        const res = await apiRequest("GET", `/api/support-tickets/${ticketId}`);
+        if (!res.ok) throw new Error('Failed to fetch ticket details');
+        return res.json();
+      } catch (error) {
+        console.error("Error fetching ticket:", error);
+        return null;
+      }
+    },
+    enabled: !!ticketId,
+  });
 
   // Get users based on role - with better caching
   const { data: users = [], isLoading: usersLoading } = useQuery<ChatUser[]>({
@@ -275,6 +304,37 @@ export default function ChatPage() {
       }
     };
   }, [isRecording]);
+  
+  // Effect to set selected user when ticket ID is provided
+  useEffect(() => {
+    // Only run this effect when ticket data and users are loaded
+    if (ticketData && users.length > 0) {
+      console.log('Ticket data loaded:', ticketData);
+      
+      // Handle based on user role
+      if (isAdmin) {
+        // For admin users, set the customer who created the ticket as the selected user
+        console.log('Admin user handling ticket, finding customer with ID:', ticketData.userId);
+        const customerUser = users.find(u => u.id === ticketData.userId);
+        if (customerUser) {
+          console.log('Setting selected user to customer:', customerUser.username);
+          setSelectedUserId(customerUser.id);
+          
+          // Set initial message to acknowledge ticket
+          setMessageInput(`I'm here to help with your support ticket #${ticketId}.`);
+        }
+      } else {
+        // For regular users, find an admin to chat with
+        console.log('Regular user handling ticket, finding an admin user');
+        // Find first admin in the users list (should be filtered to only show admins for regular users)
+        const adminUser = users[0];
+        if (adminUser) {
+          console.log('Setting selected user to admin:', adminUser.username);
+          setSelectedUserId(adminUser.id);
+        }
+      }
+    }
+  }, [ticketData, users, isAdmin, ticketId]);
 
   if (usersLoading) {
     return (
@@ -369,6 +429,37 @@ export default function ChatPage() {
       <div className="flex-1 border rounded-lg overflow-hidden flex flex-col">
         {selectedUserId ? (
           <>
+            {/* Ticket information banner (if applicable) */}
+            {ticketData && (
+              <div className="bg-muted p-3 border-b">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium flex items-center gap-2">
+                      <FileText className="h-4 w-4" /> 
+                      Support Ticket #{ticketData.id}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {ticketData.title || "No title provided"}
+                    </p>
+                  </div>
+                  <div className="text-right text-sm">
+                    <div className="font-medium">Status: <span className={
+                      ticketData.status === "open" 
+                        ? "text-green-600" 
+                        : ticketData.status === "in_progress" 
+                          ? "text-amber-600" 
+                          : "text-muted-foreground"
+                    }>
+                      {ticketData.status.replace("_", " ")}
+                    </span></div>
+                    <div className="text-muted-foreground text-xs">
+                      Created {formatDistanceToNow(new Date(ticketData.createdAt), { addSuffix: true })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+        
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
               {initialMessagesLoading ? (

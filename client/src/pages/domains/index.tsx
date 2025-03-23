@@ -459,7 +459,7 @@ export default function DomainsPage() {
                   }
                 >
                   <div className="h-full flex items-center justify-center pr-4">
-                    <SortableHeader field="guestPostPrice">Guest Post Price</SortableHeader>
+                    <SortableHeader field="guestPostPrice">GP Price</SortableHeader>
                   </div>
                 </Resizable>
               </TableHead>
@@ -474,7 +474,7 @@ export default function DomainsPage() {
                   }
                 >
                   <div className="h-full flex items-center justify-center pr-4">
-                    <SortableHeader field="nicheEditPrice">Niche Edit Price</SortableHeader>
+                    <SortableHeader field="nicheEditPrice">NE Price</SortableHeader>
                   </div>
                 </Resizable>
               </TableHead>
@@ -489,7 +489,7 @@ export default function DomainsPage() {
                   }
                 >
                   <div className="h-full flex items-center justify-center pr-4">
-                    Guest Post TAT
+                    GP TAT (in days)
                   </div>
                 </Resizable>
               </TableHead>
@@ -504,7 +504,7 @@ export default function DomainsPage() {
                   }
                 >
                   <div className="h-full flex items-center justify-center pr-4">
-                    Niche Edit TAT
+                    NE TAT (in days)
                   </div>
                 </Resizable>
               </TableHead>
@@ -576,16 +576,16 @@ export default function DomainsPage() {
                       : "Niche Edit"}
                 </TableCell>
                 <TableCell className="text-center">
-                  {domain.type !== "niche_edit" && domain.guestPostPrice ? `$${domain.guestPostPrice}` : "—"}
+                  {domain.type !== "niche_edit" && domain.guestPostPrice ? `$${domain.guestPostPrice}` : "N/A"}
                 </TableCell>
                 <TableCell className="text-center">
-                  {domain.type !== "guest_post" && domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : "—"}
+                  {domain.type !== "guest_post" && domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : "N/A"}
                 </TableCell>
                 <TableCell className="text-center">
-                  {domain.type !== "niche_edit" ? getGuestPostTAT(domain) : "—"}
+                  {domain.type !== "niche_edit" ? getGuestPostTAT(domain) : "N/A"}
                 </TableCell>
                 <TableCell className="text-center">
-                  {domain.type !== "guest_post" ? getNicheEditTAT(domain) : "—"}
+                  {domain.type !== "guest_post" ? getNicheEditTAT(domain) : "N/A"}
                 </TableCell>
                 <TableCell className="max-w-[200px]">
                   {domain.guidelines ? (

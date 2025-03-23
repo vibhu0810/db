@@ -52,6 +52,9 @@ interface Invoice {
   fileUrl: string;
   fileName: string;
   paidAt: string | null;
+  clientEmail?: string; // New field for email
+  paymentMethod?: string; // "paypal" or "wire"
+  paymentFee?: number; // Fee amount in cents
 }
 
 interface InvoiceWithUser extends Invoice {

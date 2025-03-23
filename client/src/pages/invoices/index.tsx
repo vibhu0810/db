@@ -1013,6 +1013,8 @@ function UserInvoicesTab() {
     billingState: "",
     billingZip: "",
     billingCountry: "",
+    billingEmail: "", // Added required email field
+    billingPaymentMethod: "", // Added required payment method field
     billingNotes: "",
   });
   const [isEditingBilling, setIsEditingBilling] = useState(false);

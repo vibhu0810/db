@@ -211,6 +211,14 @@ function CreateInvoiceDialog() {
     billingAddress: user?.billingAddress || ""
   });
   
+  // Client email for billing (required)
+  const [clientEmail, setClientEmail] = useState<string>("");
+  const [emailError, setEmailError] = useState<string>("");
+  
+  // Payment option selection (PayPal vs Wire Transfer)
+  const [paymentOption, setPaymentOption] = useState<string>("");
+  const [paymentOptionError, setPaymentOptionError] = useState<string>("");
+  
   // For due date selection
   const [dueDate, setDueDate] = useState<Date>(() => {
     const date = new Date();
@@ -326,19 +334,62 @@ function CreateInvoiceDialog() {
     setPreviewStep(false);
     setTotalAmount(0);
     setInvoiceDescription("");
+    setClientEmail("");
+    setEmailError("");
+    setPaymentOption("");
+    setPaymentOptionError("");
   };
 
+  // Validate form before submission
+  const validateForm = () => {
+    let isValid = true;
+    
+    // Check if email is provided
+    if (!clientEmail) {
+      setEmailError("Email is required");
+      isValid = false;
+    } else if (!/^\S+@\S+\.\S+$/.test(clientEmail)) {
+      setEmailError("Please enter a valid email address");
+      isValid = false;
+    } else {
+      setEmailError("");
+    }
+    
+    // Check if payment option is selected
+    if (!paymentOption) {
+      setPaymentOptionError("Payment option is required");
+      isValid = false;
+    } else {
+      setPaymentOptionError("");
+    }
+    
+    return isValid;
+  };
+  
   // Create and send the invoice
   const createInvoiceMutation = useMutation({
     mutationFn: async () => {
+      // First validate the form
+      if (!validateForm()) {
+        throw new Error("Please fill in all required fields");
+      }
+      
+      // Calculate final amount based on payment option
+      const finalAmount = paymentOption === "paypal" 
+        ? totalAmount * 1.05 // 5% PayPal fee
+        : totalAmount;
+      
       const invoiceData = {
         userId: selectedUser,
-        amount: totalAmount * 100, // Convert to cents for storage
+        amount: Math.round(finalAmount * 100), // Convert to cents for storage
         notes: invoiceDescription,
         dueDate: dueDate.toISOString(), // Use the selected date from the datepicker
         status: 'pending',
         fileName: 'invoice.pdf',
         fileUrl: '',
+        clientEmail: clientEmail,
+        paymentMethod: paymentOption,
+        paymentFee: paymentOption === "paypal" ? (totalAmount * 0.05) : 0,
       };
       
       const response = await apiRequest('/api/invoices', {
@@ -537,6 +588,82 @@ function CreateInvoiceDialog() {
                 </div>
                 <div className="text-sm text-right">
                   <span className="font-medium">Due Date:</span> {dueDate.toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+            
+            {/* Billing Details */}
+            <div className="space-y-4">
+              <h4 className="font-medium">Billing Details</h4>
+              
+              {/* Client Email (Required) */}
+              <div className="grid grid-cols-4 gap-2 items-center">
+                <Label htmlFor="clientEmail" className="text-right">
+                  Client Email <span className="text-red-500">*</span>
+                </Label>
+                <div className="col-span-3">
+                  <Input 
+                    id="clientEmail"
+                    type="email"
+                    placeholder="client@example.com"
+                    value={clientEmail}
+                    onChange={(e) => {
+                      setClientEmail(e.target.value);
+                      setEmailError(e.target.value ? "" : "Email is required");
+                    }}
+                    className={emailError ? "border-red-500" : ""}
+                  />
+                  {emailError && (
+                    <p className="text-xs text-red-500 mt-1">{emailError}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Invoice will be sent to this email address
+                  </p>
+                </div>
+              </div>
+              
+              {/* Payment Options (Required) */}
+              <div className="grid grid-cols-4 gap-2 items-center">
+                <Label htmlFor="paymentOption" className="text-right">
+                  Payment Option <span className="text-red-500">*</span>
+                </Label>
+                <div className="col-span-3">
+                  <Select
+                    value={paymentOption}
+                    onValueChange={(value) => {
+                      setPaymentOption(value);
+                      setPaymentOptionError(value ? "" : "Payment option is required");
+                    }}
+                  >
+                    <SelectTrigger className={paymentOptionError ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="paypal">PayPal (5% fee)</SelectItem>
+                      <SelectItem value="wire">Wire Transfer/Wise (0% fee)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {paymentOptionError && (
+                    <p className="text-xs text-red-500 mt-1">{paymentOptionError}</p>
+                  )}
+                  
+                  {/* Show fee calculation if PayPal selected */}
+                  {paymentOption === "paypal" && (
+                    <div className="bg-muted p-2 rounded mt-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span>${totalAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>PayPal Fee (5%):</span>
+                        <span>${(totalAmount * 0.05).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between font-medium pt-1 border-t mt-1">
+                        <span>Total with Fee:</span>
+                        <span>${(totalAmount * 1.05).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

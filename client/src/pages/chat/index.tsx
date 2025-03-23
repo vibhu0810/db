@@ -90,14 +90,12 @@ export default function ChatPage() {
       const res = await apiRequest("GET", "/api/users");
       const allUsers = await res.json();
 
-      // Filter users based on role
-      let filteredUsers;
+      // The server already filters users based on role, but we'll double-check here
+      let filteredUsers = allUsers;
       
-      if (isAdmin) {
-        // Admins can see all non-admin users
-        filteredUsers = allUsers.filter((chatUser: ChatUser) => !chatUser.is_admin);
-      } else {
-        // Regular users can see admin users only
+      // Apply additional client-side filtering if needed
+      if (!isAdmin) {
+        // Regular users should only see admin users
         filteredUsers = allUsers.filter((chatUser: ChatUser) => chatUser.is_admin);
       }
       

@@ -170,10 +170,9 @@ export type Order = typeof orders.$inferSelect;
 
 // Add the status type constants
 export const GUEST_POST_STATUSES = [
-  "Title Approval Pending",
-  "Title Approved",
-  "Content Writing",
-  "Sent To Editor",
+  "In Progress",
+  "Approved",
+  "Sent to Editor",
   "Completed",
   "Rejected",
   "Cancelled"
@@ -181,7 +180,7 @@ export const GUEST_POST_STATUSES = [
 
 export const NICHE_EDIT_STATUSES = [
   "In Progress",
-  "Sent",
+  "Sent to Editor",
   "Rejected",
   "Cancelled",
   "Completed"

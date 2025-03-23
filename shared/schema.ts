@@ -139,6 +139,7 @@ export const orderComments = pgTable("order_comments", {
   orderId: integer("order_id").notNull(),
   userId: integer("user_id").notNull(),
   message: text("message").notNull(),
+  ticketId: integer("ticket_id"), // Added for ticket-related comments
   createdAt: timestamp("created_at").notNull().defaultNow(),
   isFromAdmin: boolean("is_from_admin").notNull().default(false),
   isSystemMessage: boolean("is_system_message").notNull().default(false),
@@ -151,6 +152,7 @@ export const insertOrderCommentSchema = createInsertSchema(orderComments).omit({
   id: true,
   createdAt: true,
 }).extend({
+  ticketId: z.number().optional(),
   isFromAdmin: z.boolean().optional(),
   isSystemMessage: z.boolean().optional(),
   readByUser: z.boolean().optional(),

@@ -249,23 +249,25 @@ export class DatabaseStorage implements IStorage {
   // Comment operations
   async getOrderComments(orderId: number, ticketId?: number): Promise<OrderComment[]> {
     try {
-      // Start with base query
-      let query = db
+      // Get all comments for this order
+      const allComments = await db
         .select()
         .from(orderComments)
-        .where(eq(orderComments.orderId, orderId));
+        .where(eq(orderComments.orderId, orderId))
+        .orderBy(orderComments.createdAt);
       
-      // If ticketId is provided, filter to only get comments for that ticket
-      if (ticketId) {
-        query = query.where(eq(orderComments.ticketId, ticketId));
+      // Filter comments based on ticketId parameter
+      let comments: OrderComment[];
+      
+      if (ticketId !== undefined) {
+        // Get only comments for the specific ticket
+        comments = allComments.filter(comment => comment.ticketId === ticketId);
       } else {
-        // For general order comments, only get those not associated with tickets
-        query = query.where(isNull(orderComments.ticketId));
+        // Get comments that don't belong to any ticket
+        comments = allComments.filter(comment => !comment.ticketId);
       }
-
-      const comments = await query.orderBy(orderComments.createdAt);
       
-      console.log('Retrieved comments:', comments);
+      console.log('Retrieved comments:', comments.length);
       return comments;
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -284,6 +286,7 @@ export class DatabaseStorage implements IStorage {
           orderId: comment.orderId,
           userId: comment.userId,
           message: comment.message,
+          ticketId: comment.ticketId, // Include ticket ID if provided
           isFromAdmin: isFromAdmin,
           isSystemMessage: isSystemMessage,
           readByUser: isFromAdmin ? false : true, // If from admin, not read by user yet

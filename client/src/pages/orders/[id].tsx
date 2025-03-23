@@ -31,9 +31,22 @@ export default function OrderDetailsPage() {
   const [newComment, setNewComment] = useState("");
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [ticketTitle, setTicketTitle] = useState("");
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [ticketRating, setTicketRating] = useState(5);
+  const [ticketFeedback, setTicketFeedback] = useState("");
 
   // Keep track of previous order status to detect changes
   const [previousStatus, setPreviousStatus] = useState<string | null>(null);
+  
+  // Query for existing support ticket for this order
+  const { data: supportTicket } = useQuery({
+    queryKey: ['/api/support-tickets/order', id],
+    queryFn: () => apiRequest("GET", `/api/support-tickets/order/${id}`)
+      .then(res => res.ok ? res.json() : null)
+      .catch(() => null),
+    enabled: !!id && !!user,
+  });
   
   const { data: order, isLoading } = useQuery({
     queryKey: ['/api/orders', id],
@@ -165,6 +178,82 @@ export default function OrderDetailsPage() {
       toast({
         title: "Order Cancelled",
         description: `Order #${id} has been cancelled successfully.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation for creating a support ticket
+  const createTicketMutation = useMutation({
+    mutationFn: async () => {
+      if (!id || !user) throw new Error("Missing order ID or user");
+      
+      const title = ticketTitle || `Support ticket for Order #${id}`;
+      const res = await apiRequest("POST", "/api/support-tickets", {
+        orderId: Number(id),
+        title,
+        description: `User ${user.username} has opened a support ticket for Order #${id}`,
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create support ticket");
+      }
+      
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets/order', id] });
+      
+      // Redirect to the chat page with the admin
+      window.location.href = `/chat?ticket=${data.id}`;
+      
+      toast({
+        title: "Support Ticket Created",
+        description: "Your support ticket has been created. You'll be redirected to chat with support.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation for closing a support ticket with feedback
+  const closeTicketMutation = useMutation({
+    mutationFn: async () => {
+      if (!supportTicket) throw new Error("No active support ticket");
+      
+      const res = await apiRequest("PATCH", `/api/support-tickets/${supportTicket.id}/close`, {
+        rating: ticketRating,
+        feedback: ticketFeedback,
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to close support ticket");
+      }
+      
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets/order', id] });
+      setShowRatingDialog(false);
+      
+      toast({
+        title: "Ticket Closed",
+        description: "Your support ticket has been closed. Thank you for your feedback!",
       });
     },
     onError: (error: Error) => {
@@ -464,6 +553,166 @@ export default function OrderDetailsPage() {
                     </Button>
                   </div>
                 </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Support Ticket Section */}
+      <div className="grid gap-6 md:grid-cols-1">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Support</CardTitle>
+            <LifeBuoy className="h-5 w-5 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {supportTicket ? (
+                <>
+                  <div className="p-4 rounded-md bg-muted">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-medium">{supportTicket.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Created on {format(new Date(supportTicket.createdAt), "MMMM d, yyyy")}
+                        </p>
+                      </div>
+                      <StatusBadge status={supportTicket.status} />
+                    </div>
+                    <p className="text-sm mb-4">{supportTicket.description}</p>
+                    
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.location.href = `/chat?ticket=${supportTicket.id}`}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        View Conversation
+                      </Button>
+                      
+                      {supportTicket.status === 'Open' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowRatingDialog(true)}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Close Ticket
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Ticket Rating Dialog */}
+                  {showRatingDialog && (
+                    <AlertDialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Rate Your Support Experience</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Please rate your support experience and provide any feedback before closing this ticket.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        
+                        <div className="py-4 space-y-6">
+                          <div className="flex justify-center space-x-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setTicketRating(star)}
+                                className="text-gray-300 hover:text-yellow-400 focus:outline-none"
+                              >
+                                <Star 
+                                  className={`h-8 w-8 ${
+                                    star <= ticketRating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                                  }`} 
+                                />
+                              </button>
+                            ))}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Additional Feedback (Optional)</label>
+                            <Textarea
+                              placeholder="Tell us about your experience..."
+                              value={ticketFeedback}
+                              onChange={(e) => setTicketFeedback(e.target.value)}
+                              rows={4}
+                            />
+                          </div>
+                        </div>
+                        
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => closeTicketMutation.mutate()}
+                            disabled={closeTicketMutation.isPending}
+                          >
+                            {closeTicketMutation.isPending && (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            Submit & Close Ticket
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm">
+                    Need help with this order? Raise a support ticket to get assistance from our team.
+                  </p>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button className="w-full">
+                        <LifeBuoy className="h-4 w-4 mr-2" />
+                        Raise a Ticket
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Create Support Ticket</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Please provide a title for your support ticket. Our team will respond as soon as possible.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      
+                      <div className="py-4">
+                        <label className="text-sm font-medium">
+                          Ticket Title (Optional)
+                          <span className="text-sm text-muted-foreground ml-1">
+                            - We'll use a default title if not provided
+                          </span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="E.g., Question about my order status"
+                          value={ticketTitle}
+                          onChange={(e) => setTicketTitle(e.target.value)}
+                          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                        />
+                      </div>
+                      
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => createTicketMutation.mutate()}
+                          disabled={createTicketMutation.isPending}
+                        >
+                          {createTicketMutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          Create Ticket
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               )}
             </div>
           </CardContent>

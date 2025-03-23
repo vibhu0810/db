@@ -42,7 +42,23 @@ export default function ChatPage() {
   // Get ticket ID from URL if available
   const ticketId = getTicketIdFromUrl();
   
-  // Query for ticket details if ticketId is available
+  // Query for all user support tickets
+  const { data: userTickets = { tickets: [] }, isLoading: userTicketsLoading } = useQuery({
+    queryKey: ['/api/support-tickets'],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest("GET", `/api/support-tickets`);
+        if (!res.ok) throw new Error('Failed to fetch user tickets');
+        return res.json();
+      } catch (error) {
+        console.error("Error fetching user tickets:", error);
+        return { tickets: [] };
+      }
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+  
+  // Query for specific ticket details if ticketId is available
   const { data: ticketData, isLoading: ticketLoading } = useQuery({
     queryKey: ['/api/support-tickets', ticketId],
     queryFn: async () => {
@@ -305,11 +321,70 @@ export default function ChatPage() {
     };
   }, [isRecording]);
   
+  // Function to handle closing a ticket with rating
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [ticketRating, setTicketRating] = useState(5);
+  const [ticketFeedback, setTicketFeedback] = useState("");
+  const [activeTicketId, setActiveTicketId] = useState<number | null>(null);
+  
+  // Close ticket mutation
+  const closeTicketMutation = useMutation({
+    mutationFn: async ({ ticketId, rating, feedback }: { ticketId: number, rating: number, feedback: string }) => {
+      const res = await apiRequest("POST", `/api/support-tickets/${ticketId}/close`, {
+        rating,
+        feedback
+      });
+      
+      if (!res.ok) throw new Error('Failed to close ticket');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
+      
+      toast({
+        title: "Ticket closed",
+        description: "Thank you for your feedback!",
+        variant: "default",
+      });
+      
+      setShowRatingDialog(false);
+      setTicketRating(5);
+      setTicketFeedback("");
+      setActiveTicketId(null);
+    },
+    onError: (error) => {
+      console.error("Error closing ticket:", error);
+      toast({
+        title: "Failed to close ticket",
+        description: "There was a problem closing the ticket. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Handle ticket close request
+  const handleCloseTicket = (ticketId: number) => {
+    setActiveTicketId(ticketId);
+    setShowRatingDialog(true);
+  };
+  
+  // Submit ticket rating and close
+  const submitTicketRating = () => {
+    if (activeTicketId) {
+      closeTicketMutation.mutate({
+        ticketId: activeTicketId,
+        rating: ticketRating,
+        feedback: ticketFeedback
+      });
+    }
+  };
+  
   // Effect to set selected user when ticket ID is provided
   useEffect(() => {
     // Only run this effect when ticket data and users are loaded
     if (ticketData && ticketData.ticket && users.length > 0) {
       console.log('Ticket data loaded:', ticketData);
+      setActiveTicketId(ticketData.ticket.id);
       
       // Handle based on user role
       if (isAdmin) {

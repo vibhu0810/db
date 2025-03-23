@@ -44,6 +44,7 @@ interface CustomOrderFormData {
   type: "guest_post" | "niche_edit";
   contentOption?: "upload" | "write";
   contentDocument?: File;
+  googleDocLink?: string;
 }
 
 interface Domain {
@@ -114,6 +115,12 @@ export default function NewOrderPage() {
     type: z.enum(["guest_post", "niche_edit"]),
     contentOption: z.enum(["upload", "write"]).optional(),
     contentDocument: z.instanceof(File).optional(),
+    googleDocLink: z.string().optional().refine(val => {
+      if (val && val.length > 0) {
+        return val.includes("docs.google.com");
+      }
+      return true;
+    }, "Please enter a valid Google Docs URL"),
   }).refine((data) => {
     // Require contentOption if it's a guest post
     if (data.type === "guest_post") {
@@ -124,13 +131,13 @@ export default function NewOrderPage() {
     message: "Please select a content option for Guest Posts",
     path: ["contentOption"]
   }).refine((data) => {
-    // Require contentDocument if contentOption is upload
+    // For upload option, either document or Google Doc link must be provided
     if (data.type === "guest_post" && data.contentOption === "upload") {
-      return !!data.contentDocument;
+      return !!data.contentDocument || (data.googleDocLink && data.googleDocLink.length > 0);
     }
     return true;
   }, {
-    message: "Please upload a document for your content",
+    message: "Please provide either a document upload or a Google Doc link",
     path: ["contentDocument"]
   });
 
@@ -623,14 +630,14 @@ export default function NewOrderPage() {
               {/* Content Options for Guest Posts */}
               {orderType === "guest_post" && (
                 <div className="space-y-4 border p-4 rounded-md bg-muted/30">
-                  <h3 className="font-medium">Content Options</h3>
+                  <h3 className="font-medium">Content Options <span className="text-red-500">*</span></h3>
                   
                   <FormField
                     control={customOrderForm.control}
                     name="contentOption"
                     render={({ field }) => (
                       <FormItem className="space-y-3">
-                        <FormLabel>Choose how you want to provide content</FormLabel>
+                        <FormLabel>Choose how you want to provide content <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
@@ -643,7 +650,7 @@ export default function NewOrderPage() {
                               </FormControl>
                               <FormLabel className="font-normal cursor-pointer flex items-center gap-1">
                                 <FileText className="h-4 w-4" />
-                                I'll upload my own content
+                                I'll provide my own content
                               </FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-3 space-y-0">
@@ -651,9 +658,10 @@ export default function NewOrderPage() {
                                 <RadioGroupItem value="write" />
                               </FormControl>
                               <FormLabel className="font-normal cursor-pointer">
-                                Please write the content for me (additional cost)
-                                <Badge className="ml-2 bg-primary/20 text-primary border-primary/30">
-                                  +$100
+                                We will write the content at additional cost
+                                <Badge className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
+                                  <InfoIcon className="h-3 w-3 mr-1" />
+                                  Cost varies by domain
                                 </Badge>
                               </FormLabel>
                             </FormItem>
@@ -665,21 +673,45 @@ export default function NewOrderPage() {
                   />
                   
                   {customOrderForm.watch("contentOption") === "upload" && (
-                    <div className="mt-3">
-                      <FormLabel className="block mb-2">Upload Content Document</FormLabel>
-                      <input 
-                        type="file" 
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                        accept=".doc,.docx,.txt,.pdf,.rtf" 
-                        onChange={(e) => {
-                          if (e.target.files?.length) {
-                            customOrderForm.setValue("contentDocument", e.target.files[0]);
-                          }
-                        }} 
-                      />
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Accepted formats: DOC, DOCX, TXT, PDF, RTF (Max 5MB)
-                      </p>
+                    <div className="space-y-4 mt-3">
+                      <div>
+                        <FormLabel className="block mb-2">Upload Content Document <span className="text-red-500">*</span></FormLabel>
+                        <input 
+                          type="file" 
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                          accept=".doc,.docx,.txt,.pdf,.rtf" 
+                          onChange={(e) => {
+                            if (e.target.files?.length) {
+                              customOrderForm.setValue("contentDocument", e.target.files[0]);
+                            }
+                          }} 
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Accepted formats: DOC, DOCX, TXT, PDF, RTF (Max 5MB)
+                        </p>
+                      </div>
+
+                      <div className="mt-3">
+                        <FormField
+                          control={customOrderForm.control}
+                          name="googleDocLink"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Google Doc Link (Optional)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="https://docs.google.com/document/d/..."
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Alternatively, you can provide a link to your Google Doc
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>

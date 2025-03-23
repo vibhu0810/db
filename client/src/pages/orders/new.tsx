@@ -17,6 +17,7 @@ import { ArrowLeft, Loader2, Info, Link as LinkIcon, FileText, ExternalLink, Clo
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
+import { uploadFile } from "@/utils/uploadthing";
 import {
   Tooltip,
   TooltipContent,
@@ -277,10 +278,19 @@ export default function NewOrderPage() {
         // No longer adding extra cost for content writing service
         // The price depends on the domain and will be determined by admin
         
-        // Remove the file from the payload since it can't be JSON serialized
+        // Handle file upload before submitting the order
         if (data.contentDocument) {
-          delete payload.contentDocument;
-          payload.hasContentDocument = true;
+          try {
+            // Upload the file and get the URL
+            const contentDocumentUrl = await uploadFile(data.contentDocument, "document");
+            
+            // Add the content document URL to the payload
+            delete payload.contentDocument; // Remove the file from payload
+            payload.contentDocument = contentDocumentUrl; // Add the URL instead
+          } catch (error) {
+            console.error("Error uploading document:", error);
+            throw new Error("Failed to upload content document. Please try again.");
+          }
         }
       }
       

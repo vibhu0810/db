@@ -42,8 +42,14 @@ export const ourFileRouter = {
       return { uploadedBy: metadata.userId, url: file.url };
     }),
 
-  // This route allows PDF uploads for documents
-  document: f({ pdf: { maxFileSize: "16MB" } })
+  // This route allows various document formats for content uploads
+  document: f({
+    pdf: { maxFileSize: "16MB" },
+    "application/msword": { maxFileSize: "16MB" },                              // .doc
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": { maxFileSize: "16MB" }, // .docx
+    text: { maxFileSize: "5MB" },                                               // .txt
+    "application/rtf": { maxFileSize: "16MB" }                                 // .rtf
+  })
     .middleware(async ({ req }) => {
       const user = (req as any).user;
       if (!user) {
@@ -53,6 +59,7 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log("Document upload complete for userId:", metadata.userId);
+      console.log("Document URL:", file.url);
       return { uploadedBy: metadata.userId, url: file.url };
     }),
     

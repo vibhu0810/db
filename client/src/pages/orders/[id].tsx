@@ -188,7 +188,9 @@ export default function OrderDetailsPage() {
               <div className="flex items-center gap-2 mt-1">
                 <div className="truncate">
                   {order.sourceUrl === "not_applicable" 
-                    ? (order.title && order.title !== "not_applicable" ? order.title : "No source URL provided")
+                    ? (order.title && order.title !== "not_applicable" 
+                       ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
+                       : "No source URL provided")
                     : order.sourceUrl
                   }
                 </div>
@@ -198,7 +200,9 @@ export default function OrderDetailsPage() {
                   className="flex-shrink-0"
                   onClick={() => copyToClipboard(
                     order.sourceUrl === "not_applicable"
-                      ? (order.title && order.title !== "not_applicable" ? order.title : "")
+                      ? (order.title && order.title !== "not_applicable" 
+                         ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
+                         : "")
                       : order.sourceUrl
                   )}
                 >

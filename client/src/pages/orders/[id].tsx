@@ -57,7 +57,7 @@ export default function OrderDetailsPage() {
   
   // Auto-scroll to the bottom of the comments when new comments are added
   useEffect(() => {
-    if (comments.length && commentsEndRef.current) {
+    if (Array.isArray(comments) && comments.length > 0 && commentsEndRef.current) {
       commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [comments]);
@@ -84,11 +84,11 @@ export default function OrderDetailsPage() {
 
   // This effect marks comments as read when the page loads
   useEffect(() => {
-    if (id && comments.length > 0) {
+    if (id && Array.isArray(comments) && comments.length > 0) {
       // Mark comments as read using the mutation
       markCommentsAsReadMutation.mutate();
     }
-  }, [id, comments.length]);
+  }, [id, comments]);
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {
@@ -269,10 +269,18 @@ export default function OrderDetailsPage() {
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Date Ordered</label>
-              <div className="mt-1">
-                {order.dateOrdered ? format(new Date(order.dateOrdered), "MMMM d, yyyy") : "Not available"}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Date Ordered</label>
+                <div className="mt-1">
+                  {order.dateOrdered ? format(new Date(order.dateOrdered), "MMMM d, yyyy") : "Not available"}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Date Completed</label>
+                <div className="mt-1">
+                  {order.dateCompleted ? format(new Date(order.dateCompleted), "MMMM d, yyyy") : "Not completed"}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -294,7 +302,7 @@ export default function OrderDetailsPage() {
                   <div className="relative mb-4">
                     <ScrollArea className="h-[350px] pr-4 rounded-md border">
                       <div className="space-y-4 p-4">
-                        {comments.length === 0 ? (
+                        {!Array.isArray(comments) || comments.length === 0 ? (
                           <div className="text-center text-muted-foreground py-8">
                             No comments yet. Be the first to add one!
                           </div>

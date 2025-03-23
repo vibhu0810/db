@@ -1,10 +1,11 @@
-import { users, orders, orderComments, notifications, messages, domains, invoices } from "@shared/schema";
+import { users, orders, orderComments, notifications, messages, domains, invoices, supportTickets } from "@shared/schema";
 import type {
   User, InsertUser, Domain, InsertDomain,
   Order, OrderComment, InsertOrderComment,
   Notification, InsertNotification,
   Message, InsertMessage,
-  Invoice, InsertInvoice
+  Invoice, InsertInvoice,
+  SupportTicket, InsertTicket, UpdateTicket
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, or, and, desc, gte, lte, between, asc } from "drizzle-orm";
@@ -68,6 +69,15 @@ export interface IStorage {
   markInvoiceAsPaid(id: number): Promise<Invoice>;
   getInvoicesByDateRange(userId: number, startDate: Date, endDate: Date): Promise<Invoice[]>;
   getInvoicesByAmount(userId: number, minAmount: number, maxAmount: number): Promise<Invoice[]>;
+  
+  // Support Ticket operations
+  getSupportTicket(id: number): Promise<SupportTicket | undefined>;
+  getSupportTickets(userId: number): Promise<SupportTicket[]>;
+  getSupportTicketByOrder(orderId: number): Promise<SupportTicket | undefined>;
+  getAllSupportTickets(): Promise<SupportTicket[]>;
+  createSupportTicket(ticket: InsertTicket): Promise<SupportTicket>;
+  updateSupportTicket(id: number, updates: UpdateTicket): Promise<SupportTicket>;
+  closeSupportTicket(id: number, rating?: number, feedback?: string): Promise<SupportTicket>;
 
   // Session store
   sessionStore: session.Store;
@@ -566,6 +576,163 @@ export class DatabaseStorage implements IStorage {
         read: false,
       });
     }
+  }
+
+  // Support Ticket operations
+  async getSupportTicket(id: number): Promise<SupportTicket | undefined> {
+    const [ticket] = await db
+      .select()
+      .from(supportTickets)
+      .where(eq(supportTickets.id, id));
+    return ticket;
+  }
+
+  async getSupportTickets(userId: number): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(supportTickets)
+      .where(eq(supportTickets.userId, userId))
+      .orderBy(desc(supportTickets.createdAt));
+  }
+
+  async getSupportTicketByOrder(orderId: number): Promise<SupportTicket | undefined> {
+    const [ticket] = await db
+      .select()
+      .from(supportTickets)
+      .where(eq(supportTickets.orderId, orderId));
+    return ticket;
+  }
+
+  async getAllSupportTickets(): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(supportTickets)
+      .orderBy(desc(supportTickets.createdAt));
+  }
+
+  async createSupportTicket(ticket: InsertTicket): Promise<SupportTicket> {
+    const [newTicket] = await db
+      .insert(supportTickets)
+      .values({
+        ...ticket,
+        status: "open",
+        createdAt: new Date(),
+      })
+      .returning();
+    
+    // Create notification for admins
+    // Find all admin users and notify them
+    const admins = await db
+      .select()
+      .from(users)
+      .where(eq(users.is_admin, true));
+    
+    // Create notification for each admin
+    for (const admin of admins) {
+      await this.createNotification({
+        userId: admin.id,
+        type: "support_ticket",
+        message: `New support ticket: ${ticket.title}`,
+        createdAt: new Date(),
+        read: false,
+      });
+    }
+    
+    // Also create a notification for the user who opened the ticket
+    await this.createNotification({
+      userId: ticket.userId,
+      type: "support_ticket",
+      message: "Your support ticket has been created. Our team will respond shortly.",
+      createdAt: new Date(),
+      read: false,
+    });
+    
+    return newTicket;
+  }
+
+  async updateSupportTicket(id: number, updates: UpdateTicket): Promise<SupportTicket> {
+    const [ticket] = await db
+      .update(supportTickets)
+      .set(updates)
+      .where(eq(supportTickets.id, id))
+      .returning();
+    
+    // If the ticket is being closed, set closedAt
+    if (updates.status === "closed") {
+      await db
+        .update(supportTickets)
+        .set({ closedAt: new Date() })
+        .where(eq(supportTickets.id, id));
+    }
+    
+    // Notify user that ticket status has changed
+    const updatedTicket = await this.getSupportTicket(id);
+    if (updatedTicket) {
+      await this.createNotification({
+        userId: updatedTicket.userId,
+        type: "support_ticket",
+        message: `Your support ticket status has been updated to ${updates.status || updatedTicket.status}`,
+        createdAt: new Date(),
+        read: false,
+      });
+    }
+    
+    return ticket;
+  }
+
+  async closeSupportTicket(id: number, rating?: number, feedback?: string): Promise<SupportTicket> {
+    const updateData: UpdateTicket = {
+      status: "closed",
+    };
+    
+    if (rating !== undefined) {
+      updateData.rating = rating;
+    }
+    
+    if (feedback) {
+      updateData.feedback = feedback;
+    }
+    
+    const [ticket] = await db
+      .update(supportTickets)
+      .set({
+        ...updateData,
+        closedAt: new Date(),
+      })
+      .where(eq(supportTickets.id, id))
+      .returning();
+    
+    // Notify user that ticket is closed
+    const fullTicket = await this.getSupportTicket(id);
+    if (fullTicket) {
+      await this.createNotification({
+        userId: fullTicket.userId,
+        type: "support_ticket",
+        message: "Your support ticket has been closed. Thank you for your feedback!",
+        createdAt: new Date(),
+        read: false,
+      });
+      
+      // Also notify admin about the feedback
+      if (rating !== undefined || feedback) {
+        const admins = await db
+          .select()
+          .from(users)
+          .where(eq(users.is_admin, true));
+        
+        for (const admin of admins) {
+          await this.createNotification({
+            userId: admin.id,
+            type: "feedback",
+            message: `User provided feedback on ticket #${id}: ${rating ? `${rating}/5 stars` : ''} ${feedback || ''}`,
+            createdAt: new Date(),
+            read: false,
+          });
+        }
+      }
+    }
+    
+    return ticket;
   }
 }
 

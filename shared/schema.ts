@@ -253,3 +253,32 @@ export const insertInvoiceSchema = createInsertSchema(invoices);
 
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type Invoice = typeof invoices.$inferSelect;
+
+// Support Tickets schema
+export const supportTickets = pgTable("support_tickets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  orderId: integer("order_id").references(() => orders.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  status: text("status", { enum: ["open", "closed"] }).default("open").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  closedAt: timestamp("closed_at"),
+  rating: integer("rating"), // 1-5 stars
+  feedback: text("feedback"),
+});
+
+export const insertTicketSchema = createInsertSchema(supportTickets).omit({
+  id: true,
+  createdAt: true,
+  closedAt: true,
+});
+
+export const updateTicketSchema = z.object({
+  status: z.enum(["open", "closed"]).optional(),
+  rating: z.number().min(1).max(5).optional(),
+  feedback: z.string().optional(),
+});
+
+export type InsertTicket = z.infer<typeof insertTicketSchema>;
+export type UpdateTicket = z.infer<typeof updateTicketSchema>;
+export type SupportTicket = typeof supportTickets.$inferSelect;

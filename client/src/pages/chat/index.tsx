@@ -308,14 +308,14 @@ export default function ChatPage() {
   // Effect to set selected user when ticket ID is provided
   useEffect(() => {
     // Only run this effect when ticket data and users are loaded
-    if (ticketData && users.length > 0) {
+    if (ticketData && ticketData.ticket && users.length > 0) {
       console.log('Ticket data loaded:', ticketData);
       
       // Handle based on user role
       if (isAdmin) {
         // For admin users, set the customer who created the ticket as the selected user
-        console.log('Admin user handling ticket, finding customer with ID:', ticketData.userId);
-        const customerUser = users.find(u => u.id === ticketData.userId);
+        console.log('Admin user handling ticket, finding customer with ID:', ticketData.ticket.userId);
+        const customerUser = users.find(u => u.id === ticketData.ticket.userId);
         if (customerUser) {
           console.log('Setting selected user to customer:', customerUser.username);
           setSelectedUserId(customerUser.id);
@@ -430,30 +430,30 @@ export default function ChatPage() {
         {selectedUserId ? (
           <>
             {/* Ticket information banner (if applicable) */}
-            {ticketData && (
+            {ticketData && ticketData.ticket && (
               <div className="bg-muted p-3 border-b">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium flex items-center gap-2">
                       <FileText className="h-4 w-4" /> 
-                      Support Ticket #{ticketData.id}
+                      Support Ticket #{ticketData.ticket.id}
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {ticketData.title || "No title provided"}
+                      {ticketData.ticket.title || "No title provided"}
                     </p>
                   </div>
                   <div className="text-right text-sm">
                     <div className="font-medium">Status: <span className={
-                      ticketData.status === "open" 
+                      ticketData.ticket.status === "open" 
                         ? "text-green-600" 
-                        : ticketData.status === "in_progress" 
+                        : ticketData.ticket.status === "in_progress" 
                           ? "text-amber-600" 
                           : "text-muted-foreground"
                     }>
-                      {ticketData.status.replace("_", " ")}
+                      {ticketData.ticket.status.replace("_", " ")}
                     </span></div>
                     <div className="text-muted-foreground text-xs">
-                      Created {formatDistanceToNow(new Date(ticketData.createdAt), { addSuffix: true })}
+                      Created {formatDistanceToNow(new Date(ticketData.ticket.createdAt), { addSuffix: true })}
                     </div>
                   </div>
                 </div>

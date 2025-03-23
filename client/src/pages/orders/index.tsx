@@ -343,8 +343,8 @@ export default function Orders() {
     id: 100,
     price: 100,
     date: 120,
-    comments: 150,
-    actions: 150,
+    comments: 80,
+    actions: 80,
     user: 150,
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -372,8 +372,8 @@ export default function Orders() {
       id: 150,
       price: 150,
       date: 180,
-      comments: 200,
-      actions: 200,
+      comments: 100,
+      actions: 100,
       user: 200,
     };
 
@@ -1303,7 +1303,7 @@ export default function Orders() {
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <TableHead style={{ width: columnWidths.comments }}>Comments</TableHead>
+                  <TableHead style={{ width: columnWidths.comments }}></TableHead>
                 </Resizable>
                 
                 <Resizable

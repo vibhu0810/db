@@ -635,6 +635,18 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     
+    // Create an automated welcome message as a system comment
+    await this.createOrderComment({
+      orderId: ticket.orderId,
+      userId: 0, // System user
+      message: `Thank you for opening a support ticket! Our team will respond to your inquiry as soon as possible. 
+      
+Please provide any additional details that might help us assist you better with your order #${ticket.orderId}.`,
+      ticketId: newTicket.id,
+      isSystemMessage: true,
+      isFromAdmin: true,
+    });
+    
     // Create notification for admins
     // Find all admin users and notify them
     const admins = await db
@@ -650,7 +662,7 @@ export class DatabaseStorage implements IStorage {
         message: `New support ticket: ${ticket.title}`,
         createdAt: new Date(),
         read: false,
-        ticketId: newTicket.id, // Include the ticket ID in the notification for admins too
+        ticketId: newTicket.id ? newTicket.id : undefined, // Include the ticket ID in the notification for admins too
       });
       
       // Create initial message from user to admin for each admin
@@ -670,7 +682,7 @@ export class DatabaseStorage implements IStorage {
       message: "Your support ticket has been created. Our team will respond shortly.",
       createdAt: new Date(),
       read: false,
-      ticketId: newTicket.id, // Include the ticket ID in the notification
+      ticketId: newTicket.id ? newTicket.id : undefined, // Include the ticket ID in the notification
     });
     
     return newTicket;
@@ -694,13 +706,23 @@ export class DatabaseStorage implements IStorage {
     // Notify user that ticket status has changed
     const updatedTicket = await this.getSupportTicket(id);
     if (updatedTicket) {
+      // Add a system message about the status change
+      await this.createOrderComment({
+        orderId: updatedTicket.orderId,
+        userId: 0, // System user
+        message: `Support ticket status has been updated to "${updates.status || updatedTicket.status}".`,
+        ticketId: updatedTicket.id ? updatedTicket.id : undefined,
+        isSystemMessage: true,
+        isFromAdmin: true,
+      });
+      
       await this.createNotification({
         userId: updatedTicket.userId,
         type: "support_ticket",
         message: `Your support ticket status has been updated to ${updates.status || updatedTicket.status}`,
         createdAt: new Date(),
         read: false,
-        ticketId: updatedTicket.id, // Include the ticket ID in the notification
+        ticketId: updatedTicket.id ? updatedTicket.id : undefined, // Include the ticket ID in the notification
       });
     }
     
@@ -732,13 +754,23 @@ export class DatabaseStorage implements IStorage {
     // Notify user that ticket is closed
     const fullTicket = await this.getSupportTicket(id);
     if (fullTicket) {
+      // Create closing system message
+      await this.createOrderComment({
+        orderId: fullTicket.orderId,
+        userId: 0, // System user
+        message: `This support ticket has been closed. ${feedback ? `User feedback: "${feedback}"` : ''} ${rating ? `Rating: ${rating}/5 stars` : ''}`,
+        ticketId: fullTicket.id ? fullTicket.id : undefined,
+        isSystemMessage: true,
+        isFromAdmin: true,
+      });
+      
       await this.createNotification({
         userId: fullTicket.userId,
         type: "support_ticket",
         message: "Your support ticket has been closed. Thank you for your feedback!",
         createdAt: new Date(),
         read: false,
-        ticketId: fullTicket.id, // Include the ticket ID in the notification
+        ticketId: fullTicket.id ? fullTicket.id : undefined, // Include the ticket ID in the notification
       });
       
       // Also notify admin about the feedback
@@ -755,7 +787,7 @@ export class DatabaseStorage implements IStorage {
             message: `User provided feedback on ticket #${id}: ${rating ? `${rating}/5 stars` : ''} ${feedback || ''}`,
             createdAt: new Date(),
             read: false,
-            ticketId: id, // Include the ticket ID in the notification
+            ticketId: id ? id : undefined, // Include the ticket ID in the notification
           });
         }
       }

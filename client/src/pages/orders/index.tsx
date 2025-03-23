@@ -1571,21 +1571,23 @@ export default function Orders() {
                             <DropdownMenuItem asChild>
                               <Link href={`/orders/${order.id}`}>View Details</Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setOrderToEdit(order);
-                              }}
-                            >
-                              Edit Order
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {order.status !== "Cancelled" && (
-                              <DropdownMenuItem
-                                onClick={() => setOrderToCancel(order.id)}
-                                className="text-orange-600"
-                              >
-                                Cancel Order
-                              </DropdownMenuItem>
+                            {order.status === "In Progress" && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setOrderToEdit(order);
+                                  }}
+                                >
+                                  Edit Order
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => setOrderToCancel(order.id)}
+                                  className="text-orange-600"
+                                >
+                                  Cancel Order
+                                </DropdownMenuItem>
+                              </>
                             )}
                             {isAdmin && (
                               <DropdownMenuItem

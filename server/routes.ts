@@ -478,6 +478,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
+      // Special handling for "new" route used for creating orders
+      if (req.params.id === "new") {
+        // Return an empty order object for the new order form
+        return res.json({
+          id: null,
+          userId: req.user.id,
+          sourceUrl: "",
+          targetUrl: "",
+          anchorText: "",
+          textEdit: "",
+          notes: "",
+          price: "0",
+          status: "Not Started",
+          dateOrdered: new Date().toISOString(),
+          website: null
+        });
+      }
+
       const orderId = parseInt(req.params.id);
       console.log("Fetching order by ID:", orderId);
       
@@ -535,6 +553,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
+      // Special handling for "new" route
+      if (req.params.orderId === "new") {
+        return res.json([]);
+      }
+
       const orderId = parseInt(req.params.orderId);
       const comments = await storage.getOrderComments(orderId);
       const users = await storage.getUsers();
@@ -566,6 +589,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
+      // Special handling for "new" route
+      if (req.params.orderId === "new") {
+        return res.status(200).json({ success: true });
+      }
+      
       const orderId = parseInt(req.params.orderId);
       await storage.markCommentsAsRead(orderId, req.user.id);
       res.status(200).json({ success: true });
@@ -648,6 +676,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/orders/:orderId/comments", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      // Special handling for "new" route - comments cannot be added to a new order
+      if (req.params.orderId === "new") {
+        return res.status(400).json({ error: "Cannot add comments to a new order" });
+      }
 
       const orderId = parseInt(req.params.orderId);
 
@@ -737,6 +770,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update order status
   app.patch("/api/orders/:orderId/status", async (req, res) => {
     try {
+      // Special handling for "new" route - status cannot be updated for a new order
+      if (req.params.orderId === "new") {
+        return res.status(400).json({ error: "Cannot update status for a new order" });
+      }
+      
       const orderId = parseInt(req.params.orderId);
       const { status } = req.body;
 

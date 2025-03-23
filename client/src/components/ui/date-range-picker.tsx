@@ -32,34 +32,37 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "h-10 w-full sm:w-[300px] justify-start text-left font-normal",
+              "h-10 w-full justify-start text-left font-normal border-muted-foreground/20",
               !date && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date?.from ? (
               date.to ? (
-                <>
-                  {format(date.from, "MMM dd, yyyy")} -{" "}
-                  {format(date.to, "MMM dd, yyyy")}
-                </>
+                <span className="truncate">
+                  {format(date.from, "MMM dd")} - {format(date.to, "MMM dd")}
+                </span>
               ) : (
-                format(date.from, "MMM dd, yyyy")
+                <span className="truncate">{format(date.from, "MMMM dd, yyyy")}</span>
               )
             ) : (
-              <span>Filter by date</span>
+              <span>Date</span>
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="center" side="bottom" sideOffset={4}>
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={setDate}
-            numberOfMonths={1}
-          />
+        <PopoverContent className="w-auto p-2 shadow-lg" align="start">
+          <div className="space-y-2">
+            <div className="font-medium text-sm pb-1 border-b">Select date range</div>
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={date?.from}
+              selected={date}
+              onSelect={setDate}
+              numberOfMonths={1}
+              className="rounded border p-1"
+            />
+          </div>
         </PopoverContent>
       </Popover>
     </div>

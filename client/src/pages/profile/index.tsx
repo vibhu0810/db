@@ -64,7 +64,6 @@ export default function ProfilePage() {
       country: user?.country || "",
       bio: user?.bio || "",
       profilePicture: user?.profilePicture || "",
-      companyLogo: user?.companyLogo || "",
       dateOfBirth: user?.dateOfBirth || "",
       phoneNumber: user?.phoneNumber || "",
       linkedinUrl: user?.linkedinUrl || "",

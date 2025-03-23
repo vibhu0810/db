@@ -343,6 +343,7 @@ export default function Orders() {
     id: 100,
     price: 100,
     date: 120,
+    comments: 150,
     actions: 150,
     user: 150,
   });
@@ -371,6 +372,7 @@ export default function Orders() {
       id: 150,
       price: 150,
       date: 180,
+      comments: 200,
       actions: 200,
       user: 200,
     };
@@ -1222,10 +1224,42 @@ export default function Orders() {
 
 
       <div className="rounded-lg border">
-        <div className="overflow-x-auto">
-          <div className="min-w-full inline-block align-middle">
-            <div className="overflow-hidden">
-              <Table>
+        <div className="relative">
+          {/* Horizontal scrolling controls */}
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/70 focus:bg-background/70 h-8 w-8 ml-1" 
+              onClick={() => {
+                const tableContainer = document.querySelector('.overflow-x-auto');
+                if (tableContainer) {
+                  tableContainer.scrollLeft -= 300;
+                }
+              }}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/70 focus:bg-background/70 h-8 w-8 mr-1" 
+              onClick={() => {
+                const tableContainer = document.querySelector('.overflow-x-auto');
+                if (tableContainer) {
+                  tableContainer.scrollLeft += 300;
+                }
+              }}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <div className="min-w-full inline-block align-middle">
+              <div className="overflow-hidden">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     {isAdmin && (
@@ -1366,6 +1400,22 @@ export default function Orders() {
                       </Resizable>
                     </TableHead>
 
+                    <TableHead style={{ width: columnWidths.comments || 150 }}>
+                      <Resizable
+                        width={columnWidths.comments || 150}
+                        height={38}
+                        onResize={onResize('comments')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center pr-4">
+                          Comments
+                        </div>
+                      </Resizable>
+                    </TableHead>
+                    
                     <TableHead style={{ width: columnWidths.actions || 150 }}>
                       <Resizable
                         width={columnWidths.actions || 150}
@@ -1784,6 +1834,8 @@ export default function Orders() {
           </SheetContent>
         </Sheet>
       )}
+        </div>
+      </div>
     </div>
   );
 }

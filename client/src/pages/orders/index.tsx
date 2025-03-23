@@ -1376,7 +1376,9 @@ export default function Orders() {
                           <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
                         }
                       >
-                        <div className="h-full"></div>
+                        <div className="h-full flex items-center pr-4">
+                          Actions
+                        </div>
                       </Resizable>
                     </TableHead>
                   </TableRow>

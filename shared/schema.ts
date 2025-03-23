@@ -237,6 +237,9 @@ export const invoices = pgTable("invoices", {
   status: text("status", { enum: ["pending", "paid", "overdue"] }).default("pending").notNull(),
   paidAt: timestamp("paid_at"),
   notes: text("notes"),
+  clientEmail: text("client_email"), // Email where invoice is sent
+  paymentMethod: text("payment_method"), // "paypal" or "wire"
+  paymentFee: integer("payment_fee").default(0), // Fee amount in cents (e.g., 5% for PayPal)
 });
 
 export const insertInvoiceSchema = createInsertSchema(invoices);

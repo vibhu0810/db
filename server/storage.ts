@@ -635,6 +635,16 @@ export class DatabaseStorage implements IStorage {
         message: `New support ticket: ${ticket.title}`,
         createdAt: new Date(),
         read: false,
+        ticketId: newTicket.id, // Include the ticket ID in the notification for admins too
+      });
+      
+      // Create initial message from user to admin for each admin
+      // This starts the conversation automatically when a ticket is created
+      await this.createMessage({
+        senderId: ticket.userId,
+        receiverId: admin.id,
+        content: `Support Ticket #${newTicket.id}: ${ticket.title}\n\nI've created this support ticket for assistance. Order ID: ${ticket.orderId}`,
+        read: false,
       });
     }
     

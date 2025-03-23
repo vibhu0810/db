@@ -5,7 +5,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ProtectedRoute } from "@/lib/protected-route";
 import Dashboard from "./pages/dashboard";
 import DomainsPage from "./pages/domains";
-import OrdersPage from "./pages/orders/fixed-index";
+import OrdersPage from "./pages/orders";
 import OrderDetailsPage from "./pages/orders/[id]";
 import NewOrderPage from "./pages/orders/new";
 import ProfilePage from "./pages/profile";

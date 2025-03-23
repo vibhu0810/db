@@ -338,7 +338,7 @@ export default function OrderDetailsPage() {
           <CardHeader>
             <CardTitle>Order Details</CardTitle>
           </CardHeader>
-          <CardContent className="max-h-[350px] overflow-auto p-6">
+          <CardContent className="max-h-[380px] overflow-auto p-6">
             <div className="space-y-4">
               <label className="text-sm font-medium text-muted-foreground">Source URL / Guest Post Title</label>
               <div className="flex items-center gap-2 mt-1">
@@ -607,7 +607,7 @@ export default function OrderDetailsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.location.href = `/chat?ticket=${supportTicket.id}`}
+                        onClick={() => window.location.replace(`/chat?ticket=${supportTicket.id}`)}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
                         View Conversation

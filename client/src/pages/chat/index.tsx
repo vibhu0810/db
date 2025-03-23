@@ -4,7 +4,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { 
   Loader2, Send, Check, CheckCheck, Image as ImageIcon, 
-  Mic, MicOff, X, FileText, Paperclip, Music, Star
+  Mic, MicOff, X, FileText, Paperclip, Music, Star, Ticket as TicketIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -510,8 +510,24 @@ export default function ChatPage() {
                                 const adminUser = users.find((u: ChatUser) => u.is_admin);
                                 if (adminUser) {
                                   setSelectedUserId(adminUser.id);
-                                  // Set initial message referencing ticket
-                                  setMessageInput(`I need help with support ticket #${ticket.id}: ${ticket.subject || 'Support Request'}`);
+                                  // Set a message specific to this ticket
+                                  const ticketMessage = `I need help with support ticket #${ticket.id}: ${ticket.subject || 'Support Request'}`;
+                                  
+                                  // Add the ticket ID directly in the message to help track conversations 
+                                  setMessageInput(`${ticketMessage}\n\nTicket ID: ${ticket.id}`);
+                                  
+                                  // Create a new message with ticket reference if it doesn't exist
+                                  apiRequest("POST", "/api/messages", {
+                                    content: `Support Ticket #${ticket.id}: ${ticket.subject || 'Support Request'}\n\n${ticket.description || 'No description provided'}`,
+                                    receiverId: adminUser.id
+                                  })
+                                  .then(() => {
+                                    // Invalidate messages to refresh the list
+                                    queryClient.invalidateQueries({ queryKey: ['/api/messages', adminUser.id] });
+                                  })
+                                  .catch(error => {
+                                    console.error("Failed to create initial ticket message:", error);
+                                  });
                                   
                                   // Focus the input field after a short delay
                                   setTimeout(() => {
@@ -698,9 +714,21 @@ export default function ChatPage() {
                             )}
                           >
                             {/* Display message content */}
-                            <p className="whitespace-pre-wrap break-words">
-                              {message.content}
-                            </p>
+                            {message.content.includes("Support Ticket #") ? (
+                              <div className="bg-amber-100 dark:bg-amber-950 p-2 rounded-md border border-amber-300 dark:border-amber-800">
+                                <div className="flex gap-2 items-center mb-1 text-amber-800 dark:text-amber-400">
+                                  <FileText className="h-4 w-4" />
+                                  <span className="font-medium text-sm">Support Ticket</span>
+                                </div>
+                                <p className="whitespace-pre-wrap break-words">
+                                  {message.content}
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="whitespace-pre-wrap break-words">
+                                {message.content}
+                              </p>
+                            )}
                             
                             {/* Display image attachment if present */}
                             {message.attachmentUrl && message.attachmentType === 'image' && (

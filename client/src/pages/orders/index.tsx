@@ -850,23 +850,23 @@ export default function Orders() {
   // Get status options based on order type
   const getStatusOptions = (isGuestPost: boolean = false) => {
     if (isGuestPost) {
+      // Guest Post valid statuses
       return (
         <>
-          <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
-          <SelectItem value="Title Approved">Title Approved</SelectItem>
-          <SelectItem value="Content Writing">Content Writing</SelectItem>
-          <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
+          <SelectItem value="In Progress">In Progress</SelectItem>
+          <SelectItem value="Approved">Approved</SelectItem>
+          <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
           <SelectItem value="Completed">Completed</SelectItem>
           <SelectItem value="Rejected">Rejected</SelectItem>
           <SelectItem value="Cancelled">Cancelled</SelectItem>
         </>
       );
     } else {
-      // Niche Edit statuses - no "Approved" option
+      // Niche Edit valid statuses
       return (
         <>
           <SelectItem value="In Progress">In Progress</SelectItem>
-          <SelectItem value="Sent">Sent</SelectItem>
+          <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
           <SelectItem value="Completed">Completed</SelectItem>
           <SelectItem value="Rejected">Rejected</SelectItem>
           <SelectItem value="Cancelled">Cancelled</SelectItem>
@@ -1150,20 +1150,15 @@ export default function Orders() {
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             
-            {/* Niche Edit Statuses */}
-            <SelectItem value="In Progress">In Progress</SelectItem>
-            <SelectItem value="Sent">Sent</SelectItem>
-            
-            {/* Guest Post Statuses */}
-            <SelectItem value="Title Approval Pending">Title Approval Pending</SelectItem>
-            <SelectItem value="Title Approved">Title Approved</SelectItem>
-            <SelectItem value="Content Writing">Content Writing</SelectItem>
-            <SelectItem value="Sent To Editor">Sent To Editor</SelectItem>
-            
             {/* Common Statuses */}
+            <SelectItem value="In Progress">In Progress</SelectItem>
+            <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
             <SelectItem value="Completed">Completed</SelectItem>
             <SelectItem value="Rejected">Rejected</SelectItem>
             <SelectItem value="Cancelled">Cancelled</SelectItem>
+            
+            {/* Guest Post Only Statuses */}
+            <SelectItem value="Approved">Approved</SelectItem>
           </SelectContent>
         </Select>
         {isAdmin && (
@@ -1577,7 +1572,7 @@ export default function Orders() {
                                     Edit Order
                                   </DropdownMenuItem>
                                 )}
-                                {/* Only allow cancellation for orders in "In Progress" status */}
+                                {/* Allow cancellation for orders in "In Progress" status, regardless of order type */}
                                 {order.status === "In Progress" && (
                                   <DropdownMenuItem
                                     onClick={() => {

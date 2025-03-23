@@ -1365,21 +1365,7 @@ export default function Orders() {
                         </div>
                       </Resizable>
                     </TableHead>
-                    <TableHead style={{ width: columnWidths.notes || 200 }}>
-                      <Resizable
-                        width={columnWidths.notes || 200}
-                        height={38}
-                        onResize={onResize('notes')}
-                        resizeHandles={['e']}
-                        handle={
-                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                        }
-                      >
-                        <div className="h-full flex items-center pr-4">
-                          Notes
-                        </div>
-                      </Resizable>
-                    </TableHead>
+
                     <TableHead style={{ width: columnWidths.actions || 150 }}>
                       <Resizable
                         width={columnWidths.actions || 150}
@@ -1517,21 +1503,7 @@ export default function Orders() {
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <div className="truncate max-w-[200px]">
-                            {order.notes || "No notes"}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="flex-shrink-0"
-                            onClick={() => copyToClipboard(order.notes || '')}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+
                       <TableCell>
                         <div className="flex items-center justify-end space-x-2">
                           <Button
@@ -1557,7 +1529,7 @@ export default function Orders() {
                               </span>
                             )}
                           </Button>
-                          {((!["Sent", "Cancelled", "Completed"].includes(order.status) || isAdmin)) && (
+                          {((!["Sent", "Cancelled", "Completed", "Rejected"].includes(order.status) || isAdmin)) && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon">
@@ -1752,7 +1724,7 @@ export default function Orders() {
         <Sheet open={selectedOrderId !== null} onOpenChange={() => setSelectedOrderId(null)}>
           <SheetContent>
             <SheetHeader>
-              <SheetTitle>Order Comments</SheetTitle>
+              <SheetTitle>Comments</SheetTitle>
               <SheetDescription>
                 View and add comments for this order
               </SheetDescription>

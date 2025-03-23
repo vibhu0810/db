@@ -163,10 +163,11 @@ export default function NewOrderPage() {
     setOrderType(watchOrderType);
   }, [watchOrderType, customOrderForm]);
 
-  // Find the selected domain based on the domain ID from the URL
+  // Find the selected domain based on the domain URL from the query parameter
   useEffect(() => {
     if (domains.length > 0 && domainId) {
-      const domain = domains.find((d: Domain) => d.id.toString() === domainId);
+      // Now domainId contains the website URL instead of the numerical ID
+      const domain = domains.find((d: Domain) => d.websiteUrl === domainId);
       if (domain) {
         setSelectedDomain(domain);
         

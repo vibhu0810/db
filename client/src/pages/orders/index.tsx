@@ -479,6 +479,12 @@ export default function Orders() {
     refetchInterval: 10000, // Refetch orders every 10 seconds
   });
 
+  // Fetch domains for reference when displaying guest post titles
+  const { data: domains = [] } = useQuery({
+    queryKey: ['/api/domains'],
+    queryFn: () => apiRequest("GET", "/api/domains").then(res => res.json()),
+  });
+
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: () => apiRequest("GET", "/api/users").then(res => res.json()),
@@ -800,7 +806,7 @@ export default function Orders() {
       order.title && order.title !== "not_applicable" 
         ? (order.sourceUrl !== "not_applicable" 
             ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-            : order.title)
+            : `${order.title} - ${domains.find(d => d.id.toString() === order.domainId?.toString())?.websiteUrl || "unknown domain"}`)
         : order.sourceUrl === "not_applicable"
           ? "No title provided"
           : order.sourceUrl,
@@ -1400,7 +1406,7 @@ export default function Orders() {
                             {order.title && order.title !== "not_applicable" 
                               ? (order.sourceUrl !== "not_applicable" 
                                   ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-                                  : order.title)
+                                  : `${order.title} - ${domains.find(d => d.id.toString() === order.domainId?.toString())?.websiteUrl || "unknown domain"}`)
                               : order.sourceUrl === "not_applicable" 
                                 ? "No title provided" 
                                 : order.sourceUrl}
@@ -1412,7 +1418,7 @@ export default function Orders() {
                             onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
                               ? (order.sourceUrl !== "not_applicable" 
                                   ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-                                  : order.title)
+                                  : `${order.title} - ${domains.find(d => d.id.toString() === order.domainId?.toString())?.websiteUrl || "unknown domain"}`)
                               : order.sourceUrl === "not_applicable"
                                 ? ""
                                 : order.sourceUrl)}

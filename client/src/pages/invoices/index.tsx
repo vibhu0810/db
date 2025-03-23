@@ -976,6 +976,59 @@ function AdminInvoicesTab() {
                   )}
                 </div>
               </div>
+
+              {/* Payment Method Information */}
+              {selectedInvoice.paymentMethod && (
+                <div className="pt-2">
+                  <div className="border-t pt-4">
+                    <h3 className="font-medium mb-2">Payment Method</h3>
+                    <p className="mb-2">
+                      {selectedInvoice.paymentMethod === 'paypal' 
+                        ? 'PayPal (5% fee)' 
+                        : 'Wire Transfer / Wise (0% fee)'}
+                    </p>
+                    
+                    {/* Payment Details Box */}
+                    <div className="rounded-md bg-muted p-4 mt-2">
+                      {selectedInvoice.paymentMethod === 'wire' ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">Account Holder:</span>
+                            <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">IBAN:</span>
+                            <span className="font-medium col-span-2">AE070260001024344251201</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">BIC/SWIFT:</span>
+                            <span className="font-medium col-span-2">EBILAEAD</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">Bank:</span>
+                            <span className="font-medium col-span-2">Emirates NBD</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">Address:</span>
+                            <span className="font-medium col-span-2">Dubai, United Arab Emirates</span>
+                          </div>
+                        </div>
+                      ) : selectedInvoice.paymentMethod === 'paypal' ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">Email:</span>
+                            <span className="font-medium col-span-2">accounts@digitalgratified.com</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">Name:</span>
+                            <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedInvoice(null)}>
@@ -1563,6 +1616,59 @@ function UserInvoicesTab() {
                   )}
                 </div>
               </div>
+
+              {/* Payment Method Information */}
+              {selectedInvoice.paymentMethod && (
+                <div className="pt-2">
+                  <div className="border-t pt-4">
+                    <h3 className="font-medium mb-2">Payment Method</h3>
+                    <p className="mb-2">
+                      {selectedInvoice.paymentMethod === 'paypal' 
+                        ? 'PayPal (5% fee)' 
+                        : 'Wire Transfer / Wise (0% fee)'}
+                    </p>
+                    
+                    {/* Payment Details Box */}
+                    <div className="rounded-md bg-muted p-4 mt-2">
+                      {selectedInvoice.paymentMethod === 'wire' ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">Account Holder:</span>
+                            <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">IBAN:</span>
+                            <span className="font-medium col-span-2">AE070260001024344251201</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">BIC/SWIFT:</span>
+                            <span className="font-medium col-span-2">EBILAEAD</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">Bank:</span>
+                            <span className="font-medium col-span-2">Emirates NBD</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">Address:</span>
+                            <span className="font-medium col-span-2">Dubai, United Arab Emirates</span>
+                          </div>
+                        </div>
+                      ) : selectedInvoice.paymentMethod === 'paypal' ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">Email:</span>
+                            <span className="font-medium col-span-2">accounts@digitalgratified.com</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <span className="text-muted-foreground col-span-1">Name:</span>
+                            <span className="font-medium col-span-2">Digital Gratified FZ-LLC</span>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedInvoice(null)}>

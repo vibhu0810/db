@@ -472,6 +472,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const ticket = await storage.createSupportTicket(ticketData);
       
+      // Add an automated welcome message as a comment to the ticket
+      await storage.createOrderComment({
+        orderId: ticket.orderId,
+        userId: -1, // System user ID
+        content: "Thank you for contacting our support team. Please provide any additional details about your issue, and our team will respond as soon as possible.",
+        ticketId: ticket.id,
+        isFromAdmin: true,
+        isSystemMessage: true
+      });
+      
       res.status(201).json({ ticket });
     } catch (error) {
       console.error("Error creating support ticket:", error);

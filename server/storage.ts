@@ -263,9 +263,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createOrderComment(comment: InsertOrderComment & { isFromAdmin?: boolean }): Promise<OrderComment> {
+  async createOrderComment(comment: InsertOrderComment & { isFromAdmin?: boolean, isSystemMessage?: boolean }): Promise<OrderComment> {
     try {
       const isFromAdmin = comment.isFromAdmin || false;
+      const isSystemMessage = comment.isSystemMessage || false;
 
       const [newComment] = await db
         .insert(orderComments)
@@ -274,6 +275,7 @@ export class DatabaseStorage implements IStorage {
           userId: comment.userId,
           message: comment.message,
           isFromAdmin: isFromAdmin,
+          isSystemMessage: isSystemMessage,
           readByUser: isFromAdmin ? false : true, // If from admin, not read by user yet
           readByAdmin: isFromAdmin ? true : false, // If from admin, already read by admin
         })

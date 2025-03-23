@@ -998,9 +998,7 @@ export default function Orders() {
               </SheetContent>
             </Sheet>
           )}
-          <Button variant="outline" asChild>
-            <Link href="/orders/new">New Order</Link>
-          </Button>
+          {/* New Order button removed as requested */}
         </div>
       </div>
 
@@ -1196,6 +1194,35 @@ export default function Orders() {
                 </Resizable>
                 
                 <Resizable
+                  width={columnWidths.textEdit}
+                  height={40}
+                  onResize={onResize("textEdit")}
+                  handle={
+                    <span className="react-resizable-handle" />
+                  }
+                >
+                  <TableHead style={{ width: columnWidths.textEdit }}>
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => {
+                        setSortField("textEdit");
+                        setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                      }}
+                    >
+                      Text Edit/Content
+                      {sortField === "textEdit" && (
+                        <ChevronDown 
+                          className={cn(
+                            "ml-1 h-4 w-4", 
+                            sortDirection === "asc" ? "rotate-180 transform" : ""
+                          )}
+                        />
+                      )}
+                    </div>
+                  </TableHead>
+                </Resizable>
+                
+                <Resizable
                   width={columnWidths.status}
                   height={40}
                   onResize={onResize("status")}
@@ -1363,6 +1390,25 @@ export default function Orders() {
                               {order.website.url}
                             </span>
                           )}
+                          {!isGuestPost && (
+                            <div className="flex items-center">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-5 w-5 ml-1" 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(order.sourceUrl);
+                                  toast({
+                                    description: "URL copied to clipboard",
+                                    duration: 2000
+                                  });
+                                }}
+                                title="Copy URL"
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1377,10 +1423,32 @@ export default function Orders() {
                         <span className="text-sm text-muted-foreground block truncate-cell">
                           {order.targetUrl}
                         </span>
+                        <div className="flex items-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5 ml-1" 
+                            onClick={() => {
+                              navigator.clipboard.writeText(order.targetUrl);
+                              toast({
+                                description: "URL copied to clipboard",
+                                duration: 2000
+                              });
+                            }}
+                            title="Copy URL"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="max-w-xs truncate-cell">
                           {order.anchorText || "N/A"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate-cell">
+                          {order.textEdit || "N/A"}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1454,15 +1522,17 @@ export default function Orders() {
                             <DropdownMenuItem asChild>
                               <Link href={`/orders/${order.id}`}>View Details</Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setOrderToEdit(order);
-                              }}
-                            >
-                              Edit Order
-                            </DropdownMenuItem>
+                            {order.status === "In Progress" && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setOrderToEdit(order);
+                                }}
+                              >
+                                Edit Order
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
-                            {order.status !== "Cancelled" && (
+                            {order.status === "In Progress" && (
                               <DropdownMenuItem
                                 onClick={() => setOrderToCancel(order.id)}
                                 className="text-orange-600"

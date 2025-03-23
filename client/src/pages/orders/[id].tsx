@@ -11,6 +11,18 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { format } from "date-fns";
 import { Loader2, Copy, MessageSquare, ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { X, FileText, ExternalLink, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
@@ -134,6 +146,35 @@ export default function OrderDetailsPage() {
       description: "Text has been copied to your clipboard.",
     });
   };
+  
+  // Mutation for cancelling an order
+  const cancelOrderMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/orders/${id}`, {
+        status: "Cancelled"
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to cancel order");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders', id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "Order Cancelled",
+        description: `Order #${id} has been cancelled successfully.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -283,6 +324,77 @@ export default function OrderDetailsPage() {
                 </div>
               </div>
             </div>
+            
+            {/* Display content document link if available (for guest posts) */}
+            {order.contentDocument && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Content Document</label>
+                <div className="mt-1 flex items-center">
+                  <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <a 
+                    href={order.contentDocument} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    View Document
+                  </a>
+                </div>
+              </div>
+            )}
+            
+            {/* Display Google Doc link if available */}
+            {order.googleDocLink && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Google Doc</label>
+                <div className="mt-1 flex items-center">
+                  <ExternalLink className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <a 
+                    href={order.googleDocLink} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    View Google Doc
+                  </a>
+                </div>
+              </div>
+            )}
+            
+            {/* Add Cancel Order button if order is In Progress and user owns the order */}
+            {order.status === "In Progress" && order.userId === user?.id && (
+              <div className="mt-4">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full">
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel Order
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to cancel this order? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>No, Keep Order</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => cancelOrderMutation.mutate()}
+                        disabled={cancelOrderMutation.isPending}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {cancelOrderMutation.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Yes, Cancel Order
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
           </CardContent>
         </Card>
 

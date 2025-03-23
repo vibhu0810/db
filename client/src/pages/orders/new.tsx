@@ -42,6 +42,8 @@ interface CustomOrderFormData {
   notes: string;
   price: number;
   type: "guest_post" | "niche_edit";
+  contentOption?: "upload" | "write";
+  contentDocument?: File;
 }
 
 interface Domain {
@@ -110,6 +112,26 @@ export default function NewOrderPage() {
     notes: z.string().optional(),
     price: z.union([z.string(), z.number()]),
     type: z.enum(["guest_post", "niche_edit"]),
+    contentOption: z.enum(["upload", "write"]).optional(),
+    contentDocument: z.instanceof(File).optional(),
+  }).refine((data) => {
+    // Require contentOption if it's a guest post
+    if (data.type === "guest_post") {
+      return !!data.contentOption;
+    }
+    return true;
+  }, {
+    message: "Please select a content option for Guest Posts",
+    path: ["contentOption"]
+  }).refine((data) => {
+    // Require contentDocument if contentOption is upload
+    if (data.type === "guest_post" && data.contentOption === "upload") {
+      return !!data.contentDocument;
+    }
+    return true;
+  }, {
+    message: "Please upload a document for your content",
+    path: ["contentDocument"]
   });
 
   // Initialize the form
@@ -124,6 +146,7 @@ export default function NewOrderPage() {
       notes: "",
       price: 0,
       type: "niche_edit",
+      contentOption: "upload"
     },
     mode: "onTouched", // Only validate fields after they've been touched
   });
@@ -131,6 +154,7 @@ export default function NewOrderPage() {
   const watchOrderType = customOrderForm.watch("type");
   const watchSourceUrl = customOrderForm.watch("sourceUrl");
   const watchPrice = customOrderForm.watch("price");
+  const watchContentOption = customOrderForm.watch("contentOption");
   
   // Validate source URL to ensure it matches the domain
   useEffect(() => {
@@ -202,6 +226,21 @@ export default function NewOrderPage() {
       }
     }
   }, [selectedDomain, orderType, customOrderForm]);
+  
+  // Effect to update price when content option changes
+  useEffect(() => {
+    if (orderType === 'guest_post' && selectedDomain && selectedDomain.guestPostPrice) {
+      let basePrice = parseFloat(selectedDomain.guestPostPrice);
+      
+      if (watchContentOption === 'write') {
+        // Display the price with the writing service cost
+        customOrderForm.setValue('price', basePrice + 100);
+      } else {
+        // Reset to base price if switching back to upload
+        customOrderForm.setValue('price', basePrice);
+      }
+    }
+  }, [watchContentOption, selectedDomain, orderType, customOrderForm]);
 
   // API mutation to create a new order
   const customOrderMutation = useMutation({
@@ -235,6 +274,20 @@ export default function NewOrderPage() {
           name: selectedDomain.websiteName,
           url: selectedDomain.websiteUrl
         };
+        
+        // Add content option information
+        payload.contentOption = data.contentOption;
+        
+        // If content option is "write", add the extra cost
+        if (data.contentOption === "write") {
+          payload.price += 100; // Add $100 for content writing service
+        }
+        
+        // Remove the file from the payload since it can't be JSON serialized
+        if (data.contentDocument) {
+          delete payload.contentDocument;
+          payload.hasContentDocument = true;
+        }
       }
       
       const res = await apiRequest("POST", "/api/orders", payload);
@@ -567,6 +620,71 @@ export default function NewOrderPage() {
                 )}
               />
               
+              {/* Content Options for Guest Posts */}
+              {orderType === "guest_post" && (
+                <div className="space-y-4 border p-4 rounded-md bg-muted/30">
+                  <h3 className="font-medium">Content Options</h3>
+                  
+                  <FormField
+                    control={customOrderForm.control}
+                    name="contentOption"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Choose how you want to provide content</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-col space-y-1"
+                          >
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="upload" />
+                              </FormControl>
+                              <FormLabel className="font-normal cursor-pointer flex items-center gap-1">
+                                <FileText className="h-4 w-4" />
+                                I'll upload my own content
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="write" />
+                              </FormControl>
+                              <FormLabel className="font-normal cursor-pointer">
+                                Please write the content for me (additional cost)
+                                <Badge className="ml-2 bg-primary/20 text-primary border-primary/30">
+                                  +$100
+                                </Badge>
+                              </FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {customOrderForm.watch("contentOption") === "upload" && (
+                    <div className="mt-3">
+                      <FormLabel className="block mb-2">Upload Content Document</FormLabel>
+                      <input 
+                        type="file" 
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                        accept=".doc,.docx,.txt,.pdf,.rtf" 
+                        onChange={(e) => {
+                          if (e.target.files?.length) {
+                            customOrderForm.setValue("contentDocument", e.target.files[0]);
+                          }
+                        }} 
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Accepted formats: DOC, DOCX, TXT, PDF, RTF (Max 5MB)
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <FormField
                 control={customOrderForm.control}
                 name="notes"
@@ -613,7 +731,6 @@ export default function NewOrderPage() {
                         className="bg-muted cursor-not-allowed"
                       />
                     </FormControl>
-                    <p className="text-xs text-muted-foreground mt-1">This price is pre-set for this domain and cannot be modified.</p>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -189,16 +189,29 @@ export default function OrderDetailsPage() {
     },
   });
   
+  // Query for getting admin ID
+  const { data: adminData } = useQuery({
+    queryKey: ['/api/users/admin'],
+    queryFn: () => apiRequest("GET", "/api/users")
+      .then(res => res.json())
+      .then(users => users.find((u: any) => u.is_admin === true) || null),
+    enabled: !!user && !isAdmin,
+  });
+  
   // Mutation for creating a support ticket
   const createTicketMutation = useMutation({
     mutationFn: async () => {
       if (!id || !user) throw new Error("Missing order ID or user");
+      
+      // Find the admin user
+      const adminUser = adminData || { id: 1 }; // Fallback to ID 1 which is usually the admin
       
       const title = ticketTitle || `Support ticket for Order #${id}`;
       const res = await apiRequest("POST", "/api/support-tickets", {
         orderId: Number(id),
         title,
         description: `User ${user.username} has opened a support ticket for Order #${id}`,
+        adminId: adminUser.id // Explicitly set the admin ID
       });
       
       if (!res.ok) {
@@ -213,12 +226,17 @@ export default function OrderDetailsPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/support-tickets/order', id] });
       
       // Redirect to the chat page with the admin
-      window.location.href = `/chat?ticket=${data.id}`;
-      
-      toast({
-        title: "Support Ticket Created",
-        description: "Your support ticket has been created. You'll be redirected to chat with support.",
-      });
+      if (data && data.id) {
+        // Use a slight delay to ensure the ticket is fully processed
+        setTimeout(() => {
+          window.location.href = `/chat?ticket=${data.id}`;
+        }, 500);
+        
+        toast({
+          title: "Support Ticket Created",
+          description: "Your support ticket has been created. You'll be redirected to chat with support.",
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -501,7 +519,7 @@ export default function OrderDetailsPage() {
               ) : (
                 <>
                   <div className="relative mb-4">
-                    <ScrollArea className="h-[350px] pr-4 rounded-md border">
+                    <ScrollArea className="h-[250px] pr-4 rounded-md border">
                       <div className="space-y-4 p-4">
                         {!Array.isArray(comments) || comments.length === 0 ? (
                           <div className="text-center text-muted-foreground py-8">

@@ -342,8 +342,8 @@ export default function Orders() {
     status: 150,
     id: 100,
     price: 100,
-    date: 120,
-    comments: 80,
+    date: 150,
+    comments: 100,
     actions: 80,
     user: 150,
   });
@@ -1466,6 +1466,32 @@ export default function Orders() {
                               onClick={() => copyToClipboard(order.anchorText, `anchor-${order.id}`)}
                             >
                               {copiedFields[`anchor-${order.id}`] ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate-cell flex justify-between group">
+                          <div className="flex-1 truncate">
+                            {isGuestPost 
+                              ? (order.title || "N/A") 
+                              : (order.textEdit || "N/A")}
+                          </div>
+                          {(isGuestPost ? order.title : order.textEdit) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                              onClick={() => copyToClipboard(
+                                isGuestPost ? (order.title || "") : (order.textEdit || ""),
+                                `content-${order.id}`
+                              )}
+                            >
+                              {copiedFields[`content-${order.id}`] ? (
                                 <Check className="h-4 w-4 text-green-500" />
                               ) : (
                                 <Copy className="h-4 w-4" />

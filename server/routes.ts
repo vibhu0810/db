@@ -77,6 +77,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       session: req.session
     });
   });
+  
+  // Current user endpoint
+  app.get("/api/user", (req, res) => {
+    console.log("GET /api/user called, authenticated:", !!req.user);
+    console.log("Session ID:", req.sessionID);
+    console.log("Session:", req.session);
+    console.log("User:", req.user);
+    
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    // Return only necessary user data (avoid sending password or sensitive fields)
+    const userData = {
+      id: req.user.id,
+      username: req.user.username,
+      firstName: req.user.firstName,
+      lastName: req.user.lastName,
+      email: req.user.email,
+      companyName: req.user.companyName,
+      country: req.user.country,
+      is_admin: req.user.is_admin,
+      profilePicture: req.user.profilePicture,
+      phone: req.user.phone,
+      billingAddress: req.user.billingAddress,
+      paymentMethod: req.user.paymentMethod
+    };
+    
+    res.json(userData);
+  });
 
   // Add check online status endpoint
   app.get("/api/users/online-status", async (req, res) => {
@@ -147,6 +177,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+  
+  // Add single user route
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Check permissions: Admins can view any user, regular users can only view themselves and admins
+      if (!req.user.is_admin && req.user.id !== userId && !user.is_admin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      
+      // Return filtered user info
+      const filteredUser = {
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        companyName: user.companyName,
+        country: user.country,
+        is_admin: user.is_admin,
+        profilePicture: user.profilePicture
+      };
+      
+      res.json(filteredUser);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
     }
   });
 

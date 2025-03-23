@@ -606,7 +606,7 @@ export default function DomainsPage() {
                 {!isAdmin && (
                   <TableCell>
                     <Button
-                      onClick={() => setLocation(`/orders/new?domain=${domain.websiteUrl}`)}
+                      onClick={() => setLocation(`/orders/new?domain=${domain.id}`)}
                       size="sm"
                     >
                       Place Order

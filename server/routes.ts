@@ -342,6 +342,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Support Tickets routes
+  app.get("/api/support-tickets/order/:id", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const orderId = parseInt(req.params.id);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ error: "Invalid order ID" });
+      }
+      
+      const ticket = await storage.getSupportTicketByOrder(orderId);
+      
+      // Only allow access if user is owner of the order or an admin
+      if (ticket && ticket.userId !== req.user.id && !req.user.is_admin) {
+        return res.status(403).json({ error: "Unauthorized access to support ticket" });
+      }
+      
+      res.json({ ticket });
+    } catch (error) {
+      console.error("Error fetching support ticket by order:", error);
+      res.status(500).json({ error: "Failed to fetch support ticket" });
+    }
+  });
+
   app.get("/api/support-tickets", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });

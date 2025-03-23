@@ -2,10 +2,22 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Order, Domain } from "@shared/schema";
+import { Order as OrderBase, Domain } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useWelcome } from "@/hooks/use-welcome";
 import { Link } from "wouter";
+
+// Extend the Order type to include website and user properties added by the API
+interface Order extends OrderBase {
+  website?: {
+    name: string;
+    url: string;
+  };
+  user?: {
+    username: string;
+    companyName: string;
+  };
+}
 import {
   CircleDollarSign,
   LineChart,
@@ -333,9 +345,7 @@ export default function Dashboard() {
                   <div>
                     <p className="font-medium">
                       {order.sourceUrl === "not_applicable" 
-                        ? (order.website 
-                            ? `${order.title || "Untitled"} - ${order.website.name}` 
-                            : (order.title || "Guest Post"))
+                        ? `${order.title} - ${order.website?.name}`
                         : order.sourceUrl}
                     </p>
                     {isAdmin && (

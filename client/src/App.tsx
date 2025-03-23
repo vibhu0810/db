@@ -7,6 +7,7 @@ import Dashboard from "./pages/dashboard";
 import DomainsPage from "./pages/domains";
 import OrdersPage from "./pages/orders";
 import OrderDetailsPage from "./pages/orders/[id]";
+import NewOrderPage from "./pages/orders/new";
 import ProfilePage from "./pages/profile";
 import UsersPage from "./pages/users";
 import ChatPage from "./pages/chat";
@@ -28,6 +29,13 @@ function App() {
           </ProtectedRoute>
         </Route>
 
+        <Route path="/orders/new">
+          <ProtectedRoute>
+            <DashboardShell>
+              <NewOrderPage />
+            </DashboardShell>
+          </ProtectedRoute>
+        </Route>
         <Route path="/orders/:id">
           <ProtectedRoute>
             <DashboardShell>

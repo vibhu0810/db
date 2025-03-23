@@ -337,14 +337,14 @@ export default function Orders() {
     sourceUrl: 250,
     targetUrl: 250,
     anchorText: 150,
-    textEdit: 200,
+    textEdit: 150,
     notes: 200,
-    status: 150,
+    status: 120,
     id: 100,
     price: 100,
     date: 160,
-    comments: 120,
-    actions: 120,
+    comments: 100,
+    actions: 100,
     user: 150,
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -1418,11 +1418,8 @@ export default function Orders() {
                           rel="noopener noreferrer"
                           className="font-medium hover:underline truncate-cell block"
                         >
-                          {extractDomainFromUrl(order.targetUrl)}
-                        </a>
-                        <span className="text-sm text-muted-foreground block truncate-cell">
                           {order.targetUrl}
-                        </span>
+                        </a>
                         <div className="flex items-center">
                           <Button 
                             variant="ghost" 
@@ -1445,11 +1442,47 @@ export default function Orders() {
                         <div className="max-w-xs truncate-cell">
                           {order.anchorText || "N/A"}
                         </div>
+                        <div className="flex items-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5 ml-1" 
+                            onClick={() => {
+                              navigator.clipboard.writeText(order.anchorText || "");
+                              toast({
+                                description: "Anchor text copied to clipboard",
+                                duration: 2000
+                              });
+                            }}
+                            title="Copy anchor text"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="max-w-xs truncate-cell">
                           {order.textEdit || "N/A"}
                         </div>
+                        {order.textEdit && (
+                          <div className="flex items-center">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-5 w-5 ml-1" 
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.textEdit || "");
+                                toast({
+                                  description: "Text edit copied to clipboard",
+                                  duration: 2000
+                                });
+                              }}
+                              title="Copy text edit"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         {isAdmin ? (

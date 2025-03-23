@@ -1,0 +1,30 @@
+Warning: validateDOMNesting(...): %s cannot appear as a child of <%s>.%s%s%s <th> div   
+    at th
+    at _c11 (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/table.tsx:127:13)
+    at div
+    at Resizable2 (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-resizable.js?v=0ac353d6:1632:39)
+    at tr
+    at _c9 (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/table.tsx:102:12)
+    at thead
+    at _c3 (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/table.tsx:46:12)
+    at table
+    at div
+    at _c (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/table.tsx:20:11)
+    at div
+    at div
+    at div
+    at div
+    at Orders (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/pages/orders/index.tsx:417:21)
+    at main
+    at div
+    at div
+    at DashboardContent (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/layout/dashboard-shell.tsx:27:29)
+    at SidebarProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/hooks/use-sidebar.tsx:26:35)
+    at DashboardShell (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/layout/dashboard-shell.tsx:144:34)
+    at ProtectedRoute (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/lib/protected-route.tsx:21:34)
+    at Route (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=0ac353d6:206:16)
+    at Switch (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=0ac353d6:262:17)
+    at div
+    at App
+    at AuthProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/hooks/use-auth.tsx:37:32)
+    at QueryClientProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=0ac353d6:2881:3)

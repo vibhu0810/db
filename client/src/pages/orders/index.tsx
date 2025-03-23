@@ -856,9 +856,6 @@ export default function Orders() {
               </SheetContent>
             </Sheet>
           )}
-          <a href="/orders/new">
-            <Button>New Order</Button>
-          </a>
         </div>
       </div>
 

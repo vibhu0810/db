@@ -51,15 +51,27 @@ export function DatePickerWithRange({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={setDate}
-            numberOfMonths={2}
-          />
+        <PopoverContent className="max-w-[580px] w-auto p-0" align="start">
+          <div className="flex flex-col sm:flex-row">
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={date?.from}
+              selected={date}
+              onSelect={setDate}
+              numberOfMonths={1}
+              className="sm:border-r"
+            />
+            <Calendar
+              mode="range"
+              defaultMonth={date?.from ? 
+                new Date(date.from.getFullYear(), date.from.getMonth() + 1, 1) : 
+                new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)}
+              selected={date}
+              onSelect={setDate}
+              numberOfMonths={1}
+            />
+          </div>
         </PopoverContent>
       </Popover>
     </div>

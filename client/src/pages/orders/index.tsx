@@ -1303,7 +1303,7 @@ export default function Orders() {
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <TableHead style={{ width: columnWidths.comments }}></TableHead>
+                  <TableHead style={{ width: columnWidths.comments }}>Comments</TableHead>
                 </Resizable>
                 
                 <Resizable

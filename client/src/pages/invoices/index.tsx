@@ -1248,14 +1248,40 @@ function UserInvoicesTab() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredInvoices.length === 0 ? (
-        <div className="py-10 text-center">
-          <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-          <h3 className="mt-4 text-lg font-medium">No Invoices Found</h3>
-          <p className="text-muted-foreground">
-            {searchQuery || dateRange.from || statusFilter
-              ? "Try adjusting your search or filters"
-              : "You don't have any invoices yet"}
-          </p>
+        <div>
+          <div className="py-6 text-center">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+            <h3 className="mt-4 text-lg font-medium">No Invoices Found</h3>
+            <p className="text-muted-foreground">
+              {searchQuery || dateRange.from || statusFilter
+                ? "Try adjusting your search or filters"
+                : "You don't have any invoices yet"}
+            </p>
+          </div>
+          
+          {/* Payment Details Section (always visible) */}
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>Payment Information</CardTitle>
+              <CardDescription>Use the following details when making payments for your invoices</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">PayPal (5% fee)</h3>
+                  <div className="rounded-md bg-muted p-4">
+                    <PaymentDetails paymentMethod="paypal" />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Wire Transfer / Wise (0% fee)</h3>
+                  <div className="rounded-md bg-muted p-4">
+                    <PaymentDetails paymentMethod="wire" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       ) : (
         <div className="rounded-md border">

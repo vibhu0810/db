@@ -798,9 +798,7 @@ export default function Orders() {
     const rows = filteredOrders.map((order: any) => [
       order.id,
       order.title && order.title !== "not_applicable" 
-        ? (order.sourceUrl !== "not_applicable" 
-            ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
-            : order.title)
+        ? `${order.title} - ${order.website || extractDomainFromUrl(order.sourceUrl)}`
         : order.sourceUrl === "not_applicable"
           ? "No title provided"
           : extractDomainFromUrl(order.sourceUrl),

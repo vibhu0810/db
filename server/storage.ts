@@ -8,7 +8,7 @@ import type {
   SupportTicket, InsertTicket, UpdateTicket
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, or, and, desc, gte, lte, between, asc } from "drizzle-orm";
+import { eq, or, and, desc, gte, lte, between, asc, isNull } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPgSimple from "connect-pg-simple";
@@ -247,14 +247,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Comment operations
-  async getOrderComments(orderId: number): Promise<OrderComment[]> {
+  async getOrderComments(orderId: number, ticketId?: number): Promise<OrderComment[]> {
     try {
-      const comments = await db
+      // Start with base query
+      let query = db
         .select()
         .from(orderComments)
-        .where(eq(orderComments.orderId, orderId))
-        .orderBy(orderComments.createdAt);
+        .where(eq(orderComments.orderId, orderId));
+      
+      // If ticketId is provided, filter to only get comments for that ticket
+      if (ticketId) {
+        query = query.where(eq(orderComments.ticketId, ticketId));
+      } else {
+        // For general order comments, only get those not associated with tickets
+        query = query.where(isNull(orderComments.ticketId));
+      }
 
+      const comments = await query.orderBy(orderComments.createdAt);
+      
       console.log('Retrieved comments:', comments);
       return comments;
     } catch (error) {

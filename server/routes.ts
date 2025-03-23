@@ -470,6 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
       
+      console.log("Retrieved ticket comments:", commentsWithUserDetails.length);
       res.json(commentsWithUserDetails);
     } catch (error) {
       console.error("Error fetching ticket comments:", error);

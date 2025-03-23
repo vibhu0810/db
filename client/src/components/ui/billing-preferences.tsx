@@ -3,8 +3,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { updateBillingSchema } from '@/../../shared/schema';
+import { countries } from '@/lib/countries';
 
 import {
   Card,
@@ -32,11 +33,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { PaymentDetails } from '@/components/ui/payment-details';
 import { useToast } from '@/hooks/use-toast';
 
-type BillingPreferencesFormValues = z.infer<typeof updateBillingSchema>;
+// Extended schema to include all the required billing fields
+const billingFormSchema = z.object({
+  personName: z.string().min(2, "Name is required"),
+  billingEmail: z.string().email("Please enter a valid email address"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  country: z.string().min(1, "Country is required"),
+  zipCode: z.string().min(1, "ZIP/PIN code is required"),
+  billingPreferences: z.enum(["paypal", "wire"]),
+  notes: z.string().optional(),
+});
+
+type BillingFormValues = z.infer<typeof billingFormSchema>;
 
 interface BillingPreferencesProps {
   user: any; // User object with billing information
@@ -47,15 +61,14 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   
   // We'll store preferences in localStorage to persist them between sessions
-  // We could alternatively save these to the user's profile in the database
   useEffect(() => {
     // Try to get saved preferences from localStorage
     const savedPreferences = localStorage.getItem('billingPreferences');
     if (savedPreferences) {
       try {
         const parsed = JSON.parse(savedPreferences);
-        if (parsed.paymentMethod) {
-          setSelectedPaymentMethod(parsed.paymentMethod);
+        if (parsed.billingPreferences) {
+          setSelectedPaymentMethod(parsed.billingPreferences);
         }
       } catch (e) {
         console.error('Error parsing saved billing preferences', e);
@@ -63,33 +76,63 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
     }
   }, []);
 
-  const form = useForm<BillingPreferencesFormValues>({
-    resolver: zodResolver(updateBillingSchema),
+  // Get saved preferences from localStorage or use defaults
+  const getSavedPreferences = () => {
+    try {
+      const savedPreferences = localStorage.getItem('billingPreferences');
+      if (savedPreferences) {
+        return JSON.parse(savedPreferences);
+      }
+    } catch (e) {
+      console.error('Error parsing saved billing preferences', e);
+    }
+    
+    return {};
+  };
+  
+  const savedPrefs = getSavedPreferences();
+
+  const form = useForm<BillingFormValues>({
+    resolver: zodResolver(billingFormSchema),
     defaultValues: {
-      billingAddress: user?.billingAddress || '',
-      billingEmail: user?.email || '',
-      billingPreferences: (localStorage.getItem('billingPreferences') ? 
-        JSON.parse(localStorage.getItem('billingPreferences') || '{}').paymentMethod : 
-        '') || 'wire',
+      personName: savedPrefs.personName || user?.companyName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+      billingEmail: savedPrefs.billingEmail || user?.email || '',
+      city: savedPrefs.city || '',
+      state: savedPrefs.state || '',
+      country: savedPrefs.country || user?.country || '',
+      zipCode: savedPrefs.zipCode || '',
+      billingPreferences: savedPrefs.billingPreferences || 'wire',
+      notes: savedPrefs.notes || '',
     },
   });
 
   const updateBillingMutation = useMutation({
-    mutationFn: async (data: BillingPreferencesFormValues) => {
-      // Save to localStorage for now
-      localStorage.setItem('billingPreferences', JSON.stringify({
-        billingAddress: data.billingAddress,
-        billingEmail: data.billingEmail,
-        paymentMethod: data.billingPreferences,
-      }));
+    mutationFn: async (data: BillingFormValues) => {
+      // Save to localStorage 
+      localStorage.setItem('billingPreferences', JSON.stringify(data));
       
-      // This would be where we would save to the database if needed
-      // const res = await apiRequest('PATCH', '/api/user/billing', data);
-      // if (!res.ok) {
-      //   const error = await res.json();
-      //   throw new Error(error.message || 'Failed to update billing preferences');
-      // }
-      // return await res.json();
+      // In a real implementation, we would also save to the database
+      // For now, we'll create a notification for the admin
+      try {
+        // Create notification for admin users
+        const notification = {
+          // We'll send this to user ID 1 which is typically the admin account
+          userId: 1, 
+          message: `${user.username} has updated their billing information.`,
+          type: 'billing_update',
+          orderId: null,
+          read: false,
+          createdAt: new Date().toISOString(),
+        };
+        
+        // Send the notification
+        const res = await apiRequest('POST', '/api/notifications', notification);
+        if (!res.ok) {
+          console.error('Failed to send notification to admin');
+        }
+      } catch (e) {
+        console.error('Error sending admin notification:', e);
+      }
       
       return data;
     },
@@ -98,6 +141,9 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
         title: 'Preferences Saved',
         description: 'Your billing preferences have been updated.',
       });
+      
+      // Invalidate any related queries
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
     },
     onError: (error) => {
       toast({
@@ -108,7 +154,7 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
     },
   });
 
-  const onSubmit = (data: BillingPreferencesFormValues) => {
+  const onSubmit = (data: BillingFormValues) => {
     updateBillingMutation.mutateAsync(data).then(() => {
       setSelectedPaymentMethod(data.billingPreferences || null);
     });
@@ -134,15 +180,16 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Person/Business Name */}
             <FormField
               control={form.control}
-              name="billingAddress"
+              name="personName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Billing Address</FormLabel>
+                  <FormLabel>Person Name / Business Name <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Enter your billing address" 
+                      placeholder="Enter your name or business name" 
                       {...field} 
                       disabled={updateBillingMutation.isPending}
                     />
@@ -152,12 +199,13 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
               )}
             />
             
+            {/* Billing Email */}
             <FormField
               control={form.control}
               name="billingEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Billing Email</FormLabel>
+                  <FormLabel>Billing Email <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input 
                       type="email"
@@ -174,12 +222,120 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
               )}
             />
             
+            {/* City */}
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City <span className="text-red-500">*</span></FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter your city" 
+                      {...field} 
+                      disabled={updateBillingMutation.isPending}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* State */}
+            <FormField
+              control={form.control}
+              name="state"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>State <span className="text-red-500">*</span></FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter your state/province" 
+                      {...field} 
+                      disabled={updateBillingMutation.isPending}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Country */}
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country <span className="text-red-500">*</span></FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={updateBillingMutation.isPending}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your country" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="max-h-[300px] overflow-y-auto">
+                      <div className="sticky top-0 bg-background px-2 py-2 z-10">
+                        <Input
+                          placeholder="Search countries..."
+                          className="mb-1"
+                          onChange={(e) => {
+                            // Filter countries based on search
+                            const value = e.target.value.toLowerCase();
+                            const items = document.querySelectorAll('[data-country-item]');
+                            items.forEach((item) => {
+                              const text = (item.textContent || '').toLowerCase();
+                              const shouldShow = text.includes(value);
+                              (item as HTMLElement).style.display = shouldShow ? '' : 'none';
+                            });
+                          }}
+                        />
+                      </div>
+                      {countries.map((country) => (
+                        <SelectItem 
+                          key={country.value} 
+                          value={country.value}
+                          data-country-item
+                        >
+                          {country.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* ZIP/PIN Code */}
+            <FormField
+              control={form.control}
+              name="zipCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ZIP Code / PIN Code <span className="text-red-500">*</span></FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter your ZIP or PIN code" 
+                      {...field} 
+                      disabled={updateBillingMutation.isPending}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Payment Method */}
             <FormField
               control={form.control}
               name="billingPreferences"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Preferred Payment Method</FormLabel>
+                  <FormLabel>Preferred Payment Method <span className="text-red-500">*</span></FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
@@ -195,6 +351,25 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
                       <SelectItem value="paypal">PayPal (5% fee)</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Notes */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Any special instructions for billing" 
+                      {...field} 
+                      disabled={updateBillingMutation.isPending}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -218,6 +393,24 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
           <div className="mt-8">
             <h3 className="text-lg font-medium mb-4">Payment Details</h3>
             <div className="rounded-md bg-muted p-4">
+              <div className="mb-6">
+                <h4 className="font-medium mb-3">Company Information</h4>
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:justify-between">
+                    <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Company:</span>
+                    <span className="font-medium sm:w-2/3">Digital Gratified FZ-LLC</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between">
+                    <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Address:</span>
+                    <span className="font-medium sm:w-2/3">Dubai Silicon Oasis, Dubai, UAE</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between">
+                    <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Email:</span>
+                    <span className="font-medium sm:w-2/3">billing@digitalgratified.com</span>
+                  </div>
+                </div>
+              </div>
+            
               <PaymentDetails paymentMethod={selectedPaymentMethod} />
             </div>
             <p className="text-sm text-muted-foreground mt-2">

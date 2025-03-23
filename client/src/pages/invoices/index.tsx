@@ -1261,33 +1261,7 @@ function UserInvoicesTab() {
           </div>
           
           {/* Billing Preferences & Payment Details Section */}
-          <div className="mt-8 space-y-6">
-            {/* Company Billing Information - Always visible */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Company Information</CardTitle>
-                <CardDescription>The company you're making payments to</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md bg-muted p-4">
-                  <div className="space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:justify-between">
-                      <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Company:</span>
-                      <span className="font-medium sm:w-2/3">Digital Gratified FZ-LLC</span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:justify-between">
-                      <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Address:</span>
-                      <span className="font-medium sm:w-2/3">Dubai Silicon Oasis, Dubai, UAE</span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:justify-between">
-                      <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Email:</span>
-                      <span className="font-medium sm:w-2/3">billing@digitalgratified.com</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
+          <div className="mt-8 space-y-6">            
             {/* User Billing Preferences */}
             <BillingPreferences user={user} />
           </div>

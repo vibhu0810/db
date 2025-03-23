@@ -1398,9 +1398,7 @@ export default function Orders() {
                         <div className="flex items-center space-x-2">
                           <div className="truncate max-w-[250px]">
                             {order.title && order.title !== "not_applicable" 
-                              ? (order.sourceUrl !== "not_applicable" 
-                                  ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
-                                  : order.title)
+                              ? `${order.title} - ${order.website || extractDomainFromUrl(order.sourceUrl)}`
                               : order.sourceUrl === "not_applicable" 
                                 ? "No title provided" 
                                 : extractDomainFromUrl(order.sourceUrl)}
@@ -1410,9 +1408,7 @@ export default function Orders() {
                             size="icon"
                             className="flex-shrink-0"
                             onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
-                              ? (order.sourceUrl !== "not_applicable" 
-                                  ? `${extractDomainFromUrl(order.sourceUrl)} - ${order.title}`
-                                  : order.title)
+                              ? `${order.title} - ${order.website || extractDomainFromUrl(order.sourceUrl)}`
                               : order.sourceUrl === "not_applicable"
                                 ? ""
                                 : extractDomainFromUrl(order.sourceUrl))}

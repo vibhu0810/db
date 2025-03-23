@@ -149,7 +149,8 @@ export default function NewOrder() {
         notes: data.notes,
         userId: isAdmin && selectedUserId ? selectedUserId : undefined,
         price: selectedType === "guest_post" ? domain.guestPostPrice : domain.nicheEditPrice,
-        // Add type-specific fields without setting status
+        // Set default status based on order type
+        status: selectedType === "guest_post" ? "In Progress" : undefined,
         ...(selectedType === "guest_post"
           ? {
               sourceUrl: "not_applicable",

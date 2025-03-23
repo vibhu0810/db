@@ -1554,7 +1554,8 @@ export default function Orders() {
                                     Edit Order
                                   </DropdownMenuItem>
                                 )}
-                                {order.status !== "Completed" && order.status !== "Cancelled" && (
+                                {/* Only allow cancellation for orders in "In Progress" status */}
+                                {order.status === "In Progress" && (
                                   <DropdownMenuItem
                                     onClick={() => {
                                       if (!isActionInProgress) {

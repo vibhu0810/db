@@ -1052,7 +1052,7 @@ export default function Orders() {
               )}
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <DatePickerWithRange 
                 date={dateRange} 
                 setDate={setDateRange}
@@ -1306,16 +1306,7 @@ export default function Orders() {
                   <TableHead style={{ width: columnWidths.comments }}>Comments</TableHead>
                 </Resizable>
                 
-                <Resizable
-                  width={columnWidths.actions}
-                  height={40}
-                  onResize={onResize("actions")}
-                  handle={
-                    <span className="react-resizable-handle" />
-                  }
-                >
-                  <TableHead style={{ width: columnWidths.actions }}></TableHead>
-                </Resizable>
+                <TableHead style={{ width: columnWidths.actions }}></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

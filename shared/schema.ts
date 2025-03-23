@@ -44,9 +44,9 @@ export const updateProfileSchema = createInsertSchema(users)
     id: true, 
     username: true, 
     password: true,
-    billingAddress: true // Remove billing address field
   })
   .extend({
+    billingAddress: z.string().min(5, "Billing address is required").max(500, "Billing address is too long"),
     bio: z.string().min(20, "Bio must be at least 20 characters long").max(2000, "Bio must not exceed 2000 characters"),
     profilePicture: z.string().optional(),
     companyLogo: z.string().optional(),

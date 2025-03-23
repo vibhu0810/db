@@ -1197,8 +1197,8 @@ function UserInvoicesTab() {
                       </SelectTrigger>
                       <SelectContent>
                         {countries.map((country) => (
-                          <SelectItem key={country} value={country}>
-                            {country}
+                          <SelectItem key={country.value} value={country.value}>
+                            {country.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1288,7 +1288,9 @@ function UserInvoicesTab() {
                     {billingDetails.billingCountry && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Country:</span>
-                        <span className="font-medium">{billingDetails.billingCountry}</span>
+                        <span className="font-medium">
+                          {countries.find(c => c.value === billingDetails.billingCountry)?.label || billingDetails.billingCountry}
+                        </span>
                       </div>
                     )}
                     {billingDetails.billingEmail && (
@@ -1457,6 +1459,11 @@ function UserInvoicesTab() {
                 <div>
                   <h3 className="font-medium">Amount</h3>
                   <p className="text-lg font-bold">{formatCurrency(selectedInvoice.amount / 100)}</p>
+                  {selectedInvoice.paymentFee && selectedInvoice.paymentFee > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      (Includes {formatCurrency(selectedInvoice.paymentFee / 100)} PayPal fee)
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
                   <h3 className="font-medium">Status</h3>

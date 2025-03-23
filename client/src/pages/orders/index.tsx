@@ -171,7 +171,18 @@ function EditOrderSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const { toast } = useToast();
+  // Create a schema for edit form
+  const editOrderSchema = z.object({
+    sourceUrl: z.string().min(1, "Source URL is required"),
+    targetUrl: z.string().min(1, "Target URL is required"),
+    anchorText: z.string().min(1, "Anchor text is required"),
+    textEdit: z.string().optional(),
+    notes: z.string().optional(),
+    price: z.union([z.string(), z.number()]),
+  });
+
   const form = useForm<EditOrderFormData>({
+    resolver: zodResolver(editOrderSchema),
     defaultValues: {
       sourceUrl: order.sourceUrl,
       targetUrl: order.targetUrl,
@@ -180,6 +191,7 @@ function EditOrderSheet({
       notes: order.notes || "",
       price: order.price,
     },
+    mode: "onTouched", // Only validate fields after they've been touched
   });
 
   const editOrderMutation = useMutation({

@@ -8,7 +8,9 @@ import {
   insertMessageSchema, 
   insertDomainSchema, 
   updateProfileSchema,
-  insertInvoiceSchema
+  insertInvoiceSchema,
+  insertTicketSchema,
+  updateTicketSchema
 } from "@shared/schema";
 import {
   sendOrderNotificationEmail,
@@ -336,6 +338,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
       res.status(500).json({ notifications: [], error: "Failed to mark all notifications as read" });
+    }
+  });
+
+  // Support Tickets routes
+  app.get("/api/support-tickets", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      // If admin, return all tickets, otherwise only return user's tickets
+      let tickets;
+      if (req.user.is_admin) {
+        tickets = await storage.getAllSupportTickets();
+      } else {
+        tickets = await storage.getSupportTickets(req.user.id);
+      }
+      
+      res.json({ tickets });
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      res.status(500).json({ tickets: [], error: "Failed to fetch support tickets" });
+    }
+  });
+
+  app.get("/api/support-tickets/:id", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const ticketId = parseInt(req.params.id);
+      const ticket = await storage.getSupportTicket(ticketId);
+      
+      if (!ticket) {
+        return res.status(404).json({ error: "Support ticket not found" });
+      }
+      
+      // Only allow access to ticket if user is the owner or an admin
+      if (ticket.userId !== req.user.id && !req.user.is_admin) {
+        return res.status(403).json({ error: "Unauthorized access to support ticket" });
+      }
+      
+      res.json({ ticket });
+    } catch (error) {
+      console.error("Error fetching support ticket:", error);
+      res.status(500).json({ ticket: null, error: "Failed to fetch support ticket" });
+    }
+  });
+
+  app.get("/api/orders/:id/support-ticket", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const orderId = parseInt(req.params.id);
+      const ticket = await storage.getSupportTicketByOrder(orderId);
+      
+      res.json({ ticket: ticket || null });
+    } catch (error) {
+      console.error("Error fetching support ticket for order:", error);
+      res.status(500).json({ ticket: null, error: "Failed to fetch support ticket" });
+    }
+  });
+
+  app.post("/api/support-tickets", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const ticketData = insertTicketSchema.parse({
+        ...req.body,
+        userId: req.user.id
+      });
+      
+      const ticket = await storage.createSupportTicket(ticketData);
+      
+      res.status(201).json({ ticket });
+    } catch (error) {
+      console.error("Error creating support ticket:", error);
+      res.status(500).json({ ticket: null, error: "Failed to create support ticket" });
+    }
+  });
+
+  app.patch("/api/support-tickets/:id", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const ticketId = parseInt(req.params.id);
+      const ticket = await storage.getSupportTicket(ticketId);
+      
+      if (!ticket) {
+        return res.status(404).json({ error: "Support ticket not found" });
+      }
+      
+      // Only allow updates if user is the owner or an admin
+      if (ticket.userId !== req.user.id && !req.user.is_admin) {
+        return res.status(403).json({ error: "Unauthorized to update this support ticket" });
+      }
+      
+      const updateData = updateTicketSchema.parse(req.body);
+      const updatedTicket = await storage.updateSupportTicket(ticketId, updateData);
+      
+      res.json({ ticket: updatedTicket });
+    } catch (error) {
+      console.error("Error updating support ticket:", error);
+      res.status(500).json({ ticket: null, error: "Failed to update support ticket" });
+    }
+  });
+
+  app.post("/api/support-tickets/:id/close", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const ticketId = parseInt(req.params.id);
+      const ticket = await storage.getSupportTicket(ticketId);
+      
+      if (!ticket) {
+        return res.status(404).json({ error: "Support ticket not found" });
+      }
+      
+      // Both user and admin can close the ticket
+      if (ticket.userId !== req.user.id && !req.user.is_admin) {
+        return res.status(403).json({ error: "Unauthorized to close this support ticket" });
+      }
+      
+      const { rating, feedback } = req.body;
+      const closedTicket = await storage.closeSupportTicket(ticketId, rating, feedback);
+      
+      res.json({ ticket: closedTicket });
+    } catch (error) {
+      console.error("Error closing support ticket:", error);
+      res.status(500).json({ ticket: null, error: "Failed to close support ticket" });
     }
   });
 

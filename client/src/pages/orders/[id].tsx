@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { format } from "date-fns";
-import { Loader2, Copy, MessageSquare, ArrowLeft } from "lucide-react";
+import { Loader2, Copy, MessageSquare, ArrowLeft, LifeBuoy, Star } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { X, FileText, ExternalLink, AlertTriangle } from "lucide-react";
 import {

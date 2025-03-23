@@ -403,16 +403,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const user = users.find(u => u.id === order.userId);
         const unreadComments = await storage.getUnreadCommentCount(order.id, req.user!.id);
         
-        // Find the associated domain for this order
-        const domain = allDomains.find(d => d.id === order.domainId);
-        
-        // For guest posts, add the website URL as a virtual field
+        // For guest posts, identify if there's a matching domain based on price
         const isGuestPost = order.sourceUrl === "not_applicable" && order.title;
+        
+        // Find potential domain matches
+        let websiteInfo = null;
+        if (isGuestPost) {
+          // Try to find a matching domain with the same price
+          const matchingDomain = allDomains.find(d => 
+            d.guestPostPrice?.toString() === order.price?.toString() &&
+            (d.type === 'guest_post' || d.type === 'both')
+          );
+          
+          if (matchingDomain) {
+            websiteInfo = {
+              name: matchingDomain.websiteName,
+              url: matchingDomain.websiteUrl
+            };
+          }
+        }
         
         return {
           ...order,
           unreadComments,
-          website: isGuestPost && domain ? domain.websiteUrl : null,
+          website: websiteInfo,
           user: user ? {
             username: user.username,
             companyName: user.companyName,
@@ -481,15 +495,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get domain information
       const allDomains = await storage.getDomains();
-      const domain = allDomains.find(d => d.id === order.domainId);
       
-      // For guest posts, add the website URL as a virtual field
+      // For guest posts, identify if there's a matching domain based on price
       const isGuestPost = order.sourceUrl === "not_applicable" && order.title;
+      
+      // Find potential domain matches
+      let websiteInfo = null;
+      if (isGuestPost) {
+        // Try to find a matching domain with the same price
+        const matchingDomain = allDomains.find(d => 
+          d.guestPostPrice?.toString() === order.price?.toString() &&
+          (d.type === 'guest_post' || d.type === 'both')
+        );
+        
+        if (matchingDomain) {
+          websiteInfo = {
+            name: matchingDomain.websiteName,
+            url: matchingDomain.websiteUrl
+          };
+        }
+      }
       
       // Add website information to the order
       const orderWithWebsite = {
         ...order,
-        website: isGuestPost && domain ? domain.websiteUrl : null
+        website: websiteInfo
       };
       
       console.log("Order found:", orderWithWebsite);

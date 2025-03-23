@@ -116,6 +116,12 @@ interface EditOrderFormData {
   price: number;
 }
 
+// Website interface for domain information
+interface Website {
+  name: string;
+  url: string;
+}
+
 // Interface for orders with unread comments count
 interface Order {
   id: number;
@@ -132,6 +138,7 @@ interface Order {
   title: string | null;
   linkUrl: string | null;
   unreadComments?: number;  // Added for unread comment counts
+  website?: Website | null;  // Website information for guest posts
 }
 
 interface CustomOrderFormData {
@@ -1414,7 +1421,7 @@ export default function Orders() {
                         <div className="flex items-center space-x-2">
                           <div className="truncate max-w-[250px]">
                             {order.title && order.title !== "not_applicable" 
-                              ? `${order.title}${order.website ? ` - ${order.website}` : ""}`
+                              ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
                               : order.sourceUrl === "not_applicable" 
                                 ? "No title provided" 
                                 : extractDomainFromUrl(order.sourceUrl)}
@@ -1424,7 +1431,7 @@ export default function Orders() {
                             size="icon"
                             className="flex-shrink-0"
                             onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
-                              ? `${order.title}${order.website ? ` - ${order.website}` : ""}`
+                              ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
                               : order.sourceUrl === "not_applicable"
                                 ? ""
                                 : extractDomainFromUrl(order.sourceUrl))}

@@ -455,6 +455,17 @@ export default function ChatPage() {
                     <div className="text-muted-foreground text-xs">
                       Created {formatDistanceToNow(new Date(ticketData.ticket.createdAt), { addSuffix: true })}
                     </div>
+                    {/* Close ticket button */}
+                    {ticketData.ticket.status !== "closed" && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2"
+                        onClick={() => handleCloseTicket(ticketData.ticket.id)}
+                      >
+                        Close Ticket
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

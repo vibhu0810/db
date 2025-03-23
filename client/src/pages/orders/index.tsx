@@ -1314,7 +1314,7 @@ export default function Orders() {
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <TableHead style={{ width: columnWidths.actions }}>Actions</TableHead>
+                  <TableHead style={{ width: columnWidths.actions }}></TableHead>
                 </Resizable>
               </TableRow>
             </TableHeader>

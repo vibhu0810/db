@@ -77,36 +77,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       session: req.session
     });
   });
-  
-  // Current user endpoint
-  app.get("/api/user", (req, res) => {
-    console.log("GET /api/user called, authenticated:", !!req.user);
-    console.log("Session ID:", req.sessionID);
-    console.log("Session:", req.session);
-    console.log("User:", req.user);
-    
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    
-    // Return only necessary user data (avoid sending password or sensitive fields)
-    const userData = {
-      id: req.user.id,
-      username: req.user.username,
-      firstName: req.user.firstName,
-      lastName: req.user.lastName,
-      email: req.user.email,
-      companyName: req.user.companyName,
-      country: req.user.country,
-      is_admin: req.user.is_admin,
-      profilePicture: req.user.profilePicture,
-      phone: req.user.phone,
-      billingAddress: req.user.billingAddress,
-      paymentMethod: req.user.paymentMethod
-    };
-    
-    res.json(userData);
-  });
 
   // Add check online status endpoint
   app.get("/api/users/online-status", async (req, res) => {

@@ -38,6 +38,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { uploadFile } from "@/utils/uploadthing";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PaymentDetails } from "@/components/ui/payment-details";
+import { BillingPreferences } from "@/components/ui/billing-preferences";
 
 interface DateRange {
   from: Date | undefined;
@@ -1259,16 +1260,15 @@ function UserInvoicesTab() {
             </p>
           </div>
           
-          {/* Payment Details Section (always visible) */}
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>Payment Information</CardTitle>
-              <CardDescription>Use the following details when making payments for your invoices</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Billing Details */}
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3">Billing Details</h3>
+          {/* Billing Preferences & Payment Details Section */}
+          <div className="mt-8 space-y-6">
+            {/* Company Billing Information - Always visible */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Company Information</CardTitle>
+                <CardDescription>The company you're making payments to</CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="rounded-md bg-muted p-4">
                   <div className="space-y-3">
                     <div className="flex flex-col sm:flex-row sm:justify-between">
@@ -1285,26 +1285,12 @@ function UserInvoicesTab() {
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              {/* Payment Methods */}
-              <h3 className="text-lg font-medium mb-3">Payment Methods</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <h4 className="font-medium">PayPal (5% fee)</h4>
-                  <div className="rounded-md bg-muted p-4">
-                    <PaymentDetails paymentMethod="paypal" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium">Wire Transfer / Wise (0% fee)</h4>
-                  <div className="rounded-md bg-muted p-4">
-                    <PaymentDetails paymentMethod="wire" />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            
+            {/* User Billing Preferences */}
+            <BillingPreferences user={user} />
+          </div>
         </div>
       ) : (
         <div className="rounded-md border">

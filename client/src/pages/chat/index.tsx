@@ -57,7 +57,9 @@ export default function ChatPage() {
       try {
         const res = await apiRequest("GET", `/api/support-tickets`);
         if (!res.ok) throw new Error('Failed to fetch user tickets');
-        return res.json();
+        const data = await res.json();
+        console.log('Loaded support tickets:', data);
+        return data;
       } catch (error) {
         console.error("Error fetching user tickets:", error);
         return { tickets: [] };
@@ -479,6 +481,33 @@ export default function ChatPage() {
                 ? "Select a customer to chat with"
                 : "Our support team is here to help"}
             </p>
+            
+            {/* Support tickets section */}
+            {userTickets.tickets && userTickets.tickets.length > 0 && (
+              <div className="mt-3 pt-3 border-t">
+                <h3 className="text-sm font-medium mb-2">Active Support Tickets</h3>
+                <div className="space-y-2">
+                  {userTickets.tickets
+                    .filter((ticket: any) => ticket.status !== 'closed')
+                    .map((ticket: any) => (
+                      <Button 
+                        key={ticket.id}
+                        variant="outline" 
+                        size="sm"
+                        className="w-full justify-start text-xs"
+                        onClick={() => {
+                          // Navigate to the chat with ticket ID
+                          window.location.href = `/chat?ticket=${ticket.id}`;
+                        }}
+                      >
+                        <span className="truncate">
+                          Ticket #{ticket.id}: {ticket.subject || 'Support Request'}
+                        </span>
+                      </Button>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
           <ScrollArea className="h-[calc(100%-6rem)]">
             {users.length > 0 ? (

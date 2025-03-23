@@ -496,8 +496,58 @@ export default function ChatPage() {
                         size="sm"
                         className="w-full justify-start text-xs"
                         onClick={() => {
-                          // Navigate to the chat with ticket ID
-                          window.location.href = `/chat?ticket=${ticket.id}`;
+                          // Set active ticket and find the admin to chat with
+                          setActiveTicketId(ticket.id);
+                          
+                          // Fetch detailed ticket information
+                          apiRequest("GET", `/api/support-tickets/${ticket.id}`)
+                            .then(res => res.json())
+                            .then(ticketDetails => {
+                              console.log('Loaded ticket details:', ticketDetails);
+                              
+                              // For non-admin users, we want to chat with an admin about this ticket
+                              if (!isAdmin && users.length > 0) {
+                                const adminUser = users.find((u: ChatUser) => u.is_admin);
+                                if (adminUser) {
+                                  setSelectedUserId(adminUser.id);
+                                  // Set initial message referencing ticket
+                                  setMessageInput(`I need help with support ticket #${ticket.id}: ${ticket.subject || 'Support Request'}`);
+                                  
+                                  // Focus the input field after a short delay
+                                  setTimeout(() => {
+                                    const inputField = document.querySelector('input[name="messageInput"]');
+                                    if (inputField) {
+                                      (inputField as HTMLInputElement).focus();
+                                    }
+                                  }, 100);
+                                }
+                              } else if (isAdmin && ticketDetails.ticket) {
+                                // For admin users, find the customer who created the ticket
+                                const customerId = ticketDetails.ticket.userId;
+                                apiRequest("GET", `/api/users/${customerId}`)
+                                  .then(res => res.json())
+                                  .then(customerData => {
+                                    console.log('Found customer:', customerData);
+                                    setSelectedUserId(customerData.id);
+                                  })
+                                  .catch(err => {
+                                    console.error('Error finding customer:', err);
+                                    toast({
+                                      title: "Error",
+                                      description: "Could not find customer for this ticket.",
+                                      variant: "destructive"
+                                    });
+                                  });
+                              }
+                            })
+                            .catch(err => {
+                              console.error('Error loading ticket details:', err);
+                              toast({
+                                title: "Error",
+                                description: "Could not load ticket details.",
+                                variant: "destructive"
+                              });
+                            });
                         }}
                       >
                         <span className="truncate">
@@ -899,7 +949,8 @@ export default function ChatPage() {
 
                   {/* Message input */}
                   <Input
-                    placeholder="Type your message..."
+                    name="messageInput"
+                   placeholder="Type your message..."
                     value={messageInput}
                     onChange={handleMessageInputChange}
                     onKeyDown={(e) => {

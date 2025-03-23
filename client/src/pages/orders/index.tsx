@@ -30,19 +30,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { 
-  FileDown, 
-  Loader2, 
-  MessageSquare, 
-  Copy, 
-  ChevronDown, 
-  X,
-  MoreHorizontal, 
-  Pencil, 
-  Trash2, 
-  ChevronLeft, 
-  ChevronRight 
-} from "lucide-react";
+import { FileDown, Loader2, MessageSquare, Copy, ChevronDown, X, Check } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { useAuth } from "@/hooks/use-auth";
 import { Resizable } from "react-resizable";
@@ -57,6 +45,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,34 +66,47 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
+  FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import { User, GUEST_POST_STATUSES, NICHE_EDIT_STATUSES } from "@shared/schema";
+import { Plus } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import Checkbox from "@/components/ui/checkbox";
+import { Link } from "wouter";
 
-// Extract domain from URL
+// Helper function to extract domain from URL
 function extractDomainFromUrl(url: string): string {
+  if (!url || url === "not_applicable") return "";
   try {
-    const parsed = new URL(url);
-    return parsed.hostname;
+    // Use URL constructor to parse the URL
+    const urlObj = new URL(url);
+    // Remove 'www.' prefix if present
+    let domain = urlObj.hostname;
+    if (domain.startsWith('www.')) {
+      domain = domain.substring(4);
+    }
+    return domain;
   } catch (e) {
+    // If URL is invalid, return the original string
     return url;
   }
 }
 
-// Define the DateRange interface used by the date picker
+// Make sure our DateRange is compatible with react-day-picker's DateRange
+import { DateRange as DayPickerDateRange } from "react-day-picker";
+
 interface DateRange {
   from?: Date;
   to?: Date;
 }
 
-// Define the form data interfaces
 interface EditOrderFormData {
   sourceUrl: string;
   targetUrl: string;
@@ -114,13 +116,13 @@ interface EditOrderFormData {
   price: number;
 }
 
-// Website interface for guest posts
+// Website interface for domain information
 interface Website {
   name: string;
   url: string;
 }
 
-// Define the Order interface
+// Interface for orders with unread comments count
 interface Order {
   id: number;
   userId: number;
@@ -139,7 +141,6 @@ interface Order {
   website?: Website | null;  // Website information for guest posts
 }
 
-// Define Custom Order Form Data
 interface CustomOrderFormData {
   userId: number;
   sourceUrl: string;
@@ -150,46 +151,52 @@ interface CustomOrderFormData {
   price: number;
 }
 
-// Edit Order Form Component
+const customOrderSchema = z.object({
+  userId: z.number().min(1, "Please select a user"),
+  sourceUrl: z.string().min(1, "Source URL is required").url("Must be a valid URL"),
+  targetUrl: z.string().min(1, "Target URL is required").url("Must be a valid URL"),
+  anchorText: z.string().min(1, "Anchor text is required"),
+  textEdit: z.string().optional(),
+  notes: z.string().optional(),
+  price: z.number().min(0, "Price must be 0 or greater"),
+});
+
 function EditOrderSheet({
   order,
   isOpen,
-  onOpenChange,
+  onOpenChange
 }: {
-  order: Order;
+  order: any;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const { toast } = useToast();
+  const form = useForm<EditOrderFormData>({
+    defaultValues: {
+      sourceUrl: order.sourceUrl,
+      targetUrl: order.targetUrl,
+      anchorText: order.anchorText,
+      textEdit: order.textEdit || "",
+      notes: order.notes || "",
+      price: order.price,
+    },
+  });
 
-  // Create update order mutation
-  const updateOrderMutation = useMutation({
+  const editOrderMutation = useMutation({
     mutationFn: async (data: EditOrderFormData) => {
-      const response = await apiRequest(`/api/orders/${order.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          sourceUrl: data.sourceUrl,
-          targetUrl: data.targetUrl,
-          anchorText: data.anchorText,
-          textEdit: data.textEdit,
-          notes: data.notes,
-          price: data.price
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update order");
+      const res = await apiRequest("PATCH", `/api/orders/${order.id}`, data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update order");
       }
-
-      return await response.json();
+      return res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({
         title: "Order updated",
-        description: "The order has been updated successfully.",
+        description: "Order has been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       onOpenChange(false);
     },
     onError: (error: Error) => {
@@ -201,23 +208,9 @@ function EditOrderSheet({
     },
   });
 
-  // Define form state and initial values
-  const [formData, setFormData] = useState({
-    sourceUrl: order.sourceUrl,
-    targetUrl: order.targetUrl,
-    anchorText: order.anchorText,
-    textEdit: order.textEdit || "",
-    notes: order.notes || "",
-    price: parseFloat(order.price)
-  });
-
-  // Handle form submission
   const onSubmit = (data: EditOrderFormData) => {
-    updateOrderMutation.mutate(data);
+    editOrderMutation.mutate(data);
   };
-
-  const isActionInProgress = 
-    updateOrderMutation.isPending;
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -228,341 +221,220 @@ function EditOrderSheet({
             Make changes to the order details below.
           </SheetDescription>
         </SheetHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label htmlFor="sourceUrl" className="text-sm font-medium">Source URL</label>
-            <Input
-              id="sourceUrl"
-              value={formData.sourceUrl}
-              onChange={(e) => setFormData({...formData, sourceUrl: e.target.value})}
-              placeholder="Source URL"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+            <FormField
+              control={form.control}
+              name="sourceUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Source URL/Guest Post Title</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="targetUrl" className="text-sm font-medium">Target URL</label>
-            <Input
-              id="targetUrl"
-              value={formData.targetUrl}
-              onChange={(e) => setFormData({...formData, targetUrl: e.target.value})}
-              placeholder="Target URL"
+            <FormField
+              control={form.control}
+              name="targetUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target URL</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="anchorText" className="text-sm font-medium">Anchor Text</label>
-            <Input
-              id="anchorText"
-              value={formData.anchorText}
-              onChange={(e) => setFormData({...formData, anchorText: e.target.value})}
-              placeholder="Anchor Text"
+            <FormField
+              control={form.control}
+              name="anchorText"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Anchor Text</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="textEdit" className="text-sm font-medium">Text Edit/Content</label>
-            <Textarea
-              id="textEdit"
-              value={formData.textEdit}
-              onChange={(e) => setFormData({...formData, textEdit: e.target.value})}
-              placeholder="Text Edit Content"
+            <FormField
+              control={form.control}
+              name="textEdit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Text Edit/Article</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="notes" className="text-sm font-medium">Notes</label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              placeholder="Add additional notes..."
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="price" className="text-sm font-medium">Price ($)</label>
-            <Input
-              id="price"
-              type="number"
-              value={formData.price}
-              onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
-              placeholder="Price"
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="pt-4">
-            <Button 
-              className="w-full" 
-              disabled={isActionInProgress}
-              onClick={() => onSubmit(formData)}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={editOrderMutation.isPending}
             >
-              {isActionInProgress && (
+              {editOrderMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Update Order
+              Save Changes
             </Button>
-          </div>
-        </div>
+          </form>
+        </Form>
       </SheetContent>
     </Sheet>
   );
 }
 
-// Main Orders Component
 export default function Orders() {
-  const { toast } = useToast();
-  const { user, isAdmin } = useAuth();
-  
-  // State for managing order filtering, pagination, and actions
-  const [selectedType, setSelectedType] = useState<string>("all");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [selectedUser, setSelectedUser] = useState<string>("all");
+  const { isAdmin, user } = useAuth();
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRange>({});
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
-  const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [newComment, setNewComment] = useState<string>("");
-  
-  // State for custom order form
-  const [showCustomOrderSheet, setShowCustomOrderSheet] = useState<boolean>(false);
-  
-  // Orders per page for pagination
-  const itemsPerPage = 10;
-  
-  // State for resizable columns
+  const [sortField, setSortField] = useState<string>("dateOrdered");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const { toast } = useToast();
   const [columnWidths, setColumnWidths] = useState({
-    id: 80,
-    client: 150,
-    sourceUrl: 200,
-    targetUrl: 200,
+    sourceUrl: 250,
+    targetUrl: 250,
     anchorText: 150,
-    textEdit: 150,
+    textEdit: 200,
+    notes: 200,
     status: 150,
+    id: 100,
     price: 100,
-    dateOrdered: 150, // Increased from 120px
-    comments: 100, // Changed from 80px
-    actions: 100,
+    date: 150,
+    comments: 100,
+    actions: 80,
+    user: 150,
   });
-  
-  // Mutation for adding comments
-  const addCommentMutation = useMutation({
-    mutationFn: async ({ orderId, comment }: { orderId: number; comment: string }) => {
-      const response = await apiRequest(`/api/orders/${orderId}/comments`, {
-        method: "POST",
-        body: JSON.stringify({ comment }),
-      });
-  
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to add comment");
-      }
-  
-      return await response.json();
-    },
-    onSuccess: () => {
-      setNewComment("");
-      toast({
-        title: "Comment added",
-        description: "Your comment has been added successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      
-      if (selectedOrderId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/orders", selectedOrderId, "comments"] });
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Queries for orders, users, and comments
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["/api/orders"],
-    queryFn: async () => {
-      const res = await apiRequest(`/api/orders`);
-      const data = await res.json();
-      return data;
-    },
-  });
-  
-  const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
-    queryFn: async () => {
-      const res = await apiRequest(`/api/users`);
-      const data = await res.json();
-      return data;
-    },
-    enabled: isAdmin, // Only fetch users if user is admin
-  });
-  
-  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
-    queryKey: ["/api/orders", selectedOrderId, "comments"],
-    queryFn: async () => {
-      if (!selectedOrderId) return [];
-      const res = await apiRequest(`/api/orders/${selectedOrderId}/comments`);
-      const data = await res.json();
-      return data;
-    },
-    enabled: selectedOrderId !== null,
-  });
-  
-  // Mutation for marking comments as read
-  const markCommentsAsReadMutation = useMutation({
-    mutationFn: async (orderId: number) => {
-      const response = await apiRequest(`/api/orders/${orderId}/comments/read`, {
-        method: "POST",
-      });
-  
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to mark comments as read");
-      }
-  
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Mutation for deleting orders
-  const deleteOrderMutation = useMutation({
-    mutationFn: async (orderId: number) => {
-      const response = await apiRequest(`/api/orders/${orderId}`, {
-        method: "DELETE",
-      });
-  
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to delete order");
-      }
-  
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Order deleted",
-        description: "The order has been deleted successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      setOrderToDelete(null);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Form for custom order creation
-  const customOrderSchema = z.object({
-    userId: z.number().optional(),
-    sourceUrl: z.string().url("Please enter a valid URL"),
-    targetUrl: z.string().url("Please enter a valid URL"),
-    anchorText: z.string().min(1, "Anchor text is required"),
-    textEdit: z.string().optional(),
-    notes: z.string().optional(),
-    price: z.number().min(0, "Price must be a positive number"),
-  });
-  
-  const form = useForm<CustomOrderFormData>({
-    resolver: zodResolver(customOrderSchema),
-    defaultValues: {
-      userId: isAdmin ? undefined : user?.id,
-      sourceUrl: "",
-      targetUrl: "",
-      anchorText: "",
-      textEdit: "",
-      notes: "",
-      price: 0,
-    },
-  });
-  
-  // Mutation for adding custom orders
-  const customOrderMutation = useMutation({
-    mutationFn: async (data: CustomOrderFormData) => {
-      const response = await apiRequest(`/api/orders`, {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-  
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create order");
-      }
-  
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Order created",
-        description: "Your order has been created successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      setShowCustomOrderSheet(false);
-      form.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Handle custom order form submission
-  const onSubmit = (data: CustomOrderFormData) => {
-    customOrderMutation.mutate({
-      ...data,
-      userId: isAdmin ? data.userId : user?.id,
-    });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [highlightedOrderId, setHighlightedOrderId] = useState<number | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
+  const [orderToEdit, setOrderToEdit] = useState<any>(null);
+  const [userFilter, setUserFilter] = useState<number | "all">("all");
+  const [showCustomOrderSheet, setShowCustomOrderSheet] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
+  const [selectedType, setSelectedType] = useState<string>("all");
+  const [previousOrderStatuses, setPreviousOrderStatuses] = useState<Record<number, string>>({});
+  // Track manual status updates with timestamps to know which ones were user-initiated
+  const [recentStatusUpdates, setRecentStatusUpdates] = useState<Record<number, number>>({});
+  const [isActionInProgress, setIsActionInProgress] = useState<boolean>(false);
+
+  const onResize = (column: string) => (e: any, { size }: { size: { width: number } }) => {
+    const maxWidths = {
+      sourceUrl: 400,
+      targetUrl: 400,
+      anchorText: 300,
+      textEdit: 400,
+      notes: 350,
+      status: 300,
+      id: 150,
+      price: 150,
+      date: 180,
+      comments: 100,
+      actions: 100,
+      user: 200,
+    };
+
+    const minWidth = 50; // Add a minimum width
+    const maxWidth = maxWidths[column as keyof typeof maxWidths];
+    const newWidth = Math.min(Math.max(size.width, minWidth), maxWidth);
+    
+    console.log(`Resizing column ${column} to ${newWidth}px`);
+
+    setColumnWidths(prev => ({
+      ...prev,
+      [column]: newWidth,
+    }));
   };
   
-  // Detect when API actions are in progress
-  const isActionInProgress = 
-    addCommentMutation.isPending || 
-    markCommentsAsReadMutation.isPending || 
-    deleteOrderMutation.isPending;
-  
-  // Add CSS for resizable columns
+  // Apply CSS for resizable columns
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
-      /* Resizable handle */
+      table {
+        width: 100%;
+        table-layout: fixed;
+      }
+      
+      th {
+        position: relative;
+        overflow: visible;
+      }
+      
+      .react-resizable {
+        position: relative;
+      }
+      
       .react-resizable-handle {
         position: absolute;
-        right: 0;
+        right: -1px;
         bottom: 0;
-        width: 10px;
+        top: 0;
+        width: 8px;
         height: 100%;
         cursor: col-resize;
         z-index: 1;
+        background-color: transparent;
       }
       
-      /* Horizontal scrolling for tables */
-      .table-scroll-container {
-        overflow-x: auto;
-        max-width: 100%;
+      .react-resizable-handle:after {
+        content: "";
+        position: absolute;
+        right: 3px;
+        top: 0;
+        height: 100%;
+        width: 2px;
+        background-color: #e2e8f0;
       }
       
-      .table-content {
-        min-width: 1200px; /* Ensures table is wide enough */
+      .react-resizable-handle:hover:after,
+      .react-resizable-handle:active:after {
+        background-color: #3b82f6;
       }
       
-      /* Truncate long text */
       .truncate-cell {
-        max-width: 200px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -574,44 +446,422 @@ export default function Orders() {
       document.head.removeChild(style);
     };
   }, []);
+
+  // Utility function for copying text to clipboard
+  const [copiedFields, setCopiedFields] = useState<Record<string, boolean>>({});
   
-  // Handle column resize
-  const onResize = (column: string) => (e: React.SyntheticEvent, { size }: { size: { width: number; height: number } }) => {
-    setColumnWidths({
-      ...columnWidths,
-      [column]: size.width,
-    });
+  const copyToClipboard = (text: string, fieldId: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopiedFields(prev => ({ ...prev, [fieldId]: true }));
+        setTimeout(() => {
+          setCopiedFields(prev => ({ ...prev, [fieldId]: false }));
+        }, 2000);
+        toast({
+          title: "Copied!",
+          description: "Text copied to clipboard.",
+        });
+      },
+      (err) => {
+        console.error('Could not copy text: ', err);
+        toast({
+          title: "Error",
+          description: "Could not copy text to clipboard",
+          variant: "destructive",
+        });
+      }
+    );
   };
+
+  // Track unread comments
+  const [unreadCommentCounts, setUnreadCommentCounts] = useState<{[key: number]: number}>({});
+
+  // Mutation for marking comments as read
+  const markCommentsAsReadMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      const response = await apiRequest("POST", `/api/orders/${orderId}/comments/read`);
+      if (!response.ok) {
+        throw new Error("Failed to mark comments as read");
+      }
+      return response.json();
+    },
+    onSuccess: (_, orderId) => {
+      // Update the local state immediately to remove the badge
+      const updatedCounts = {...unreadCommentCounts};
+      delete updatedCounts[orderId];
+      setUnreadCommentCounts(updatedCounts);
+      
+      // Also invalidate related queries to update the server data
+      queryClient.invalidateQueries({ queryKey: ['/api/orders/unread-comments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to mark comments as read",
+        variant: "destructive",
+      });
+      console.error("Failed to mark comments as read:", error);
+    }
+  });
+
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ['/api/orders'],
+    queryFn: () => {
+      const endpoint = isAdmin ? '/api/orders/all' : '/api/orders';
+      return apiRequest("GET", endpoint).then(res => res.json());
+    },
+    refetchInterval: 10000, // Refetch orders every 10 seconds
+  });
+
+  const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+    queryFn: () => apiRequest("GET", "/api/users").then(res => res.json()),
+    enabled: isAdmin,
+  });
+
+  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
+    queryKey: ['/api/orders', selectedOrderId, 'comments'],
+    queryFn: () => apiRequest("GET", `/api/orders/${selectedOrderId}/comments`).then(res => res.json()),
+    enabled: selectedOrderId !== null,
+    refetchInterval: selectedOrderId ? 3000 : false, // Poll every 3 seconds when a comment modal is open
+  });
   
-  // Get appropriate status options based on order type
-  const getStatusOptions = (orderType: string | undefined) => {
-    // For guest posts
+  // Query for unread comment counts across all orders
+  useQuery({
+    queryKey: ['/api/orders/unread-comments'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest("GET", "/api/orders/unread-comments");
+        const data = await response.json();
+        
+        if (response.ok) {
+          setUnreadCommentCounts(data);
+        }
+        return data;
+      } catch (error) {
+        console.error("Failed to fetch unread comments:", error);
+        return {};
+      }
+    },
+    refetchInterval: 5000, // Poll every 5 seconds
+  });
+
+  const addCommentMutation = useMutation({
+    mutationFn: async () => {
+      setIsActionInProgress(true);
+      if (!selectedOrderId || !newComment.trim()) {
+        throw new Error("Please enter a comment");
+      }
+      
+      const commentData = {
+        orderId: selectedOrderId,
+        message: newComment.trim(),
+      };
+      
+      const res = await apiRequest("POST", `/api/orders/${selectedOrderId}/comments`, commentData);
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to add comment");
+      }
+      
+      setNewComment("");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders', selectedOrderId, 'comments'] });
+      setIsActionInProgress(false);
+      toast({
+        title: "Comment added",
+        description: "Your comment has been added successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      setIsActionInProgress(false);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteOrderMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      setIsActionInProgress(true);
+      const res = await apiRequest("DELETE", `/api/orders/${orderId}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete order");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      setOrderToDelete(null);
+      setIsActionInProgress(false);
+      toast({
+        title: "Order deleted",
+        description: "The order has been deleted successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      setIsActionInProgress(false);
+      setOrderToDelete(null);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for handling status change
+  const changeStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
+      setIsActionInProgress(true);
+      // Store the current status in case we need to roll back
+      const currentOrder = orders.find(o => o.id === orderId);
+      if (currentOrder) {
+        setPreviousOrderStatuses(prev => ({
+          ...prev,
+          [orderId]: currentOrder.status
+        }));
+      }
+      
+      // Record the timestamp of this status update as a user-initiated action
+      setRecentStatusUpdates(prev => ({
+        ...prev,
+        [orderId]: Date.now()
+      }));
+      
+      const res = await apiRequest("PATCH", `/api/orders/${orderId}`, { status });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update status");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      setIsActionInProgress(false);
+      toast({
+        title: "Status updated",
+        description: "Order status has been updated successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      setIsActionInProgress(false);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for handling custom order creation
+  const customOrderMutation = useMutation({
+    mutationFn: async (data: CustomOrderFormData) => {
+      setIsActionInProgress(true);
+      const res = await apiRequest("POST", "/api/orders", data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create order");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      setShowCustomOrderSheet(false);
+      setIsActionInProgress(false);
+      toast({
+        title: "Order created",
+        description: "The custom order has been created successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      setIsActionInProgress(false);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const cancelOrderMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      setIsActionInProgress(true);
+      const res = await apiRequest("PATCH", `/api/orders/${orderId}`, { status: "Cancelled" });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to cancel order");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      setOrderToCancel(null);
+      setIsActionInProgress(false);
+      toast({
+        title: "Order cancelled",
+        description: "The order has been cancelled successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      setIsActionInProgress(false);
+      setOrderToCancel(null);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const customOrderForm = useForm<CustomOrderFormData>({
+    resolver: zodResolver(customOrderSchema),
+    defaultValues: {
+      userId: user?.id || 0,
+      sourceUrl: "",
+      targetUrl: "",
+      anchorText: "",
+      textEdit: "",
+      notes: "",
+      price: 0,
+    },
+  });
+
+  const onSubmit = (data: CustomOrderFormData) => {
+    customOrderMutation.mutate(data);
+  };
+
+  // Determine if the order is a niche edit or guest post
+  const getOrderType = (order: any) => {
+    // Order is guest post if sourceUrl is "not_applicable" or if it has a website field
+    if (order.sourceUrl === "not_applicable" || order.website) {
+      return "guest_post";
+    }
+    return "niche_edit";
+  };
+
+  // Function to render proper order status options based on order type
+  const renderStatusOptions = (order: any) => {
+    const orderType = getOrderType(order);
+    
     if (orderType === "guest_post") {
       return (
         <>
           <SelectItem value="In Progress">In Progress</SelectItem>
           <SelectItem value="Approved">Approved</SelectItem>
-          <SelectItem value="Content Writing">Content Writing</SelectItem>
-          <SelectItem value="Content Review">Content Review</SelectItem>
-          <SelectItem value="Published">Published</SelectItem>
+          <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
           <SelectItem value="Completed">Completed</SelectItem>
           <SelectItem value="Rejected">Rejected</SelectItem>
+          <SelectItem value="Cancelled">Cancelled</SelectItem>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <SelectItem value="In Progress">In Progress</SelectItem>
+          <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
+          <SelectItem value="Completed">Completed</SelectItem>
+          <SelectItem value="Rejected">Rejected</SelectItem>
+          <SelectItem value="Cancelled">Cancelled</SelectItem>
         </>
       );
     }
-    
-    // For niche edits
-    return (
-      <>
-        <SelectItem value="In Progress">In Progress</SelectItem>
-        <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
-        <SelectItem value="Added">Added</SelectItem>
-        <SelectItem value="Completed">Completed</SelectItem>
-        <SelectItem value="Rejected">Rejected</SelectItem>
-      </>
-    );
   };
-  
+
+  // Filter and sort orders
+  const filteredOrders = orders
+    .filter((order: Order) => {
+      // Filter by type (niche edit or guest post)
+      if (selectedType !== "all") {
+        const orderType = getOrderType(order);
+        if (selectedType !== orderType) {
+          return false;
+        }
+      }
+      
+      // Filter by status
+      if (statusFilter !== "all" && order.status !== statusFilter) {
+        return false;
+      }
+      
+      // Filter by user
+      if (isAdmin && userFilter !== "all" && order.userId !== userFilter) {
+        return false;
+      }
+      
+      // Filter by search query
+      const searchFields = [
+        order.sourceUrl,
+        order.targetUrl, 
+        order.anchorText,
+        order.textEdit,
+        order.notes,
+        order.title,
+        order.status,
+        order.id?.toString()
+      ].filter(Boolean).map(field => field?.toLowerCase());
+      
+      if (searchQuery && !searchFields.some(field => field && field.includes(searchQuery.toLowerCase()))) {
+        return false;
+      }
+      
+      // Filter by date range
+      if (dateRange.from) {
+        const orderDate = new Date(order.dateOrdered);
+        if (orderDate < dateRange.from) {
+          return false;
+        }
+      }
+      
+      if (dateRange.to) {
+        const orderDate = new Date(order.dateOrdered);
+        const endOfDay = new Date(dateRange.to);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (orderDate > endOfDay) {
+          return false;
+        }
+      }
+      
+      return true;
+    })
+    .sort((a: Order, b: Order) => {
+      // For dateOrdered field
+      if (sortField === "dateOrdered") {
+        const dateA = new Date(a.dateOrdered).getTime();
+        const dateB = new Date(b.dateOrdered).getTime();
+        return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
+      }
+      
+      // For other string fields
+      const valA = String(a[sortField as keyof Order] || "").toLowerCase();
+      const valB = String(b[sortField as keyof Order] || "").toLowerCase();
+      
+      if (sortDirection === "asc") {
+        return valA.localeCompare(valB);
+      } else {
+        return valB.localeCompare(valA);
+      }
+    });
+
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+
+  const resetFilters = () => {
+    setStatusFilter("all");
+    setSearchQuery("");
+    setDateRange({});
+    setUserFilter("all");
+    setSelectedType("all");
+  };
+
   // If data is loading, show a loading spinner
   if (isLoading) {
     return (
@@ -620,73 +870,6 @@ export default function Orders() {
       </div>
     );
   }
-
-  // Filter orders based on selected filters
-  const filteredOrders = orders
-    .filter((order: Order) => {
-      // Filter by type (guest post or niche edit)
-      if (selectedType !== "all") {
-        if (selectedType === "guest_post" && order.sourceUrl !== "not_applicable") {
-          return false;
-        }
-        if (selectedType === "niche_edit" && order.sourceUrl === "not_applicable") {
-          return false;
-        }
-      }
-
-      // Filter by status
-      if (selectedStatus !== "all" && order.status !== selectedStatus) {
-        return false;
-      }
-
-      // Filter by user (admin only)
-      if (isAdmin && selectedUser !== "all" && order.userId !== parseInt(selectedUser)) {
-        return false;
-      }
-
-      // Filter by date range
-      if (dateRange.from && new Date(order.dateOrdered) < dateRange.from) {
-        return false;
-      }
-      if (dateRange.to) {
-        const toDate = new Date(dateRange.to);
-        toDate.setHours(23, 59, 59, 999); // End of the day
-        if (new Date(order.dateOrdered) > toDate) {
-          return false;
-        }
-      }
-
-      // Filter by search query
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const sourceUrl = order.sourceUrl?.toLowerCase() || "";
-        const targetUrl = order.targetUrl?.toLowerCase() || "";
-        const anchorText = order.anchorText?.toLowerCase() || "";
-        const notes = order.notes?.toLowerCase() || "";
-        const title = order.title?.toLowerCase() || "";
-        const website = order.website?.name?.toLowerCase() || "";
-
-        return (
-          sourceUrl.includes(query) ||
-          targetUrl.includes(query) ||
-          anchorText.includes(query) ||
-          notes.includes(query) ||
-          title.includes(query) ||
-          website.includes(query)
-        );
-      }
-
-      return true;
-    })
-    .sort((a: Order, b: Order) => {
-      // Sort by date ordered (newest first)
-      return new Date(b.dateOrdered).getTime() - new Date(a.dateOrdered).getTime();
-    });
-
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="space-y-6">
@@ -702,151 +885,136 @@ export default function Orders() {
           {isAdmin && (
             <Sheet open={showCustomOrderSheet} onOpenChange={setShowCustomOrderSheet}>
               <SheetTrigger asChild>
-                <Button variant="outline">
-                  Add Custom Order
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Custom Order
                 </Button>
               </SheetTrigger>
-              <SheetContent className="sm:max-w-xl w-full">
+              <SheetContent className="w-[400px] sm:w-[540px]">
                 <SheetHeader>
                   <SheetTitle>Create Custom Order</SheetTitle>
                   <SheetDescription>
-                    Create a custom link building order for a client.
+                    Create a custom order for a specific user.
                   </SheetDescription>
                 </SheetHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    {isAdmin && (
-                      <FormField
-                        control={form.control}
-                        name="userId"
-                        render={({ field }) => (
-                          <FormItem className="space-y-1">
-                            <FormLabel>Client</FormLabel>
-                            <Select
-                              onValueChange={(value) => field.onChange(parseInt(value))}
-                              defaultValue={field.value?.toString()}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select client" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {users.map((user: any) => (
-                                  <SelectItem key={user.id} value={user.id.toString()}>
-                                    {user.companyName || user.username}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
+                <Form {...customOrderForm}>
+                  <form onSubmit={customOrderForm.handleSubmit(onSubmit)} className="space-y-4 mt-4">
                     <FormField
-                      control={form.control}
+                      control={customOrderForm.control}
+                      name="userId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>User</FormLabel>
+                          <Select 
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                            defaultValue={field.value.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select user" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {users.map((user: User) => (
+                                <SelectItem key={user.id} value={user.id.toString()}>
+                                  {user.companyName || user.username}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={customOrderForm.control}
                       name="sourceUrl"
                       render={({ field }) => (
-                        <FormItem className="space-y-1">
-                          <FormLabel>Source URL</FormLabel>
+                        <FormItem>
+                          <FormLabel>Source URL/Guest Post Title</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="https://example.com"
-                              {...field}
-                            />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={customOrderForm.control}
                       name="targetUrl"
                       render={({ field }) => (
-                        <FormItem className="space-y-1">
+                        <FormItem>
                           <FormLabel>Target URL</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="https://targetsite.com/page" 
-                              {...field} 
-                            />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={customOrderForm.control}
                       name="anchorText"
                       render={({ field }) => (
-                        <FormItem className="space-y-1">
+                        <FormItem>
                           <FormLabel>Anchor Text</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="Click here" 
-                              {...field} 
-                            />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={customOrderForm.control}
                       name="textEdit"
                       render={({ field }) => (
-                        <FormItem className="space-y-1">
-                          <FormLabel>Text Edit/Content</FormLabel>
+                        <FormItem>
+                          <FormLabel>Text Edit/Article</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Text to edit or insert" 
-                              {...field} 
-                            />
+                            <Textarea {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={customOrderForm.control}
                       name="notes"
                       render={({ field }) => (
-                        <FormItem className="space-y-1">
+                        <FormItem>
                           <FormLabel>Notes</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Additional notes or instructions" 
-                              {...field} 
-                            />
+                            <Textarea {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={customOrderForm.control}
                       name="price"
                       render={({ field }) => (
-                        <FormItem className="space-y-1">
-                          <FormLabel>Price ($)</FormLabel>
+                        <FormItem>
+                          <FormLabel>Price</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
+                            <Input
+                              type="number"
+                              step="0.01"
                               {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button 
-                      type="submit" 
-                      className="w-full mt-6"
-                      disabled={isActionInProgress || customOrderMutation.isPending}
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={customOrderMutation.isPending || isActionInProgress}
                     >
-                      {(isActionInProgress || customOrderMutation.isPending) && (
+                      {(customOrderMutation.isPending || isActionInProgress) && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
                       Create Order
@@ -856,6 +1024,9 @@ export default function Orders() {
               </SheetContent>
             </Sheet>
           )}
+          <Button variant="outline" asChild>
+            <Link href="/orders/new">New Order</Link>
+          </Button>
         </div>
       </div>
 
@@ -870,40 +1041,34 @@ export default function Orders() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="guest_post">Guest Posts</SelectItem>
-                  <SelectItem value="niche_edit">Niche Edits</SelectItem>
+                  <SelectItem value="niche_edit">Niche Edit</SelectItem>
+                  <SelectItem value="guest_post">Guest Post</SelectItem>
                 </SelectContent>
               </Select>
               
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  {/* Common statuses */}
                   <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
                   <SelectItem value="Completed">Completed</SelectItem>
                   <SelectItem value="Rejected">Rejected</SelectItem>
-                  {/* Guest post specific statuses */}
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Content Writing">Content Writing</SelectItem>
-                  <SelectItem value="Content Review">Content Review</SelectItem>
-                  <SelectItem value="Published">Published</SelectItem>
-                  {/* Niche edit specific statuses */}
-                  <SelectItem value="Sent to Editor">Sent to Editor</SelectItem>
-                  <SelectItem value="Added">Added</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
               
               {isAdmin && (
-                <Select value={selectedUser} onValueChange={setSelectedUser}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select client" />
+                <Select value={userFilter.toString()} onValueChange={(value) => setUserFilter(value === "all" ? "all" : parseInt(value))}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Filter by user" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Clients</SelectItem>
-                    {users.map((user: any) => (
+                    <SelectItem value="all">All Users</SelectItem>
+                    {users.map((user: User) => (
                       <SelectItem key={user.id} value={user.id.toString()}>
                         {user.companyName || user.username}
                       </SelectItem>
@@ -913,36 +1078,31 @@ export default function Orders() {
               )}
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <DatePickerWithRange 
                 date={dateRange} 
                 setDate={setDateRange}
+                className="w-full sm:w-auto" 
               />
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setDateRange({})}
-                disabled={!dateRange.from && !dateRange.to}
-              >
+              <Button variant="outline" size="icon" onClick={resetFilters}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
           
-          <div className="flex-1 max-w-sm">
+          <div className="flex gap-2 items-center">
             <Input
               placeholder="Search orders..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-full"
+              className="w-full sm:w-[300px]"
             />
           </div>
         </div>
 
         {/* Orders Table */}
-        <div className="table-scroll-container">
-          <div className="table-content">
-            <Table>
+        <div className="overflow-auto">
+          <Table>
             <TableHeader>
               <TableRow>
                 <Resizable
@@ -953,41 +1113,56 @@ export default function Orders() {
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <div className="flex h-10 items-center justify-between">
-                    <TableHead className="font-medium">ID</TableHead>
-                  </div>
+                  <TableHead style={{ width: columnWidths.id }}>
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => {
+                        setSortField("id");
+                        setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                      }}
+                    >
+                      ID
+                      {sortField === "id" && (
+                        <ChevronDown 
+                          className={cn(
+                            "ml-1 h-4 w-4", 
+                            sortDirection === "asc" ? "rotate-180 transform" : ""
+                          )}
+                        />
+                      )}
+                    </div>
+                  </TableHead>
                 </Resizable>
-
-                {isAdmin && (
-                  <Resizable
-                    width={columnWidths.client}
-                    height={40}
-                    onResize={onResize("client")}
-                    handle={
-                      <span className="react-resizable-handle" />
-                    }
-                  >
-                    <div className="flex h-10 items-center justify-between">
-                      <TableHead className="font-medium">Client</TableHead>
+                
+                <Resizable
+                  width={columnWidths.sourceUrl}
+                  height={40}
+                  onResize={onResize("sourceUrl")}
+                  handle={
+                    <span className="react-resizable-handle" />
+                  }
+                >
+                  <TableHead style={{ width: columnWidths.sourceUrl }}>
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => {
+                        setSortField("sourceUrl");
+                        setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                      }}
+                    >
+                      Source URL/Guest Post Title
+                      {sortField === "sourceUrl" && (
+                        <ChevronDown 
+                          className={cn(
+                            "ml-1 h-4 w-4", 
+                            sortDirection === "asc" ? "rotate-180 transform" : ""
+                          )}
+                        />
+                      )}
                     </div>
-                  </Resizable>
-                )}
-
-                <TableHead className="font-medium p-0 relative" style={{ width: columnWidths.sourceUrl + 'px' }}>
-                  <Resizable
-                    width={columnWidths.sourceUrl}
-                    height={40}
-                    onResize={onResize("sourceUrl")}
-                    handle={
-                      <span className="react-resizable-handle" />
-                    }
-                  >
-                    <div className="flex h-10 items-center">
-                      Source
-                    </div>
-                  </Resizable>
-                </TableHead>
-
+                  </TableHead>
+                </Resizable>
+                
                 <Resizable
                   width={columnWidths.targetUrl}
                   height={40}
@@ -996,11 +1171,27 @@ export default function Orders() {
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <div className="flex h-10 items-center justify-between">
-                    <TableHead className="font-medium">Target URL</TableHead>
-                  </div>
+                  <TableHead style={{ width: columnWidths.targetUrl }}>
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => {
+                        setSortField("targetUrl");
+                        setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                      }}
+                    >
+                      Target URL
+                      {sortField === "targetUrl" && (
+                        <ChevronDown 
+                          className={cn(
+                            "ml-1 h-4 w-4", 
+                            sortDirection === "asc" ? "rotate-180 transform" : ""
+                          )}
+                        />
+                      )}
+                    </div>
+                  </TableHead>
                 </Resizable>
-
+                
                 <Resizable
                   width={columnWidths.anchorText}
                   height={40}
@@ -1009,11 +1200,27 @@ export default function Orders() {
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <div className="flex h-10 items-center justify-between">
-                    <TableHead className="font-medium">Anchor Text</TableHead>
-                  </div>
+                  <TableHead style={{ width: columnWidths.anchorText }}>
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => {
+                        setSortField("anchorText");
+                        setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                      }}
+                    >
+                      Anchor Text
+                      {sortField === "anchorText" && (
+                        <ChevronDown 
+                          className={cn(
+                            "ml-1 h-4 w-4", 
+                            sortDirection === "asc" ? "rotate-180 transform" : ""
+                          )}
+                        />
+                      )}
+                    </div>
+                  </TableHead>
                 </Resizable>
-
+                
                 <Resizable
                   width={columnWidths.textEdit}
                   height={40}
@@ -1022,11 +1229,27 @@ export default function Orders() {
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <div className="flex h-10 items-center justify-between">
-                    <TableHead className="font-medium">Text Edit/Content</TableHead>
-                  </div>
+                  <TableHead style={{ width: columnWidths.textEdit }}>
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => {
+                        setSortField("textEdit");
+                        setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                      }}
+                    >
+                      Text Edit/Content
+                      {sortField === "textEdit" && (
+                        <ChevronDown 
+                          className={cn(
+                            "ml-1 h-4 w-4", 
+                            sortDirection === "asc" ? "rotate-180 transform" : ""
+                          )}
+                        />
+                      )}
+                    </div>
+                  </TableHead>
                 </Resizable>
-
+                
                 <Resizable
                   width={columnWidths.status}
                   height={40}
@@ -1035,11 +1258,27 @@ export default function Orders() {
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <div className="flex h-10 items-center justify-between">
-                    <TableHead className="font-medium">Status</TableHead>
-                  </div>
+                  <TableHead style={{ width: columnWidths.status }}>
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => {
+                        setSortField("status");
+                        setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                      }}
+                    >
+                      Status
+                      {sortField === "status" && (
+                        <ChevronDown 
+                          className={cn(
+                            "ml-1 h-4 w-4", 
+                            sortDirection === "asc" ? "rotate-180 transform" : ""
+                          )}
+                        />
+                      )}
+                    </div>
+                  </TableHead>
                 </Resizable>
-
+                
                 <Resizable
                   width={columnWidths.price}
                   height={40}
@@ -1048,24 +1287,69 @@ export default function Orders() {
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <div className="flex h-10 items-center justify-between">
-                    <TableHead className="font-medium">Price</TableHead>
-                  </div>
+                  <TableHead style={{ width: columnWidths.price }}>
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => {
+                        setSortField("price");
+                        setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                      }}
+                    >
+                      Price
+                      {sortField === "price" && (
+                        <ChevronDown 
+                          className={cn(
+                            "ml-1 h-4 w-4", 
+                            sortDirection === "asc" ? "rotate-180 transform" : ""
+                          )}
+                        />
+                      )}
+                    </div>
+                  </TableHead>
                 </Resizable>
-
+                
                 <Resizable
-                  width={columnWidths.dateOrdered}
+                  width={columnWidths.date}
                   height={40}
-                  onResize={onResize("dateOrdered")}
+                  onResize={onResize("date")}
                   handle={
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <div className="flex h-10 items-center justify-between">
-                    <TableHead className="font-medium">Date Ordered</TableHead>
-                  </div>
+                  <TableHead style={{ width: columnWidths.date }}>
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => {
+                        setSortField("dateOrdered");
+                        setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                      }}
+                    >
+                      Date Ordered
+                      {sortField === "dateOrdered" && (
+                        <ChevronDown 
+                          className={cn(
+                            "ml-1 h-4 w-4", 
+                            sortDirection === "asc" ? "rotate-180 transform" : ""
+                          )}
+                        />
+                      )}
+                    </div>
+                  </TableHead>
                 </Resizable>
-
+                
+                {isAdmin && (
+                  <Resizable
+                    width={columnWidths.user}
+                    height={40}
+                    onResize={onResize("user")}
+                    handle={
+                      <span className="react-resizable-handle" />
+                    }
+                  >
+                    <TableHead style={{ width: columnWidths.user }}>User</TableHead>
+                  </Resizable>
+                )}
+                
                 <Resizable
                   width={columnWidths.comments}
                   height={40}
@@ -1074,248 +1358,242 @@ export default function Orders() {
                     <span className="react-resizable-handle" />
                   }
                 >
-                  <div className="flex h-10 items-center justify-between">
-                    <TableHead className="font-medium">Comments</TableHead>
-                  </div>
+                  <TableHead style={{ width: columnWidths.comments }}>Comments</TableHead>
                 </Resizable>
-
-                <Resizable
-                  width={columnWidths.actions}
-                  height={40}
-                  onResize={onResize("actions")}
-                  handle={
-                    <span className="react-resizable-handle" />
-                  }
-                >
-                  <div className="flex h-10 items-center justify-between">
-                    <TableHead className="font-medium">Actions</TableHead>
-                  </div>
-                </Resizable>
+                
+                <TableHead style={{ width: columnWidths.actions }}></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 11 : 10} className="text-center py-10 text-muted-foreground">
-                    No orders found. Try adjusting your filters or create a new order.
+                  <TableCell colSpan={isAdmin ? 10 : 9} className="text-center py-10">
+                    No orders found. Try adjusting your filters or creating a new order.
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedOrders.map((order: Order) => {
-                  // Determine if this is a guest post or niche edit
-                  const isGuestPost = order.sourceUrl === "not_applicable";
-                  
-                  // Create a display title for source URL column
-                  let sourceDisplay = isGuestPost 
-                    ? (order.title && order.website 
-                        ? `${order.title} - ${order.website.name}` 
-                        : (order.title || "N/A"))
+                  const isGuestPost = getOrderType(order) === "guest_post";
+                  const sourceDisplay = isGuestPost 
+                    ? (order.title || "Untitled") + (order.website ? ` - ${order.website.name}` : "")
                     : order.sourceUrl;
-
-                  // Format the date in a user-friendly way
-                  const formattedDate = order.dateOrdered
-                    ? format(new Date(order.dateOrdered), "MMM d, yyyy")
-                    : "N/A";
-
+                    
                   return (
                     <TableRow 
                       key={order.id}
                       className={cn(
-                        "group",
-                        order.unreadComments && order.unreadComments > 0 ? "bg-blue-50 dark:bg-blue-950/20" : ""
+                        highlightedOrderId === order.id && "bg-muted/50"
                       )}
                     >
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      
-                      {isAdmin && (
-                        <TableCell>
-                          {users.find((u: any) => u.id === order.userId)?.companyName || 
-                           users.find((u: any) => u.id === order.userId)?.username || 
-                           "N/A"}
-                        </TableCell>
-                      )}
-                      
                       <TableCell>
-                        <div className="max-w-xs truncate">
-                          {isGuestPost && order.title ? (
-                            <div className="font-medium">{sourceDisplay}</div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="truncate-cell">{sourceDisplay}</span>
-                              {order.sourceUrl !== "not_applicable" && (
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(order.sourceUrl);
-                                    toast({
-                                      title: "Copied",
-                                      description: "Source URL copied to clipboard",
-                                    });
-                                  }}
-                                >
-                                  <Copy className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        <Link href={`/orders/${order.id}`} className="font-medium hover:underline">
+                          {order.id}
+                        </Link>
                       </TableCell>
-                      
                       <TableCell>
-                        <div className="max-w-xs truncate-cell">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate-cell">{order.targetUrl}</span>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => {
-                                navigator.clipboard.writeText(order.targetUrl);
-                                toast({
-                                  title: "Copied",
-                                  description: "Target URL copied to clipboard",
-                                });
-                              }}
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                            </Button>
+                        <div className="max-w-xs truncate flex justify-between group">
+                          <div className="flex-1 truncate">
+                            {order.sourceUrl === "not_applicable" ? (
+                              <div className="font-medium">{sourceDisplay}</div>
+                            ) : (
+                              <a 
+                                href={order.sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium hover:underline truncate-cell block"
+                              >
+                                {sourceDisplay}
+                              </a>
+                            )}
+                            {isGuestPost && order.website && (
+                              <span className="text-sm text-muted-foreground block truncate-cell">
+                                {order.website.url}
+                              </span>
+                            )}
                           </div>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="truncate-cell">{order.anchorText}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => {
-                              navigator.clipboard.writeText(order.anchorText);
-                              toast({
-                                title: "Copied",
-                                description: "Anchor text copied to clipboard",
-                              });
-                            }}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                            onClick={() => copyToClipboard(order.sourceUrl === "not_applicable" ? 
+                              (order.title || "Untitled") : order.sourceUrl, `source-${order.id}`)}
                           >
-                            <Copy className="h-3.5 w-3.5" />
+                            {copiedFields[`source-${order.id}`] ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       </TableCell>
-                      
                       <TableCell>
-                        <div className="truncate-cell">
-                          {order.textEdit || "N/A"}
+                        <div className="flex justify-between group">
+                          <div className="flex-1 truncate">
+                            <a 
+                              href={order.targetUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-medium hover:underline truncate-cell block"
+                            >
+                              {extractDomainFromUrl(order.targetUrl)}
+                            </a>
+                            <span className="text-sm text-muted-foreground block truncate-cell">
+                              {order.targetUrl}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                            onClick={() => copyToClipboard(order.targetUrl, `target-${order.id}`)}
+                          >
+                            {copiedFields[`target-${order.id}`] ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
                         </div>
                       </TableCell>
-                      
+                      <TableCell>
+                        <div className="max-w-xs truncate-cell flex justify-between group">
+                          <div className="flex-1 truncate">{order.anchorText || "N/A"}</div>
+                          {order.anchorText && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                              onClick={() => copyToClipboard(order.anchorText, `anchor-${order.id}`)}
+                            >
+                              {copiedFields[`anchor-${order.id}`] ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate-cell flex justify-between group">
+                          <div className="flex-1 truncate">
+                            {isGuestPost 
+                              ? (order.title || "N/A") 
+                              : (order.textEdit || "N/A")}
+                          </div>
+                          {(isGuestPost ? order.title : order.textEdit) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                              onClick={() => copyToClipboard(
+                                isGuestPost ? (order.title || "") : (order.textEdit || ""),
+                                `content-${order.id}`
+                              )}
+                            >
+                              {copiedFields[`content-${order.id}`] ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         {isAdmin ? (
-                          <Select 
+                          <Select
                             defaultValue={order.status}
                             onValueChange={(value) => {
-                              fetch(`/api/orders/${order.id}`, {
-                                method: "PATCH",
-                                headers: {
-                                  "Content-Type": "application/json"
-                                },
-                                body: JSON.stringify({ status: value })
-                              })
-                              .then(response => {
-                                if (!response.ok) throw new Error("Failed to update status");
-                                return response.json();
-                              })
-                              .then(() => {
-                                queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-                                toast({
-                                  title: "Status updated",
-                                  description: `Order #${order.id} status changed to ${value}`,
+                              if (value !== order.status && !isActionInProgress) {
+                                changeStatusMutation.mutate({
+                                  orderId: order.id,
+                                  status: value
                                 });
-                              })
-                              .catch(error => {
-                                toast({
-                                  title: "Error",
-                                  description: error.message,
-                                  variant: "destructive",
-                                });
-                              });
+                              }
                             }}
+                            disabled={isActionInProgress}
                           >
-                            <SelectTrigger className="w-36 h-8">
-                              <SelectValue>
-                                <StatusBadge status={order.status} />
-                              </SelectValue>
+                            <SelectTrigger className="w-full">
+                              <StatusBadge status={order.status} />
                             </SelectTrigger>
                             <SelectContent>
-                              {getStatusOptions(isGuestPost ? "guest_post" : "niche_edit")}
+                              {renderStatusOptions(order)}
                             </SelectContent>
                           </Select>
                         ) : (
                           <StatusBadge status={order.status} />
                         )}
                       </TableCell>
-                      
-                      <TableCell>${parseFloat(order.price).toFixed(2)}</TableCell>
-                      
-                      <TableCell>{formattedDate}</TableCell>
-                      
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
+                        ${Number(order.price).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(order.dateOrdered), "MMM d, yyyy")}
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          {users.find((u: User) => u.id === order.userId)?.companyName || 
+                           users.find((u: User) => u.id === order.userId)?.username || 
+                           "Unknown"}
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        <Button
+                          variant="ghost"
                           size="icon"
-                          className="relative"
                           onClick={() => {
                             setSelectedOrderId(order.id);
-                            if (order.unreadComments && order.unreadComments > 0) {
+                            // Mark comments as read when opening the comments sheet
+                            if (unreadCommentCounts[order.id]) {
                               markCommentsAsReadMutation.mutate(order.id);
                             }
                           }}
+                          className="relative"
                         >
-                          <MessageSquare className="h-5 w-5" />
-                          {order.unreadComments && order.unreadComments > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                              {order.unreadComments}
+                          <MessageSquare className="h-4 w-4" />
+                          {unreadCommentCounts[order.id] > 0 && (
+                            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center">
+                              {unreadCommentCounts[order.id]}
                             </span>
                           )}
                         </Button>
                       </TableCell>
-                      
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-5 w-5" />
+                              <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => setOrderToEdit(order)}
-                            >
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit
+                            <DropdownMenuItem asChild>
+                              <Link href={`/orders/${order.id}`}>View Details</Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => {
-                                window.open(`/orders/${order.id}`, "_blank");
+                                setOrderToEdit(order);
                               }}
                             >
-                              <FileDown className="mr-2 h-4 w-4" />
-                              View Details
+                              Edit Order
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {order.status !== "Cancelled" && (
+                              <DropdownMenuItem
+                                onClick={() => setOrderToCancel(order.id)}
+                                className="text-orange-600"
+                              >
+                                Cancel Order
+                              </DropdownMenuItem>
+                            )}
                             {isAdmin && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => setOrderToDelete(order.id)}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </>
+                              <DropdownMenuItem
+                                onClick={() => setOrderToDelete(order.id)}
+                                className="text-red-600"
+                              >
+                                Delete Order
+                              </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -1326,8 +1604,8 @@ export default function Orders() {
               )}
             </TableBody>
           </Table>
-          </div>
         </div>
+      </div>
       
       {/* Pagination */}
       <div className="flex items-center justify-center mt-4">
@@ -1347,11 +1625,10 @@ export default function Orders() {
             
             {Array.from({ length: totalPages }).map((_, index) => {
               const page = index + 1;
-              
-              // Show current page, first page, last page, and pages around current page
+              // Show first 3 pages, last 3 pages, and pages around current page
               if (
-                page === 1 ||
-                page === totalPages ||
+                page <= 3 ||
+                page > totalPages - 3 ||
                 (page >= currentPage - 1 && page <= currentPage + 1)
               ) {
                 return (
@@ -1361,21 +1638,18 @@ export default function Orders() {
                       size="icon"
                       className={cn(
                         "h-9 w-9",
-                        currentPage === page && "bg-primary text-primary-foreground hover:bg-primary/90"
+                        currentPage === page && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
                       )}
-                      disabled={currentPage === page || isActionInProgress}
-                      onClick={() => setCurrentPage(page)}
+                      onClick={() => !isActionInProgress && setCurrentPage(page)}
+                      disabled={isActionInProgress || currentPage === page}
                     >
                       {page}
                     </Button>
                   </PaginationItem>
                 );
-              }
-              
-              // Show ellipsis between non-continuous pages
-              if (
-                (page === 2 && currentPage > 3) ||
-                (page === totalPages - 1 && currentPage < totalPages - 2)
+              } else if (
+                (page === 4 && currentPage > 4) ||
+                (page === totalPages - 3 && currentPage < totalPages - 3)
               ) {
                 return (
                   <PaginationItem key={page}>
@@ -1400,7 +1674,6 @@ export default function Orders() {
           </PaginationContent>
         </Pagination>
       </div>
-      </div>
       
       {/* Delete Order Confirmation Dialog */}
       <AlertDialog
@@ -1415,19 +1688,50 @@ export default function Orders() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isActionInProgress}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
                 if (orderToDelete) {
                   deleteOrderMutation.mutate(orderToDelete);
                 }
               }}
+              disabled={isActionInProgress}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleteOrderMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {isActionInProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Order Confirmation Dialog */}
+      <AlertDialog
+        open={orderToCancel !== null}
+        onOpenChange={(open) => !open && setOrderToCancel(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this order? This will change the order status to "Cancelled".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isActionInProgress}>No, Keep It</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (orderToCancel) {
+                  cancelOrderMutation.mutate(orderToCancel);
+                }
+              }}
+              disabled={isActionInProgress}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {isActionInProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Yes, Cancel Order
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1449,7 +1753,7 @@ export default function Orders() {
             <div className="py-4">
               <div className="space-y-4 max-h-[60vh] overflow-y-auto pb-4">
                 {isLoadingComments ? (
-                  <div className="flex items-center justify-center py-10">
+                  <div className="flex justify-center py-10">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
                 ) : comments.length === 0 ? (
@@ -1458,53 +1762,44 @@ export default function Orders() {
                   </div>
                 ) : (
                   comments.map((comment: any) => (
-                    <div 
-                      key={comment.id} 
-                      className={`p-3 rounded-lg ${
-                        comment.isFromAdmin
-                          ? "bg-blue-50 dark:bg-blue-950/20 ml-6"
-                          : "bg-gray-100 dark:bg-gray-800 mr-6"
-                      }`}
+                    <div
+                      key={comment.id}
+                      className="rounded-lg border p-4"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="font-medium">
-                          {comment.isFromAdmin ? "Admin" : "You"}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {format(new Date(comment.createdAt), "MMM d, yyyy 'at' h:mm a")}
-                        </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">
+                          {comment.user?.companyName || comment.user?.username}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                        </p>
                       </div>
-                      <div className="mt-1">{comment.text}</div>
+                      <p className="mt-2">{comment.message}</p>
                     </div>
                   ))
                 )}
               </div>
-              <div className="pt-4 border-t mt-4">
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Write a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={() => {
-                      if (!newComment.trim()) return;
-                      
-                      addCommentMutation.mutate({
-                        orderId: selectedOrderId,
-                        comment: newComment,
-                      });
-                    }}
-                    disabled={!newComment.trim() || isActionInProgress || addCommentMutation.isPending}
-                    className="w-full"
-                  >
-                    {(isActionInProgress || addCommentMutation.isPending) && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Add Comment
-                  </Button>
-                </div>
+              <div className="space-y-4 pt-4 border-t">
+                <Textarea
+                  placeholder="Add a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                />
+                <Button
+                  onClick={() => {
+                    if (!isActionInProgress && newComment.trim()) {
+                      setIsActionInProgress(true);
+                      addCommentMutation.mutate();
+                    }
+                  }}
+                  disabled={!newComment.trim() || isActionInProgress || addCommentMutation.isPending}
+                  className="w-full"
+                >
+                  {(isActionInProgress || addCommentMutation.isPending) && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Add Comment
+                </Button>
               </div>
             </div>
           </SheetContent>

@@ -122,13 +122,10 @@ export default function NewOrderPage() {
       return true;
     }, "Please enter a valid Google Docs URL"),
   }).refine((data) => {
-    // Require contentOption if it's a guest post
-    if (data.type === "guest_post") {
-      return !!data.contentOption;
-    }
-    return true;
+    // Content option is no longer required for guest posts
+    return true; 
   }, {
-    message: "Please select a content option for Guest Posts",
+    message: "",
     path: ["contentOption"]
   }).refine((data) => {
     // For upload option, either document or Google Doc link must be provided
@@ -523,7 +520,7 @@ export default function NewOrderPage() {
                   name="sourceUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Source URL</FormLabel>
+                      <FormLabel>Source URL <span className="text-red-500">*</span></FormLabel>
                       <FormDescription>
                         The URL of the existing article where your link will be added
                         {selectedDomain && (
@@ -562,7 +559,7 @@ export default function NewOrderPage() {
                 name="targetUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Target URL</FormLabel>
+                    <FormLabel>Target URL <span className="text-red-500">*</span></FormLabel>
                     <FormDescription>
                       The URL you want to link to (your website)
                     </FormDescription>
@@ -579,7 +576,7 @@ export default function NewOrderPage() {
                 name="anchorText"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Anchor Text</FormLabel>
+                    <FormLabel>Anchor Text <span className="text-red-500">*</span></FormLabel>
                     <FormDescription>
                       The clickable text that will contain your link
                     </FormDescription>
@@ -623,14 +620,14 @@ export default function NewOrderPage() {
               {/* Content Options for Guest Posts */}
               {orderType === "guest_post" && (
                 <div className="space-y-4 border p-4 rounded-md bg-muted/30">
-                  <h3 className="font-medium">Content Options <span className="text-red-500">*</span></h3>
+                  <h3 className="font-medium">Content Options</h3>
                   
                   <FormField
                     control={customOrderForm.control}
                     name="contentOption"
                     render={({ field }) => (
                       <FormItem className="space-y-3">
-                        <FormLabel>Choose how you want to provide content <span className="text-red-500">*</span></FormLabel>
+                        <FormLabel>Choose how you want to provide content</FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}

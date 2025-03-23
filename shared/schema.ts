@@ -44,9 +44,9 @@ export const updateProfileSchema = createInsertSchema(users)
     id: true, 
     username: true, 
     password: true,
+    billingAddress: true // Remove billing address field from profile updates
   })
   .extend({
-    billingAddress: z.string().min(5, "Billing address is required").max(500, "Billing address is too long"),
     bio: z.string().min(20, "Bio must be at least 20 characters long").max(2000, "Bio must not exceed 2000 characters"),
     profilePicture: z.string().optional(),
     companyLogo: z.string().optional(),
@@ -57,6 +57,13 @@ export const updateProfileSchema = createInsertSchema(users)
       .includes("linkedin.com", { message: "URL must be from LinkedIn" }),
     instagramProfile: z.string().optional(),
   });
+  
+// Schema for updating billing details
+export const updateBillingSchema = z.object({
+  billingAddress: z.string().min(5, "Billing address is required").max(500, "Billing address is too long"),
+  billingEmail: z.string().email("Please enter a valid email address"),
+  billingPreferences: z.enum(["paypal", "wire"]).optional(),
+});
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;

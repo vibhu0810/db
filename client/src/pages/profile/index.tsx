@@ -62,7 +62,6 @@ export default function ProfilePage() {
       email: user?.email || "",
       companyName: user?.companyName || "",
       country: user?.country || "",
-      billingAddress: user?.billingAddress || "",
       bio: user?.bio || "",
       profilePicture: user?.profilePicture || "",
       dateOfBirth: user?.dateOfBirth || "",

@@ -336,10 +336,10 @@ export default function Orders() {
   const [columnWidths, setColumnWidths] = useState({
     sourceUrl: 250,
     targetUrl: 250,
-    anchorText: 180,
-    textEdit: 250,
+    anchorText: 150,
+    textEdit: 200,
     notes: 200,
-    status: 180,
+    status: 150,
     id: 100,
     price: 100,
     date: 120,

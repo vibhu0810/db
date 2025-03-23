@@ -1065,9 +1065,25 @@ function UserInvoicesTab() {
     setDateRange({ from: undefined, to: undefined });
   };
 
+  // Load billing details from localStorage on component mount
+  useEffect(() => {
+    const savedBillingDetails = localStorage.getItem('billingDetails');
+    if (savedBillingDetails) {
+      try {
+        const parsedDetails = JSON.parse(savedBillingDetails);
+        setBillingDetails(parsedDetails);
+      } catch (error) {
+        console.error('Error parsing saved billing details:', error);
+      }
+    }
+  }, []);
+
   const handleBillingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would normally save the billing details to the backend
+    
+    // Save billing details to localStorage for persistence
+    localStorage.setItem('billingDetails', JSON.stringify(billingDetails));
+    
     toast({
       title: "Success",
       description: "Billing details updated successfully",
@@ -1241,10 +1257,7 @@ function UserInvoicesTab() {
                         <span className="text-sm mt-1">{billingDetails.billingNotes}</span>
                       </div>
                     )}
-                    <div className="flex justify-between mt-2">
-                      <span className="text-muted-foreground">Next Invoice:</span>
-                      <span className="font-medium">{format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "PPP")}</span>
-                    </div>
+
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-center py-2">No billing details provided yet</p>

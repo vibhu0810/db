@@ -331,7 +331,13 @@ export default function Dashboard() {
               {recentOrdersList.map((order) => (
                 <div key={order.id} className="flex items-center justify-between border-b pb-4 last:border-0">
                   <div>
-                    <p className="font-medium">{order.sourceUrl}</p>
+                    <p className="font-medium">
+                      {order.sourceUrl === "not_applicable" 
+                        ? (order.website 
+                            ? `${order.title || "Untitled"} - ${order.website.name}` 
+                            : (order.title || "Guest Post"))
+                        : order.sourceUrl}
+                    </p>
                     {isAdmin && (
                       <p className="text-sm text-muted-foreground">
                         Ordered by: {order.user?.companyName || order.user?.username}

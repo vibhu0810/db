@@ -415,7 +415,7 @@ export default function ChatPage() {
 
   if (usersLoading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+      <div className="flex items-center justify-center h-[calc(95vh-4rem)]">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -423,7 +423,7 @@ export default function ChatPage() {
 
   return (
     <>
-      <div className="h-[calc(100vh-4rem)] flex gap-4">
+      <div className="h-[calc(95vh-4rem)] flex gap-4">
         {/* Users list */}
         <div className="w-64 border rounded-lg overflow-hidden">
           <div className="p-4 border-b bg-muted">

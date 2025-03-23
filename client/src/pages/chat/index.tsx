@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { 
   Loader2, Send, Check, CheckCheck, Image as ImageIcon, 
   Mic, MicOff, X, FileText, Paperclip, Music, Star, Ticket as TicketIcon,
-  Info
+  Info, Link as LinkIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { User } from "@shared/schema";
 import { uploadFile } from "@/utils/uploadthing";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 interface ChatUser extends User {
   companyName: string;
@@ -801,6 +801,12 @@ export default function ChatPage() {
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">
                         {ticketData.ticket.title || "No title provided"}
+                      </p>
+                      <p className="text-xs flex items-center gap-1 mt-1 text-primary">
+                        <LinkIcon className="h-3 w-3" /> 
+                        <Link href={`/orders/${ticketData.ticket.orderId}`} className="hover:underline">
+                          Order #{ticketData.ticket.orderId}
+                        </Link>
                       </p>
                     </div>
                     <div className="text-right text-sm">

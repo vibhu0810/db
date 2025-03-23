@@ -4,7 +4,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { 
   Loader2, Send, Check, CheckCheck, Image as ImageIcon, 
-  Mic, MicOff, X, FileText, Paperclip, Music, Star, Ticket as TicketIcon
+  Mic, MicOff, X, FileText, Paperclip, Music, Star, Ticket as TicketIcon,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,6 +118,104 @@ export default function ChatPage() {
     queryKey: ['/api/messages', selectedUserId],
     queryFn: async () => {
       if (!selectedUserId) return [];
+      
+      // Handle virtual ticket users (negative IDs)
+      if (selectedUserId < 0) {
+        // This is a ticket conversation - get the ticket ID from the negative user ID
+        const ticketId = Math.abs(selectedUserId);
+        
+        // For ticket conversations, we need to retrieve ticket-specific messages
+        // These would ideally come from a dedicated API endpoint, but we'll improvise
+        try {
+          // Get ticket details first
+          const ticketRes = await apiRequest("GET", `/api/support-tickets/${ticketId}`);
+          const ticketData = await ticketRes.json();
+          
+          if (!ticketRes.ok) throw new Error('Failed to fetch ticket details');
+          
+          // Let's create a synthetic conversation for this ticket
+          const ticketMessages = [
+            {
+              id: `ticket-${ticketId}-1`,
+              senderId: -100, // System message sender ID
+              receiverId: user?.id || 0,
+              content: `Support Ticket #${ticketId}: ${ticketData.ticket.subject || 'Support Request'}\n\n${ticketData.ticket.description || 'No description provided'}`,
+              attachmentUrl: null,
+              attachmentType: null,
+              read: true,
+              createdAt: ticketData.ticket.createdAt,
+              isSystemMessage: true
+            }
+          ];
+          
+          // Get any comments on this ticket
+          if (ticketData.ticket.id) {
+            try {
+              const commentsRes = await apiRequest("GET", `/api/support-tickets/${ticketId}/comments`);
+              if (commentsRes.ok) {
+                const comments = await commentsRes.json();
+                
+                // Add each comment as a message in this conversation
+                comments.forEach((comment: any, index: number) => {
+                  // Determine if comment is from admin or customer
+                  const isAdminComment = comment.isFromAdmin;
+                  
+                  ticketMessages.push({
+                    id: `ticket-${ticketId}-comment-${index + 2}`,
+                    senderId: isAdminComment ? -101 : user?.id || 0, // Admin (virtual) or current user
+                    receiverId: isAdminComment ? user?.id || 0 : -101,
+                    content: comment.content,
+                    attachmentUrl: null,
+                    attachmentType: null,
+                    read: true,
+                    createdAt: comment.createdAt,
+                    isSystemMessage: false
+                  });
+                });
+              }
+            } catch (e) {
+              console.error("Error fetching ticket comments:", e);
+            }
+          }
+          
+          // Add status update message if the ticket has been updated
+          if (ticketData.ticket.status !== "open") {
+            ticketMessages.push({
+              id: `ticket-${ticketId}-status`,
+              senderId: -100, // System message
+              receiverId: user?.id || 0,
+              content: `This ticket's status was updated to: ${ticketData.ticket.status.replace("_", " ")}`,
+              attachmentUrl: null,
+              attachmentType: null,
+              read: true,
+              createdAt: ticketData.ticket.updatedAt || ticketData.ticket.createdAt,
+              isSystemMessage: true
+            });
+          }
+          
+          // If the ticket is closed, add a closing message
+          if (ticketData.ticket.status === "closed") {
+            ticketMessages.push({
+              id: `ticket-${ticketId}-closed`,
+              senderId: -100, // System message
+              receiverId: user?.id || 0,
+              content: `This ticket has been closed. ${ticketData.ticket.feedback ? `Feedback: ${ticketData.ticket.feedback}` : ''}`,
+              attachmentUrl: null,
+              attachmentType: null,
+              read: true,
+              createdAt: ticketData.ticket.closedAt || ticketData.ticket.updatedAt || ticketData.ticket.createdAt,
+              isSystemMessage: true
+            });
+          }
+          
+          return ticketMessages;
+        } catch (error) {
+          console.error("Error fetching ticket conversation:", error);
+          return [];
+        }
+      }
+      
+      // Regular user-to-user messages
       const res = await apiRequest("GET", `/api/messages/${selectedUserId}`);
       if (!res.ok) throw new Error('Failed to fetch messages');
       return res.json();
@@ -220,15 +319,51 @@ export default function ChatPage() {
     }) => {
       if (!selectedUserId) throw new Error("No recipient selected");
       
-      const res = await apiRequest("POST", "/api/messages", {
-        content: messageText,
-        receiverId: selectedUserId,
-        attachmentUrl,
-        attachmentType
-      });
-      
-      if (!res.ok) throw new Error('Failed to send message');
-      return res.json();
+      // Check if this is a virtual ticket conversation (selectedUserId is negative)
+      if (selectedUserId < 0) {
+        const ticketId = Math.abs(selectedUserId);
+        
+        // For virtual ticket conversations, we add a comment to the ticket instead
+        const res = await apiRequest("POST", `/api/support-tickets/${ticketId}/comments`, {
+          content: messageText,
+          // We don't handle attachments for ticket comments yet
+          isFromAdmin: isAdmin
+        });
+        
+        if (!res.ok) throw new Error('Failed to add comment to ticket');
+        
+        // Also create a regular message for admin notification if user is not admin
+        if (!isAdmin) {
+          // Find an admin to notify
+          const adminUser = users.find((u: ChatUser) => u.is_admin);
+          if (adminUser) {
+            // Create a notification message for the admin
+            const notifyRes = await apiRequest("POST", "/api/messages", {
+              content: `New comment on Support Ticket #${ticketId}: ${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}`,
+              receiverId: adminUser.id,
+              attachmentUrl,
+              attachmentType
+            });
+            
+            if (!notifyRes.ok) {
+              console.warn('Failed to notify admin about ticket comment');
+            }
+          }
+        }
+        
+        return res.json();
+      } else {
+        // Regular user-to-user message
+        const res = await apiRequest("POST", "/api/messages", {
+          content: messageText,
+          receiverId: selectedUserId,
+          attachmentUrl,
+          attachmentType
+        });
+        
+        if (!res.ok) throw new Error('Failed to send message');
+        return res.json();
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
@@ -505,29 +640,38 @@ export default function ChatPage() {
                             .then(ticketDetails => {
                               console.log('Loaded ticket details:', ticketDetails);
                               
-                              // For non-admin users, we want to chat with an admin about this ticket
+                              // Create a virtual user ID for this ticket
+                              // We'll use a negative number based on the ticket ID to ensure uniqueness
+                              // This will be used as the selectedUserId for this ticket conversation
+                              const virtualTicketUserId = -1 * ticket.id; 
+                              
+                              // Set the active ticket and selected user (virtual)
+                              setActiveTicketId(ticket.id);
+                              setSelectedUserId(virtualTicketUserId);
+                              
+                              // Store ticket data for display
+                              const ticketData = {
+                                ticket: ticketDetails.ticket || ticket
+                              };
+                              localStorage.setItem(`ticket_${ticket.id}`, JSON.stringify(ticketData));
+                              
+                              // Update the URL with the ticket ID for persistence
+                              const url = new URL(window.location.href);
+                              url.searchParams.set('ticket', ticket.id.toString());
+                              window.history.pushState({}, '', url);
+                              
+                              // For non-admin users, prepare a message to the admin about this ticket
                               if (!isAdmin && users.length > 0) {
                                 const adminUser = users.find((u: ChatUser) => u.is_admin);
                                 if (adminUser) {
-                                  setSelectedUserId(adminUser.id);
                                   // Set a message specific to this ticket
                                   const ticketMessage = `I need help with support ticket #${ticket.id}: ${ticket.subject || 'Support Request'}`;
                                   
                                   // Add the ticket ID directly in the message to help track conversations 
                                   setMessageInput(`${ticketMessage}\n\nTicket ID: ${ticket.id}`);
                                   
-                                  // Create a new message with ticket reference if it doesn't exist
-                                  apiRequest("POST", "/api/messages", {
-                                    content: `Support Ticket #${ticket.id}: ${ticket.subject || 'Support Request'}\n\n${ticket.description || 'No description provided'}`,
-                                    receiverId: adminUser.id
-                                  })
-                                  .then(() => {
-                                    // Invalidate messages to refresh the list
-                                    queryClient.invalidateQueries({ queryKey: ['/api/messages', adminUser.id] });
-                                  })
-                                  .catch(error => {
-                                    console.error("Failed to create initial ticket message:", error);
-                                  });
+                                  // Create a special class for virtual ticket chat that shows previous messages
+                                  // We'll fetch previous ticket messages in the chat display section
                                   
                                   // Focus the input field after a short delay
                                   setTimeout(() => {
@@ -714,7 +858,19 @@ export default function ChatPage() {
                             )}
                           >
                             {/* Display message content */}
-                            {message.content.includes("Support Ticket #") ? (
+                            {message.isSystemMessage ? (
+                              // System message (like ticket updates)
+                              <div className="bg-muted p-2 rounded-md border border-border">
+                                <div className="flex gap-2 items-center mb-1 text-muted-foreground">
+                                  <Info className="h-4 w-4" />
+                                  <span className="font-medium text-xs">System</span>
+                                </div>
+                                <p className="whitespace-pre-wrap break-words text-muted-foreground">
+                                  {message.content}
+                                </p>
+                              </div>
+                            ) : message.content.includes("Support Ticket #") ? (
+                              // Support ticket notification
                               <div className="bg-amber-100 dark:bg-amber-950 p-2 rounded-md border border-amber-300 dark:border-amber-800">
                                 <div className="flex gap-2 items-center mb-1 text-amber-800 dark:text-amber-400">
                                   <FileText className="h-4 w-4" />
@@ -725,6 +881,7 @@ export default function ChatPage() {
                                 </p>
                               </div>
                             ) : (
+                              // Regular message
                               <p className="whitespace-pre-wrap break-words">
                                 {message.content}
                               </p>

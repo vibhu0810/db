@@ -4,12 +4,14 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { 
   Loader2, Send, Check, CheckCheck, Image as ImageIcon, 
-  Mic, MicOff, X, FileText, Paperclip, Music 
+  Mic, MicOff, X, FileText, Paperclip, Music, Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { User } from "@shared/schema";
@@ -31,6 +33,12 @@ export default function ChatPage() {
   const [messageInput, setMessageInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [location] = useLocation();
+  
+  // Support ticket states
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [ticketRating, setTicketRating] = useState(5);
+  const [ticketFeedback, setTicketFeedback] = useState("");
+  const [activeTicketId, setActiveTicketId] = useState<number | null>(null);
   
   // Parse URL query parameters to get ticket ID if present
   const getTicketIdFromUrl = () => {
@@ -321,12 +329,6 @@ export default function ChatPage() {
     };
   }, [isRecording]);
   
-  // Function to handle closing a ticket with rating
-  const [showRatingDialog, setShowRatingDialog] = useState(false);
-  const [ticketRating, setTicketRating] = useState(5);
-  const [ticketFeedback, setTicketFeedback] = useState("");
-  const [activeTicketId, setActiveTicketId] = useState<number | null>(null);
-  
   // Close ticket mutation
   const closeTicketMutation = useMutation({
     mutationFn: async ({ ticketId, rating, feedback }: { ticketId: number, rating: number, feedback: string }) => {
@@ -420,426 +422,515 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex gap-4">
-      {/* Users list */}
-      <div className="w-64 border rounded-lg overflow-hidden">
-        <div className="p-4 border-b bg-muted">
-          <h2 className="font-semibold">
-            {isAdmin ? "Customers" : "Support Team"}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isAdmin
-              ? "Select a customer to chat with"
-              : "Our support team is here to help"}
-          </p>
-        </div>
-        <ScrollArea className="h-[calc(100%-6rem)]">
-          {users.length > 0 ? (
-            users.map((chatUser) => {
-              // Count unread messages for this user
-              const unreadMessages = messages?.filter(
-                (m: any) => m.senderId === chatUser.id && !m.read &&
-                // Only count messages from conversations other than the currently selected one
-                (selectedUserId !== chatUser.id)
-              );
-              const unreadCount = unreadMessages?.length || 0;
-
-              return (
-                <button
-                  key={chatUser.id}
-                  onClick={() => setSelectedUserId(chatUser.id)}
-                  className={cn(
-                    "w-full p-4 text-left hover:bg-accent transition-colors flex items-center gap-3 relative",
-                    selectedUserId === chatUser.id && "bg-accent"
-                  )}
-                >
-                  <div className="relative">
-                    <Avatar>
-                      {chatUser.profilePicture ? (
-                        <img src={chatUser.profilePicture} alt={chatUser.username} />
-                      ) : (
-                        <div className="bg-primary/10 w-full h-full flex items-center justify-center text-primary font-semibold">
-                          {chatUser.username[0].toUpperCase()}
-                        </div>
-                      )}
-                    </Avatar>
-                    {/* Online/Offline indicator */}
-                    <div className={cn(
-                      "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background",
-                      onlineStatus[chatUser.id] ? "bg-emerald-500" : "bg-destructive"
-                    )} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">
-                      {chatUser.companyName || chatUser.username}
-                      {chatUser.is_admin && (
-                        <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                          Admin
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground truncate">
-                      {chatUser.is_admin ? "Support Agent" : chatUser.email}
-                    </div>
-                  </div>
-                  {unreadCount > 0 && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                      {unreadCount}
-                    </div>
-                  )}
-                </button>
-              );
-            })
-          ) : (
-            <div className="p-4 text-center text-muted-foreground">
+    <>
+      <div className="h-[calc(100vh-4rem)] flex gap-4">
+        {/* Users list */}
+        <div className="w-64 border rounded-lg overflow-hidden">
+          <div className="p-4 border-b bg-muted">
+            <h2 className="font-semibold">
+              {isAdmin ? "Customers" : "Support Team"}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
               {isAdmin
-                ? "No customers available"
-                : "No support agents available at the moment"}
-            </div>
-          )}
-        </ScrollArea>
-      </div>
+                ? "Select a customer to chat with"
+                : "Our support team is here to help"}
+            </p>
+          </div>
+          <ScrollArea className="h-[calc(100%-6rem)]">
+            {users.length > 0 ? (
+              users.map((chatUser) => {
+                // Count unread messages for this user
+                const unreadMessages = messages?.filter(
+                  (m: any) => m.senderId === chatUser.id && !m.read &&
+                  // Only count messages from conversations other than the currently selected one
+                  (selectedUserId !== chatUser.id)
+                );
+                const unreadCount = unreadMessages?.length || 0;
 
-      {/* Chat area */}
-      <div className="flex-1 border rounded-lg overflow-hidden flex flex-col">
-        {selectedUserId ? (
-          <>
-            {/* Ticket information banner (if applicable) */}
-            {ticketData && ticketData.ticket && (
-              <div className="bg-muted p-3 border-b">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium flex items-center gap-2">
-                      <FileText className="h-4 w-4" /> 
-                      Support Ticket #{ticketData.ticket.id}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {ticketData.ticket.title || "No title provided"}
-                    </p>
-                  </div>
-                  <div className="text-right text-sm">
-                    <div className="font-medium">Status: <span className={
-                      ticketData.ticket.status === "open" 
-                        ? "text-green-600" 
-                        : ticketData.ticket.status === "in_progress" 
-                          ? "text-amber-600" 
-                          : "text-muted-foreground"
-                    }>
-                      {ticketData.ticket.status.replace("_", " ")}
-                    </span></div>
-                    <div className="text-muted-foreground text-xs">
-                      Created {formatDistanceToNow(new Date(ticketData.ticket.createdAt), { addSuffix: true })}
-                    </div>
-                    {/* Close ticket button */}
-                    {ticketData.ticket.status !== "closed" && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={() => handleCloseTicket(ticketData.ticket.id)}
-                      >
-                        Close Ticket
-                      </Button>
+                return (
+                  <button
+                    key={chatUser.id}
+                    onClick={() => setSelectedUserId(chatUser.id)}
+                    className={cn(
+                      "w-full p-4 text-left hover:bg-accent transition-colors flex items-center gap-3 relative",
+                      selectedUserId === chatUser.id && "bg-accent"
                     )}
-                  </div>
-                </div>
+                  >
+                    <div className="relative">
+                      <Avatar>
+                        {chatUser.profilePicture ? (
+                          <img src={chatUser.profilePicture} alt={chatUser.username} />
+                        ) : (
+                          <div className="bg-primary/10 w-full h-full flex items-center justify-center text-primary font-semibold">
+                            {chatUser.username[0].toUpperCase()}
+                          </div>
+                        )}
+                      </Avatar>
+                      {/* Online/Offline indicator */}
+                      <div className={cn(
+                        "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background",
+                        onlineStatus[chatUser.id] ? "bg-emerald-500" : "bg-destructive"
+                      )} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">
+                        {chatUser.companyName || chatUser.username}
+                        {chatUser.is_admin && (
+                          <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {chatUser.is_admin ? "Support Agent" : chatUser.email}
+                      </div>
+                    </div>
+                    {unreadCount > 0 && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        {unreadCount}
+                      </div>
+                    )}
+                  </button>
+                );
+              })
+            ) : (
+              <div className="p-4 text-center text-muted-foreground">
+                {isAdmin
+                  ? "No customers available"
+                  : "No support agents available at the moment"}
               </div>
             )}
-        
-            {/* Messages */}
-            <ScrollArea className="flex-1 p-4">
-              {initialMessagesLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="h-8 w-8 animate-spin" />
+          </ScrollArea>
+        </div>
+
+        {/* Chat area */}
+        <div className="flex-1 border rounded-lg overflow-hidden flex flex-col">
+          {selectedUserId ? (
+            <>
+              {/* Ticket information banner (if applicable) */}
+              {ticketData && ticketData.ticket && (
+                <div className="bg-muted p-3 border-b">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium flex items-center gap-2">
+                        <FileText className="h-4 w-4" /> 
+                        Support Ticket #{ticketData.ticket.id}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {ticketData.ticket.title || "No title provided"}
+                      </p>
+                    </div>
+                    <div className="text-right text-sm">
+                      <div className="font-medium">Status: <span className={
+                        ticketData.ticket.status === "open" 
+                          ? "text-green-600" 
+                          : ticketData.ticket.status === "in_progress" 
+                            ? "text-amber-600" 
+                            : "text-muted-foreground"
+                      }>
+                        {ticketData.ticket.status.replace("_", " ")}
+                      </span></div>
+                      <div className="text-muted-foreground text-xs">
+                        Created {formatDistanceToNow(new Date(ticketData.ticket.createdAt), { addSuffix: true })}
+                      </div>
+                      {/* Close ticket button */}
+                      {ticketData.ticket.status !== "closed" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={() => handleCloseTicket(ticketData.ticket.id)}
+                        >
+                          Close Ticket
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {messages.length > 0 ? (
-                    messages.map((message: any) => (
-                      <div
-                        key={message.id}
-                        className={cn(
-                          "flex gap-2",
-                          message.senderId === user?.id && "justify-end"
-                        )}
-                      >
+              )}
+          
+              {/* Messages */}
+              <ScrollArea className="flex-1 p-4">
+                {initialMessagesLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {messages.length > 0 ? (
+                      messages.map((message: any) => (
                         <div
+                          key={message.id}
                           className={cn(
-                            "max-w-[70%] rounded-lg p-3",
-                            message.senderId === user?.id
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                            "flex gap-2",
+                            message.senderId === user?.id && "justify-end"
                           )}
                         >
-                          {/* Display message content */}
-                          <p className="whitespace-pre-wrap break-words">
-                            {message.content}
-                          </p>
-                          
-                          {/* Display image attachment if present */}
-                          {message.attachmentUrl && message.attachmentType === 'image' && (
-                            <div className="mt-2 rounded-md overflow-hidden">
-                              <div className="flex items-center gap-2 mb-1">
-                                <ImageIcon className="h-4 w-4" />
-                                <span className="text-xs font-medium">Image</span>
-                              </div>
-                              <a 
-                                href={message.attachmentUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="block rounded-md overflow-hidden"
-                              >
-                                <img 
-                                  src={message.attachmentUrl} 
-                                  alt="Message attachment" 
-                                  className="max-w-full rounded-md hover:opacity-90 transition-opacity border border-border" 
-                                  loading="lazy"
-                                />
-                              </a>
-                            </div>
-                          )}
-                          
-                          {/* Display audio attachment if present */}
-                          {message.attachmentUrl && message.attachmentType === 'audio' && (
-                            <div className="mt-2 bg-background/20 rounded-md p-2">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Music className="h-4 w-4" />
-                                <span className="text-xs font-medium">Voice Message</span>
-                              </div>
-                              <audio 
-                                src={message.attachmentUrl} 
-                                controls 
-                                className="max-w-full w-full h-8"
-                                controlsList="nodownload noplaybackrate"
-                              />
-                            </div>
-                          )}
-                          
-                          {/* Display message metadata */}
                           <div
                             className={cn(
-                              "text-xs mt-1 flex items-center gap-1",
+                              "max-w-[70%] rounded-lg p-3",
                               message.senderId === user?.id
-                                ? "text-primary-foreground/70"
-                                : "text-muted-foreground"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
                             )}
                           >
-                            <span>
-                              {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                            </span>
-                            {message.senderId === user?.id && (
-                              <span className="flex items-center">
-                                •
-                                {message.read ? (
-                                  <CheckCheck className="h-3 w-3 ml-1" />
-                                ) : (
-                                  <Check className="h-3 w-3 ml-1" />
-                                )}
-                              </span>
+                            {/* Display message content */}
+                            <p className="whitespace-pre-wrap break-words">
+                              {message.content}
+                            </p>
+                            
+                            {/* Display image attachment if present */}
+                            {message.attachmentUrl && message.attachmentType === 'image' && (
+                              <div className="mt-2 rounded-md overflow-hidden">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <ImageIcon className="h-4 w-4" />
+                                  <span className="text-xs font-medium">Image</span>
+                                </div>
+                                <a 
+                                  href={message.attachmentUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="block rounded-md overflow-hidden"
+                                >
+                                  <img 
+                                    src={message.attachmentUrl} 
+                                    alt="Message attachment" 
+                                    className="max-w-full rounded-md hover:opacity-90 transition-opacity border border-border" 
+                                    loading="lazy"
+                                  />
+                                </a>
+                              </div>
                             )}
+                            
+                            {/* Display audio attachment if present */}
+                            {message.attachmentUrl && message.attachmentType === 'audio' && (
+                              <div className="mt-2 bg-background/20 rounded-md p-2">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Music className="h-4 w-4" />
+                                  <span className="text-xs font-medium">Voice Message</span>
+                                </div>
+                                <audio 
+                                  src={message.attachmentUrl} 
+                                  controls 
+                                  className="max-w-full w-full h-8"
+                                  controlsList="nodownload noplaybackrate"
+                                />
+                              </div>
+                            )}
+                            
+                            {/* Display message metadata */}
+                            <div
+                              className={cn(
+                                "text-xs mt-1 flex items-center gap-1",
+                                message.senderId === user?.id
+                                  ? "text-primary-foreground/70"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              <span>
+                                {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                              </span>
+                              {message.senderId === user?.id && (
+                                <span className="flex items-center">
+                                  •
+                                  {message.read ? (
+                                    <CheckCheck className="h-3 w-3 ml-1" />
+                                  ) : (
+                                    <Check className="h-3 w-3 ml-1" />
+                                  )}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        No messages yet. Start the conversation!
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      No messages yet. Start the conversation!
-                    </div>
-                  )}
-                  {/* Typing indicator */}
-                  {typingStatus?.isTyping && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="flex gap-1">
-                        <span className="animate-bounce">.</span>
-                        <span className="animate-bounce delay-100">.</span>
-                        <span className="animate-bounce delay-200">.</span>
-                      </div>
-                      <span>Typing</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </ScrollArea>
-
-            {/* Input area */}
-            <div className="p-4 border-t">
-              {/* Display selected attachments */}
-              {(imageAttachment || audioAttachment) && (
-                <div className="mb-3 p-2 border rounded-md bg-muted/50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {imageAttachment && (
-                      <>
-                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm truncate max-w-[200px]">
-                          {imageAttachment.name}
-                        </span>
-                      </>
                     )}
-                    {audioAttachment && (
-                      <>
-                        <Music className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm truncate max-w-[200px]">
-                          {audioAttachment.name || "Voice recording.mp3"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {(audioAttachment.size / 1024 / 1024).toFixed(2)} MB
-                        </span>
-                      </>
+                    {/* Typing indicator */}
+                    {typingStatus?.isTyping && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex gap-1">
+                          <span className="animate-bounce">.</span>
+                          <span className="animate-bounce delay-100">.</span>
+                          <span className="animate-bounce delay-200">.</span>
+                        </div>
+                        <span>Typing</span>
+                      </div>
                     )}
                   </div>
+                )}
+              </ScrollArea>
+
+              {/* Input area */}
+              <div className="p-4 border-t">
+                {/* Display selected attachments */}
+                {(imageAttachment || audioAttachment) && (
+                  <div className="mb-3 p-2 border rounded-md bg-muted/50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {imageAttachment && (
+                        <>
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                          <span className="text-sm truncate max-w-[200px]">
+                            {imageAttachment.name}
+                          </span>
+                        </>
+                      )}
+                      {audioAttachment && (
+                        <>
+                          <Music className="h-5 w-5 text-muted-foreground" />
+                          <span className="text-sm truncate max-w-[200px]">
+                            {audioAttachment.name || "Voice recording.mp3"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {(audioAttachment.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setImageAttachment(null);
+                        setAudioAttachment(null);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Voice recording UI */}
+                {isRecording && (
+                  <div className="mb-3 p-2 border rounded-md bg-destructive/10 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <span className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
+                        <span className="absolute -inset-1 rounded-full bg-destructive/30 animate-ping opacity-75" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-destructive font-medium">Recording...</span>
+                        <span className="text-xs text-muted-foreground">
+                          {Math.floor(recordingDuration / 60).toString().padStart(2, '0')}:
+                          {(recordingDuration % 60).toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive border-destructive"
+                      onClick={() => {
+                        if (mediaRecorder) {
+                          mediaRecorder.stop();
+                        }
+                        setIsRecording(false);
+                      }}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-2">
+                  {/* File attachment button */}
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full"
+                      type="button"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file) {
+                            setImageAttachment(file);
+                          }
+                        };
+                        input.click();
+                      }}
+                    >
+                      <Paperclip className="h-5 w-5" />
+                    </Button>
+                  </div>
+
+                  {/* Voice recording button */}
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setImageAttachment(null);
-                      setAudioAttachment(null);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-              
-              {/* Voice recording UI */}
-              {isRecording && (
-                <div className="mb-3 p-2 border rounded-md bg-destructive/10 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <span className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
-                      <span className="absolute -inset-1 rounded-full bg-destructive/30 animate-ping opacity-75" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm text-destructive font-medium">Recording...</span>
-                      <span className="text-xs text-muted-foreground">
-                        {Math.floor(recordingDuration / 60).toString().padStart(2, '0')}:
-                        {(recordingDuration % 60).toString().padStart(2, '0')}
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      if (mediaRecorder) {
-                        mediaRecorder.stop();
-                      }
-                    }}
-                  >
-                    <MicOff className="h-4 w-4 mr-1" />
-                    Stop
-                  </Button>
-                </div>
-              )}
-              
-              <div className="flex gap-2">
-                {/* Attachment buttons */}
-                <div className="flex gap-1">
-                  {/* Image upload button */}
-                  <input 
-                    type="file" 
-                    id="image-upload" 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setImageAttachment(file);
-                        setAudioAttachment(null);
-                      }
-                      e.target.value = ''; // Reset input
-                    }}
-                  />
-                  <Button 
-                    variant="outline" 
                     size="icon"
-                    type="button"
-                    onClick={() => document.getElementById('image-upload')?.click()}
-                    disabled={isRecording || uploadingAttachment}
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
-                  
-                  {/* Voice recording button */}
-                  <Button 
-                    variant="outline" 
-                    size="icon"
+                    className="rounded-full"
                     type="button"
                     onClick={() => {
                       if (isRecording) {
                         if (mediaRecorder) {
                           mediaRecorder.stop();
                         }
-                        return;
-                      }
-                      
-                      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                        navigator.mediaDevices.getUserMedia({ audio: true })
-                          .then(stream => {
-                            const recorder = new MediaRecorder(stream);
-                            const chunks: Blob[] = [];
-                            
-                            recorder.ondataavailable = e => {
-                              chunks.push(e.data);
-                            };
-                            
-                            recorder.onstop = () => {
-                              setIsRecording(false);
-                              const blob = new Blob(chunks, { type: 'audio/mp3' });
-                              const audioFile = new File([blob], 'voice-message.mp3', { type: 'audio/mp3' });
-                              setAudioAttachment(audioFile);
-                              setImageAttachment(null);
-                              
-                              // Stop the media tracks
-                              stream.getTracks().forEach(track => track.stop());
-                            };
-                            
-                            recorder.start();
-                            setIsRecording(true);
-                            setMediaRecorder(recorder);
-                          })
-                          .catch(err => {
-                            console.error("Error accessing microphone:", err);
-                          });
+                        setIsRecording(false);
                       } else {
-                        console.error("Media devices not supported");
+                        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                          navigator.mediaDevices.getUserMedia({ audio: true })
+                            .then(stream => {
+                              const recorder = new MediaRecorder(stream);
+                              const chunks: Blob[] = [];
+                              
+                              recorder.ondataavailable = e => {
+                                chunks.push(e.data);
+                              };
+                              
+                              recorder.onstop = () => {
+                                const blob = new Blob(chunks, { type: 'audio/mpeg' });
+                                const file = new File([blob], 'voice-message.mp3', { type: 'audio/mpeg' });
+                                setAudioAttachment(file);
+                                setAudioChunks([]);
+                                
+                                // Stop all tracks in the stream
+                                stream.getTracks().forEach(track => track.stop());
+                              };
+                              
+                              recorder.start();
+                              setMediaRecorder(recorder);
+                              setIsRecording(true);
+                              setAudioChunks([]);
+                            })
+                            .catch(err => {
+                              console.error("Error accessing microphone:", err);
+                              toast({
+                                title: "Cannot access microphone",
+                                description: "Please allow microphone access and try again.",
+                                variant: "destructive",
+                              });
+                            });
+                        } else {
+                          toast({
+                            title: "Voice recording not supported",
+                            description: "Your browser doesn't support voice recording.",
+                            variant: "destructive",
+                          });
+                        }
                       }
                     }}
-                    disabled={uploadingAttachment}
-                    className={isRecording ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
                   >
-                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    {isRecording ? (
+                      <MicOff className="h-5 w-5 text-destructive" />
+                    ) : (
+                      <Mic className="h-5 w-5" />
+                    )}
+                  </Button>
+
+                  {/* Message input */}
+                  <Input
+                    placeholder="Type your message..."
+                    value={messageInput}
+                    onChange={handleMessageInputChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    disabled={isRecording || uploadingAttachment}
+                    className="flex-1"
+                  />
+                  
+                  {/* Send button */}
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={
+                      (!messageInput.trim() && !imageAttachment && !audioAttachment) || 
+                      sendMessageMutation.isPending || 
+                      uploadingAttachment
+                    }
+                  >
+                    {sendMessageMutation.isPending || uploadingAttachment ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 
-                {/* Message input */}
-                <Input
-                  value={messageInput}
-                  onChange={handleMessageInputChange}
-                  placeholder="Type a message..."
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                  disabled={isRecording || uploadingAttachment}
-                />
-                
-                {/* Send button */}
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={(!(messageInput.trim() || imageAttachment || audioAttachment)) || sendMessageMutation.isPending || uploadingAttachment}
-                >
-                  {sendMessageMutation.isPending || uploadingAttachment ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
+                {/* Recording/attachment instructions */}
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Press and hold the microphone button to record a voice message. 
+                  Click the paperclip to attach an image.
+                </div>
               </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              Select a {isAdmin ? "customer" : "support agent"} to start chatting
             </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            Select a {isAdmin ? "customer" : "support agent"} to start chatting
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+      
+      {/* Ticket Rating Dialog */}
+      <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rate your support experience</DialogTitle>
+            <DialogDescription>
+              Please rate your support experience and provide any feedback you'd like to share.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col space-y-4 py-4">
+            <div className="flex justify-center space-x-1">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <button
+                  key={rating}
+                  onClick={() => setTicketRating(rating)}
+                  className={`p-1 rounded-full transition-colors ${
+                    ticketRating >= rating ? 'text-yellow-400' : 'text-gray-300'
+                  }`}
+                >
+                  <Star className="h-8 w-8" fill={ticketRating >= rating ? "currentColor" : "none"} />
+                </button>
+              ))}
+            </div>
+            
+            <Textarea
+              placeholder="Share your feedback (optional)"
+              value={ticketFeedback}
+              onChange={(e) => setTicketFeedback(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+          
+          <DialogFooter className="sm:justify-between">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRatingDialog(false);
+                setTicketRating(5);
+                setTicketFeedback("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={submitTicketRating}
+              disabled={closeTicketMutation.isPending}
+            >
+              {closeTicketMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit & Close Ticket"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

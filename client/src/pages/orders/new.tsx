@@ -10,9 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { ArrowLeft, Loader2, Info, Link as LinkIcon, FileText, ExternalLink } from "lucide-react";
+import { ArrowLeft, Loader2, Info, Link as LinkIcon, FileText, ExternalLink, Clock, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
@@ -55,6 +56,19 @@ interface Domain {
   guidelines?: string;
 }
 
+// Turnaround time helper functions
+function getGuestPostTAT(price: number): string {
+  if (price >= 300) return "5-7 business days";
+  if (price >= 200) return "7-10 business days";
+  return "10-14 business days";
+}
+
+function getNicheEditTAT(price: number): string {
+  if (price >= 300) return "2-3 business days";
+  if (price >= 200) return "3-5 business days";
+  return "5-7 business days";
+}
+
 export default function NewOrderPage() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -62,6 +76,7 @@ export default function NewOrderPage() {
   const [initializing, setInitializing] = useState(true);
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
   const [orderType, setOrderType] = useState<"guest_post" | "niche_edit" | null>(null);
+  const [sourceUrlError, setSourceUrlError] = useState<string | null>(null);
   
   // Get domain from URL query parameter
   const query = new URLSearchParams(window.location.search);
@@ -85,7 +100,13 @@ export default function NewOrderPage() {
     }, "Source URL is required for Niche Edit orders"),
     targetUrl: z.string().url("Please enter a valid URL"),
     anchorText: z.string().min(1, "Anchor text is required"),
-    textEdit: z.string().optional(),
+    textEdit: z.string().refine(val => {
+      // Require textEdit (article title) for guest posts
+      if (orderType === "guest_post") {
+        return val.length > 0;
+      }
+      return true;
+    }, "Article title is required for Guest Posts"),
     notes: z.string().optional(),
     price: z.union([z.string(), z.number()]),
     type: z.enum(["guest_post", "niche_edit"]),
@@ -108,6 +129,28 @@ export default function NewOrderPage() {
   });
 
   const watchOrderType = customOrderForm.watch("type");
+  const watchSourceUrl = customOrderForm.watch("sourceUrl");
+  const watchPrice = customOrderForm.watch("price");
+  
+  // Validate source URL to ensure it matches the domain
+  useEffect(() => {
+    if (orderType === "niche_edit" && selectedDomain && watchSourceUrl && watchSourceUrl !== "not_applicable") {
+      try {
+        const sourceUrlDomain = extractDomainFromUrl(watchSourceUrl);
+        const domainUrl = selectedDomain.websiteUrl;
+        
+        if (sourceUrlDomain !== domainUrl) {
+          setSourceUrlError(`Source URL must be from ${domainUrl}`);
+        } else {
+          setSourceUrlError(null);
+        }
+      } catch (e) {
+        setSourceUrlError("Invalid URL format");
+      }
+    } else {
+      setSourceUrlError(null);
+    }
+  }, [watchSourceUrl, selectedDomain, orderType]);
   
   // Effect to set sourceUrl to not_applicable for guest posts
   useEffect(() => {
@@ -162,6 +205,23 @@ export default function NewOrderPage() {
   // API mutation to create a new order
   const customOrderMutation = useMutation({
     mutationFn: async (data: CustomOrderFormData) => {
+      // Validate source URL for niche edits
+      if (data.type === 'niche_edit' && selectedDomain) {
+        try {
+          const sourceUrlDomain = extractDomainFromUrl(data.sourceUrl);
+          const domainUrl = selectedDomain.websiteUrl;
+          
+          if (sourceUrlDomain !== domainUrl) {
+            throw new Error(`Source URL must be from ${domainUrl}`);
+          }
+        } catch (e) {
+          if (e instanceof Error) {
+            throw e;
+          }
+          throw new Error("Invalid URL format");
+        }
+      }
+      
       const payload: any = {
         ...data,
         price: typeof data.price === "string" ? parseFloat(data.price) : data.price,
@@ -169,7 +229,7 @@ export default function NewOrderPage() {
       
       // Add domain-specific fields for guest posts
       if (data.type === 'guest_post' && selectedDomain) {
-        payload.title = data.textEdit || "Guest Post";
+        payload.title = data.textEdit; // Title is required for guest posts
         payload.website = {
           name: selectedDomain.websiteName,
           url: selectedDomain.websiteUrl
@@ -204,6 +264,16 @@ export default function NewOrderPage() {
 
   // Submit handler
   const onSubmit = (data: CustomOrderFormData) => {
+    // Don't submit if there's a source URL error
+    if (sourceUrlError) {
+      toast({
+        title: "Validation Error",
+        description: sourceUrlError,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     customOrderMutation.mutate(data);
   };
 
@@ -212,6 +282,18 @@ export default function NewOrderPage() {
     if (!selectedDomain) return true;
     if (selectedDomain.type === "both") return true;
     return selectedDomain.type === type;
+  };
+
+  // Get turnaround time based on order type and price
+  const getTurnaroundTime = () => {
+    const price = typeof watchPrice === "string" ? parseFloat(watchPrice) : watchPrice;
+    
+    if (orderType === "guest_post") {
+      return getGuestPostTAT(price);
+    } else if (orderType === "niche_edit") {
+      return getNicheEditTAT(price);
+    }
+    return "";
   };
 
   if (initializing) {
@@ -281,6 +363,23 @@ export default function NewOrderPage() {
                       ? "Guest Post" 
                       : "Niche Edit"}
                 </span>
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground mb-1">
+                  {orderType === "guest_post" ? "Guest Post Price" : "Niche Edit Price"}
+                </h3>
+                <span className="font-medium">
+                  {orderType === "guest_post" 
+                    ? (selectedDomain.guestPostPrice ? `$${selectedDomain.guestPostPrice}` : "N/A") 
+                    : (selectedDomain.nicheEditPrice ? `$${selectedDomain.nicheEditPrice}` : "N/A")}
+                </span>
+              </div>
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground mb-1">Turnaround Time</h3>
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
+                  <span className="font-medium">{getTurnaroundTime()}</span>
+                </div>
               </div>
               {selectedDomain.guidelines && (
                 <div className="col-span-1 md:col-span-2">
@@ -373,10 +472,31 @@ export default function NewOrderPage() {
                       <FormLabel>Source URL</FormLabel>
                       <FormDescription>
                         The URL of the existing article where your link will be added
+                        {selectedDomain && (
+                          <div className="mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              Must be from {selectedDomain.websiteUrl}
+                            </Badge>
+                          </div>
+                        )}
                       </FormDescription>
                       <FormControl>
-                        <Input {...field} placeholder="https://example.com/article" />
+                        <div className="relative">
+                          <Input 
+                            {...field} 
+                            placeholder={`https://${selectedDomain?.websiteUrl || 'example.com'}/article`}
+                            className={sourceUrlError ? "border-red-500 pr-10" : ""}
+                          />
+                          {sourceUrlError && (
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500">
+                              <AlertCircle className="h-4 w-4" />
+                            </div>
+                          )}
+                        </div>
                       </FormControl>
+                      {sourceUrlError && (
+                        <p className="text-sm font-medium text-red-500 mt-1">{sourceUrlError}</p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -422,10 +542,15 @@ export default function NewOrderPage() {
                 name="textEdit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{orderType === "guest_post" ? 'Article Title' : 'Text Edit'}</FormLabel>
+                    <FormLabel>
+                      {orderType === "guest_post" ? 'Article Title' : 'Text Edit'}
+                      {orderType === "guest_post" && (
+                        <span className="text-red-500 ml-1">*</span>
+                      )}
+                    </FormLabel>
                     <FormDescription>
                       {orderType === "guest_post" 
-                        ? "The title of the guest post article" 
+                        ? "The title of the guest post article (required)" 
                         : "Surrounding text suggestions for your link (optional)"}
                     </FormDescription>
                     <FormControl>
@@ -464,21 +589,30 @@ export default function NewOrderPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Price</FormLabel>
-                    <FormDescription>
-                      {selectedDomain && orderType === "guest_post" && selectedDomain.guestPostPrice 
-                        ? `Standard price: $${selectedDomain.guestPostPrice}` 
-                        : selectedDomain && orderType === "niche_edit" && selectedDomain.nicheEditPrice 
-                          ? `Standard price: $${selectedDomain.nicheEditPrice}` 
-                          : "Price for this order"}
-                    </FormDescription>
+                    <div className="flex items-center">
+                      <FormDescription className="mt-0">
+                        {selectedDomain && orderType === "guest_post" && selectedDomain.guestPostPrice 
+                          ? `Standard price: $${selectedDomain.guestPostPrice}` 
+                          : selectedDomain && orderType === "niche_edit" && selectedDomain.nicheEditPrice 
+                            ? `Standard price: $${selectedDomain.nicheEditPrice}` 
+                            : "Price for this order"}
+                      </FormDescription>
+                      <Badge className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {getTurnaroundTime()}
+                      </Badge>
+                    </div>
                     <FormControl>
                       <Input
                         {...field}
                         type="number"
                         value={field.value}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        readOnly
+                        disabled
+                        className="bg-muted cursor-not-allowed"
                       />
                     </FormControl>
+                    <p className="text-xs text-muted-foreground mt-1">Price is fixed based on domain and service type.</p>
                     <FormMessage />
                   </FormItem>
                 )}

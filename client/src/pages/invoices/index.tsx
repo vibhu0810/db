@@ -829,8 +829,7 @@ function AdminInvoicesTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">Manage Invoices</h2>
+      <div className="flex justify-end items-center">
         <CreateInvoiceDialog />
       </div>
 
@@ -1462,7 +1461,7 @@ export default function InvoicesPage() {
       <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
         {user?.is_admin && <TabsTrigger value="admin">Admin View</TabsTrigger>}
         <TabsTrigger value="user" className={user?.is_admin ? "" : "col-span-2"}>
-          Invoices
+          My Billing
         </TabsTrigger>
       </TabsList>
       {user?.is_admin && (

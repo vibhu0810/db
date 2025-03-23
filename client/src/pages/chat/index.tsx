@@ -90,9 +90,16 @@ export default function ChatPage() {
       const res = await apiRequest("GET", "/api/users");
       const allUsers = await res.json();
 
-      return allUsers.filter((chatUser: ChatUser) =>
+      // First, filter users based on role
+      let filteredUsers = allUsers.filter((chatUser: ChatUser) =>
         isAdmin ? !chatUser.is_admin : chatUser.is_admin
       );
+      
+      // Log for debugging
+      console.log('All users before filtering:', allUsers);
+      console.log(`Filtered users for ${isAdmin ? 'admin' : 'user'} :`, filteredUsers);
+      
+      return filteredUsers;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false,
@@ -392,23 +399,56 @@ export default function ChatPage() {
       if (isAdmin) {
         // For admin users, set the customer who created the ticket as the selected user
         console.log('Admin user handling ticket, finding customer with ID:', ticketData.ticket.userId);
-        const customerUser = users.find(u => u.id === ticketData.ticket.userId);
-        if (customerUser) {
-          console.log('Setting selected user to customer:', customerUser.username);
-          setSelectedUserId(customerUser.id);
-          
-          // Set initial message to acknowledge ticket
-          setMessageInput(`I'm here to help with your support ticket #${ticketId}.`);
-        }
+        
+        // This might not be in the filtered users list, so fetch the specific user directly
+        apiRequest("GET", `/api/users/${ticketData.ticket.userId}`)
+          .then(res => res.json())
+          .then(customerData => {
+            console.log('Found customer user:', customerData);
+            setSelectedUserId(customerData.id);
+            
+            // Set initial message to acknowledge ticket
+            setMessageInput(`I'm here to help with your support ticket #${ticketId}.`);
+          })
+          .catch(err => {
+            console.error('Error fetching customer user:', err);
+            toast({
+              title: "Error",
+              description: "Could not find the customer for this support ticket.",
+              variant: "destructive",
+            });
+          });
       } else {
         // For regular users, find an admin to chat with
         console.log('Regular user handling ticket, finding an admin user');
-        // Find first admin in the users list (should be filtered to only show admins for regular users)
-        const adminUser = users[0];
-        if (adminUser) {
-          console.log('Setting selected user to admin:', adminUser.username);
-          setSelectedUserId(adminUser.id);
-        }
+        
+        // Get all users to find admins, regardless of the current filter
+        apiRequest("GET", "/api/users")
+          .then(res => res.json())
+          .then(allUsers => {
+            const admins = allUsers.filter((u: ChatUser) => u.is_admin);
+            console.log('Found admins:', admins);
+            
+            if (admins.length > 0) {
+              const adminUser = admins[0];
+              console.log('Setting selected user to admin:', adminUser.username);
+              setSelectedUserId(adminUser.id);
+            } else {
+              toast({
+                title: "No Admin Found",
+                description: "Could not find an admin to handle your support ticket.",
+                variant: "destructive",
+              });
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching admin users:', err);
+            toast({
+              title: "Error",
+              description: "Could not find admin support for this ticket.",
+              variant: "destructive",
+            });
+          });
       }
     }
   }, [ticketData, users, isAdmin, ticketId]);

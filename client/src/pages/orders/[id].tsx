@@ -46,7 +46,12 @@ export default function OrderDetailsPage() {
 
   const { data: comments = [], isLoading: isLoadingComments, refetch: refetchComments } = useQuery({
     queryKey: ['/api/orders', id, 'comments'],
-    queryFn: () => apiRequest("GET", `/api/orders/${id}/comments`).then(res => res.json()),
+    queryFn: () => apiRequest("GET", `/api/orders/${id}/comments`)
+      .then(res => res.json())
+      .catch(err => {
+        console.error("Error fetching comments:", err);
+        return [];
+      }),
     refetchInterval: 5000, // Poll every 5 seconds for new comments
   });
   
@@ -267,7 +272,7 @@ export default function OrderDetailsPage() {
             <div>
               <label className="text-sm font-medium text-muted-foreground">Date Ordered</label>
               <div className="mt-1">
-                {format(new Date(order.dateOrdered), "MMMM d, yyyy")}
+                {order.dateOrdered ? format(new Date(order.dateOrdered), "MMMM d, yyyy") : "Not available"}
               </div>
             </div>
           </CardContent>
@@ -299,7 +304,7 @@ export default function OrderDetailsPage() {
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="font-medium">{comment.user?.username}</span>
                                 <span className="text-sm text-muted-foreground">
-                                  {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                                  {comment.createdAt ? format(new Date(comment.createdAt), "MMM d, yyyy h:mm a") : "Unknown time"}
                                 </span>
                               </div>
                               <p className="text-sm">{comment.message}</p>

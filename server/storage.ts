@@ -645,6 +645,7 @@ export class DatabaseStorage implements IStorage {
       message: "Your support ticket has been created. Our team will respond shortly.",
       createdAt: new Date(),
       read: false,
+      ticketId: newTicket.id, // Include the ticket ID in the notification
     });
     
     return newTicket;
@@ -674,6 +675,7 @@ export class DatabaseStorage implements IStorage {
         message: `Your support ticket status has been updated to ${updates.status || updatedTicket.status}`,
         createdAt: new Date(),
         read: false,
+        ticketId: updatedTicket.id, // Include the ticket ID in the notification
       });
     }
     
@@ -711,6 +713,7 @@ export class DatabaseStorage implements IStorage {
         message: "Your support ticket has been closed. Thank you for your feedback!",
         createdAt: new Date(),
         read: false,
+        ticketId: fullTicket.id, // Include the ticket ID in the notification
       });
       
       // Also notify admin about the feedback

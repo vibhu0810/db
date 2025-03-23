@@ -120,6 +120,21 @@ export function NotificationsDropdown() {
           console.log('Detected chat notification, redirecting to chat');
           setLocation('/chat');
           break;
+        
+        case "support_ticket":
+          // Support ticket notification - redirect to chat
+          console.log('Detected support ticket notification, redirecting to chat');
+          
+          // We need to extract the ticket ID from the notification - first check if it's a property
+          if (notification.ticketId) {
+            console.log('Using ticketId from notification:', notification.ticketId);
+            setLocation(`/chat?ticket=${notification.ticketId}`);
+          } else {
+            // Extract the ticket info from notification data somehow - for now, just go to chat
+            console.log('No ticketId found, redirecting to main chat page');
+            setLocation('/chat');
+          }
+          break;
           
         case "order":
         case "status":

@@ -1075,13 +1075,15 @@ export default function Orders() {
               )}
             </div>
             
-            <div className="flex gap-2 items-center">
-              <DatePickerWithRange 
-                date={dateRange} 
-                setDate={setDateRange}
-                className="w-full sm:w-auto" 
-              />
-              <Button variant="outline" size="icon" onClick={resetFilters}>
+            <div className="flex items-center">
+              <div className="min-w-[200px] max-w-[300px]">
+                <DatePickerWithRange 
+                  date={dateRange} 
+                  setDate={setDateRange}
+                  className="w-full" 
+                />
+              </div>
+              <Button variant="outline" size="icon" className="ml-2" onClick={resetFilters}>
                 <X className="h-4 w-4" />
               </Button>
             </div>

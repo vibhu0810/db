@@ -338,7 +338,7 @@ export default function OrderDetailsPage() {
           <CardHeader>
             <CardTitle>Order Details</CardTitle>
           </CardHeader>
-          <CardContent className="max-h-[380px] overflow-auto p-6">
+          <CardContent className="max-h-[450px] overflow-auto p-6">
             <div className="space-y-4">
               <label className="text-sm font-medium text-muted-foreground">Source URL / Guest Post Title</label>
               <div className="flex items-center gap-2 mt-1">

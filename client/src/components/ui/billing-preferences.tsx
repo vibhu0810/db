@@ -199,24 +199,21 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
               )}
             />
             
-            {/* Billing Email */}
+            {/* Email */}
             <FormField
               control={form.control}
               name="billingEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Billing Email <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel>Email <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input 
                       type="email"
-                      placeholder="Enter your billing email" 
+                      placeholder="Enter your email address" 
                       {...field} 
                       disabled={updateBillingMutation.isPending}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Invoices will be sent to this email address
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

@@ -47,11 +47,21 @@ import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ReportsPage() {
-  // Date range for filtering
+  // Date range for filtering (defaults to last 3 months)
   const [date, setDate] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -30),
+    from: subMonths(new Date(), 3),
     to: new Date(),
   });
+  
+  // Month filter functionality
+  const setMonthFilter = (monthsBack: number) => {
+    const today = new Date();
+    const startDate = subMonths(today, monthsBack);
+    setDate({
+      from: startDate,
+      to: today
+    });
+  };
 
   // AI Chat state
   const [chatInput, setChatInput] = useState("");

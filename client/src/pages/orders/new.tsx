@@ -410,7 +410,7 @@ export default function NewOrder() {
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="we_write" id="we_write" />
                           <label htmlFor="we_write">
-                            Write the content for me ($80 for 1000 words)
+                            Write the content for me (at extra cost)
                           </label>
                         </div>
                       </RadioGroup>

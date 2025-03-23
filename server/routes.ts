@@ -48,7 +48,7 @@ const GUEST_POST_STATUSES = [
 
 const NICHE_EDIT_STATUSES = [
   "In Progress",
-  "Sent",
+  "Sent to Editor",
   "Rejected",
   "Cancelled",
   "Completed"
@@ -171,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orders: {
             total: userOrders.length,
             completed: userOrders.filter(o => o.status === "Completed").length,
-            pending: userOrders.filter(o => ["Sent", "Revision"].includes(o.status)).length,
+            pending: userOrders.filter(o => ["Sent to Editor", "Revision"].includes(o.status)).length,
             totalSpent: userOrders.reduce((sum, order) => sum + parseFloat(order.price || "0"), 0)
           }
         };

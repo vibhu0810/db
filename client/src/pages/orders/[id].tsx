@@ -204,7 +204,7 @@ export default function OrderDetailsPage() {
       if (!id || !user) throw new Error("Missing order ID or user");
       
       // Find the admin user
-      const adminUser = adminData || { id: 1 }; // Fallback to ID 1 which is usually the admin
+      const adminUser = adminData || { id: 133 }; // Default to ID 133 which is the Digital Gratified admin
       
       const title = ticketTitle || `Support ticket for Order #${id}`;
       const res = await apiRequest("POST", "/api/support-tickets", {
@@ -225,17 +225,20 @@ export default function OrderDetailsPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
       queryClient.invalidateQueries({ queryKey: ['/api/support-tickets/order', id] });
       
-      // Redirect to the chat page with the admin
+      // Direct navigation to chat page with the ticket
       if (data && data.id) {
-        // Use a slight delay to ensure the ticket is fully processed
-        setTimeout(() => {
-          window.location.href = `/chat?ticket=${data.id}`;
-        }, 500);
-        
         toast({
           title: "Support Ticket Created",
-          description: "Your support ticket has been created. You'll be redirected to chat with support.",
+          description: "Support ticket has been created successfully. Opening chat with support team...",
         });
+        
+        // Use direct navigation instead of window.location.href to avoid notification click issues
+        // Use a delay to allow the toast to show and the ticket to be fully processed
+        setTimeout(() => {
+          const chatUrl = `/chat?ticket=${data.id}`;
+          // Force a hard navigation instead of a client-side route change
+          window.location.replace(chatUrl);
+        }, 800);
       }
     },
     onError: (error: Error) => {
@@ -335,8 +338,8 @@ export default function OrderDetailsPage() {
           <CardHeader>
             <CardTitle>Order Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
+          <CardContent className="max-h-[350px] overflow-auto p-6">
+            <div className="space-y-4">
               <label className="text-sm font-medium text-muted-foreground">Source URL / Guest Post Title</label>
               <div className="flex items-center gap-2 mt-1">
                 <div className="truncate">
@@ -519,7 +522,7 @@ export default function OrderDetailsPage() {
               ) : (
                 <>
                   <div className="relative mb-4">
-                    <ScrollArea className="h-[250px] pr-4 rounded-md border">
+                    <ScrollArea className="h-[325px] pr-4 rounded-md border">
                       <div className="space-y-4 p-4">
                         {!Array.isArray(comments) || comments.length === 0 ? (
                           <div className="text-center text-muted-foreground py-8">

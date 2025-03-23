@@ -128,6 +128,7 @@ export const notifications = pgTable("notifications", {
   message: text("message").notNull(),
   type: text("type").notNull(),
   orderId: integer("order_id"),
+  ticketId: integer("ticket_id"), // Added for support ticket notifications
   read: boolean("read").notNull().default(false),
   createdAt: timestamp("created_at").notNull(),
 });

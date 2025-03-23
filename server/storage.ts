@@ -730,6 +730,7 @@ export class DatabaseStorage implements IStorage {
             message: `User provided feedback on ticket #${id}: ${rating ? `${rating}/5 stars` : ''} ${feedback || ''}`,
             createdAt: new Date(),
             read: false,
+            ticketId: id, // Include the ticket ID in the notification
           });
         }
       }

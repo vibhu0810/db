@@ -46,3 +46,22 @@
   background-color: hsl(var(--border));
   border-radius: 3px;
 }
+
+/* Table horizontal scrolling */
+.table-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.table-content {
+  min-width: 100%;
+  width: max-content;
+}
+
+.truncate-cell {
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

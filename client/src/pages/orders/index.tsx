@@ -1086,8 +1086,9 @@ export default function Orders() {
         </div>
 
         {/* Orders Table */}
-        <div className="overflow-auto">
-          <Table>
+        <div className="table-scroll-container">
+          <div className="table-content">
+            <Table>
             <TableHeader>
               <TableRow>
                 <Resizable
@@ -1498,8 +1499,8 @@ export default function Orders() {
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
-      </div>
       
       {/* Pagination */}
       <div className="flex items-center justify-center mt-4">

@@ -1196,6 +1196,35 @@ export default function Orders() {
                 </Resizable>
                 
                 <Resizable
+                  width={columnWidths.textEdit}
+                  height={40}
+                  onResize={onResize("textEdit")}
+                  handle={
+                    <span className="react-resizable-handle" />
+                  }
+                >
+                  <TableHead style={{ width: columnWidths.textEdit }}>
+                    <div 
+                      className="flex items-center cursor-pointer"
+                      onClick={() => {
+                        setSortField("textEdit");
+                        setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                      }}
+                    >
+                      Text Edit/Content
+                      {sortField === "textEdit" && (
+                        <ChevronDown 
+                          className={cn(
+                            "ml-1 h-4 w-4", 
+                            sortDirection === "asc" ? "rotate-180 transform" : ""
+                          )}
+                        />
+                      )}
+                    </div>
+                  </TableHead>
+                </Resizable>
+                
+                <Resizable
                   width={columnWidths.status}
                   height={40}
                   onResize={onResize("status")}

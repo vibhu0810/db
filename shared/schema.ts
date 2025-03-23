@@ -66,7 +66,6 @@ export type User = typeof users.$inferSelect;
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  domainId: integer("domain_id").notNull(), // Domain ID field
   sourceUrl: text("source_url").notNull(),
   targetUrl: text("target_url").notNull(),
   anchorText: text("anchor_text").notNull(),

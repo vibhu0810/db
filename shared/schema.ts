@@ -141,6 +141,7 @@ export const orderComments = pgTable("order_comments", {
   message: text("message").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   isFromAdmin: boolean("is_from_admin").notNull().default(false),
+  isSystemMessage: boolean("is_system_message").notNull().default(false),
   readByUser: boolean("read_by_user").notNull().default(false),
   readByAdmin: boolean("read_by_admin").notNull().default(false),
 });
@@ -151,6 +152,7 @@ export const insertOrderCommentSchema = createInsertSchema(orderComments).omit({
   createdAt: true,
 }).extend({
   isFromAdmin: z.boolean().optional(),
+  isSystemMessage: z.boolean().optional(),
   readByUser: z.boolean().optional(),
   readByAdmin: z.boolean().optional(),
 });

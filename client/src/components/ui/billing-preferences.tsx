@@ -390,24 +390,6 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
           <div className="mt-8">
             <h3 className="text-lg font-medium mb-4">Payment Details</h3>
             <div className="rounded-md bg-muted p-4">
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Company Information</h4>
-                <div className="space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:justify-between">
-                    <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Company:</span>
-                    <span className="font-medium sm:w-2/3">Digital Gratified FZ-LLC</span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:justify-between">
-                    <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Address:</span>
-                    <span className="font-medium sm:w-2/3">Dubai Silicon Oasis, Dubai, UAE</span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:justify-between">
-                    <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Email:</span>
-                    <span className="font-medium sm:w-2/3">billing@digitalgratified.com</span>
-                  </div>
-                </div>
-              </div>
-            
               <PaymentDetails paymentMethod={selectedPaymentMethod} />
             </div>
             <p className="text-sm text-muted-foreground mt-2">

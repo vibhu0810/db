@@ -976,18 +976,20 @@ export default function Orders() {
                   </Resizable>
                 )}
 
-                <Resizable
-                  width={columnWidths.sourceUrl}
-                  height={40}
-                  onResize={onResize("sourceUrl")}
-                  handle={
-                    <span className="react-resizable-handle" />
-                  }
-                >
-                  <div className="flex h-10 items-center justify-between">
-                    <TableHead className="font-medium">Source</TableHead>
-                  </div>
-                </Resizable>
+                <TableHead className="font-medium p-0 relative" style={{ width: columnWidths.sourceUrl + 'px' }}>
+                  <Resizable
+                    width={columnWidths.sourceUrl}
+                    height={40}
+                    onResize={onResize("sourceUrl")}
+                    handle={
+                      <span className="react-resizable-handle" />
+                    }
+                  >
+                    <div className="flex h-10 items-center">
+                      Source
+                    </div>
+                  </Resizable>
+                </TableHead>
 
                 <Resizable
                   width={columnWidths.targetUrl}

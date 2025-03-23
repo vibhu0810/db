@@ -14,6 +14,7 @@ import { useState, useEffect, useRef } from "react";
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
+  const orderId = parseInt(id);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
   const [newComment, setNewComment] = useState("");
@@ -23,10 +24,17 @@ export default function OrderDetailsPage() {
   // Keep track of previous order status to detect changes
   const [previousStatus, setPreviousStatus] = useState<string | null>(null);
   
+  // Only fetch if we have a valid order ID (number)
   const { data: order, isLoading } = useQuery({
-    queryKey: ['/api/orders', id],
-    queryFn: () => apiRequest("GET", `/api/orders/${id}`).then(res => res.json()),
+    queryKey: ['/api/orders', orderId],
+    queryFn: () => {
+      if (isNaN(orderId)) {
+        return Promise.reject(new Error("Invalid order ID"));
+      }
+      return apiRequest("GET", `/api/orders/${orderId}`).then(res => res.json());
+    },
     refetchInterval: 5000, // Poll every 5 seconds for order status updates
+    enabled: !isNaN(orderId) // Only run the query if orderId is a valid number
   });
   
   // Notify on status change
@@ -44,10 +52,17 @@ export default function OrderDetailsPage() {
     }
   }, [order?.status, previousStatus, toast]);
 
+  // Only fetch comments if we have a valid order ID
   const { data: comments = [], isLoading: isLoadingComments, refetch: refetchComments } = useQuery({
-    queryKey: ['/api/orders', id, 'comments'],
-    queryFn: () => apiRequest("GET", `/api/orders/${id}/comments`).then(res => res.json()),
+    queryKey: ['/api/orders', orderId, 'comments'],
+    queryFn: () => {
+      if (isNaN(orderId)) {
+        return Promise.reject(new Error("Invalid order ID"));
+      }
+      return apiRequest("GET", `/api/orders/${orderId}/comments`).then(res => res.json());
+    },
     refetchInterval: 5000, // Poll every 5 seconds for new comments
+    enabled: !isNaN(orderId) // Only run the query if orderId is a valid number
   });
   
   // Auto-scroll to the bottom of the comments when new comments are added
@@ -267,7 +282,15 @@ export default function OrderDetailsPage() {
             <div>
               <label className="text-sm font-medium text-muted-foreground">Date Ordered</label>
               <div className="mt-1">
-                {format(new Date(order.dateOrdered), "MMMM d, yyyy")}
+                {order.dateOrdered ? 
+                  (() => {
+                    try {
+                      return format(new Date(order.dateOrdered), "MMMM d, yyyy");
+                    } catch (error) {
+                      return "Invalid date";
+                    }
+                  })() 
+                  : "N/A"}
               </div>
             </div>
           </CardContent>
@@ -299,7 +322,15 @@ export default function OrderDetailsPage() {
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="font-medium">{comment.user?.username}</span>
                                 <span className="text-sm text-muted-foreground">
-                                  {format(new Date(comment.createdAt), "MMM d, yyyy h:mm a")}
+                                  {comment.createdAt ? 
+                                    (() => {
+                                      try {
+                                        return format(new Date(comment.createdAt), "MMM d, yyyy h:mm a");
+                                      } catch (error) {
+                                        return "Invalid date";
+                                      }
+                                    })() 
+                                    : "N/A"}
                                 </span>
                               </div>
                               <p className="text-sm">{comment.message}</p>

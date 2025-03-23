@@ -1,5 +1,6 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface PaymentDetailsProps {
   paymentMethod: string; // 'wire' or 'paypal'
@@ -8,6 +9,22 @@ interface PaymentDetailsProps {
 export function PaymentDetails({ paymentMethod }: PaymentDetailsProps) {
   return (
     <>
+      {/* Payment method badge */}
+      <div className="mb-3">
+        <Badge variant={paymentMethod === 'paypal' ? 'default' : 'outline'} className="mb-2">
+          {paymentMethod === 'paypal' ? 'PayPal (5% fee)' : 'Wire Transfer / Wise (0% fee)'}
+        </Badge>
+        {paymentMethod === 'paypal' ? (
+          <p className="text-sm text-muted-foreground">
+            A 5% processing fee will be added to the total amount when paying with PayPal.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No additional fees when paying with Wire Transfer or Wise.
+          </p>
+        )}
+      </div>
+      
       {paymentMethod === 'wire' ? (
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:justify-between">

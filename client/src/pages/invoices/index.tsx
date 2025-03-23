@@ -811,7 +811,7 @@ function AdminInvoicesTab() {
     })
     .filter(invoice => {
       // Apply status filter
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== "all") {
         return invoice.status === statusFilter;
       }
       return true;
@@ -841,14 +841,14 @@ function AdminInvoicesTab() {
           />
           
           <Select
-            value={statusFilter || ""}
-            onValueChange={(value) => setStatusFilter(value || null)}
+            value={statusFilter || "all"}
+            onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
           >
             <SelectTrigger className="w-full sm:w-32">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="overdue">Overdue</SelectItem>
@@ -971,9 +971,9 @@ function AdminInvoicesTab() {
                 </div>
                 <div className="text-right">
                   <h3 className="font-semibold">To</h3>
-                  <p>{selectedInvoice.user?.companyName || selectedInvoice.user?.username || "Unknown"}</p>
-                  <p>{selectedInvoice.clientEmail || selectedInvoice.user?.email || ""}</p>
-                  <p>{selectedInvoice.user?.country ? getCountryName(selectedInvoice.user.country) : ""}</p>
+                  <p>{(selectedInvoice as InvoiceWithUser).user?.companyName || (selectedInvoice as InvoiceWithUser).user?.username || "Unknown"}</p>
+                  <p>{selectedInvoice.clientEmail || (selectedInvoice as InvoiceWithUser).user?.email || ""}</p>
+                  <p>{(selectedInvoice as InvoiceWithUser).user?.country ? getCountryName((selectedInvoice as InvoiceWithUser).user.country) : ""}</p>
                 </div>
               </div>
               
@@ -1197,7 +1197,7 @@ function UserInvoicesTab() {
     })
     .filter(invoice => {
       // Apply status filter
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== "all") {
         return invoice.status === statusFilter;
       }
       return true;
@@ -1226,14 +1226,14 @@ function UserInvoicesTab() {
           />
           
           <Select
-            value={statusFilter || ""}
-            onValueChange={(value) => setStatusFilter(value || null)}
+            value={statusFilter || "all"}
+            onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
           >
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="overdue">Overdue</SelectItem>

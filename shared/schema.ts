@@ -162,6 +162,7 @@ export const insertOrderSchema = createInsertSchema(orders)
     linkUrl: z.string().optional(),
     content: z.string().optional(),
     weWriteContent: z.boolean().optional(),
+    website: z.string().optional(), // Added website field for guest posts
   });
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;

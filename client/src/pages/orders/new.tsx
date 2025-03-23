@@ -78,6 +78,7 @@ const createFormSchema = (domain: Domain | undefined, orderType: OrderType | nul
     content: z.string().optional(),
     textEdit: z.string().optional(),
     notes: z.string().optional(),
+    website: z.string().optional(),
   });
 };
 
@@ -118,6 +119,7 @@ export default function NewOrder() {
       content: "",
       textEdit: "",
       notes: "",
+      website: domain?.websiteUrl || "",
     },
     // Re-validate form fields when order type changes
     context: { selectedType, domain },
@@ -154,6 +156,7 @@ export default function NewOrder() {
               title: data.title,
               weWriteContent,
               content: !weWriteContent ? data.content : undefined,
+              website: data.website, // Include the website field for guest posts
             }
           : {
               sourceUrl: data.sourceUrl,
@@ -354,6 +357,23 @@ export default function NewOrder() {
 
                 {selectedType === "guest_post" && (
                   <>
+                    <FormField
+                      control={form.control}
+                      name="website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website</FormLabel>
+                          <FormControl>
+                            <Input {...field} disabled />
+                          </FormControl>
+                          <FormDescription>
+                            Website where the guest post will be published
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
                     <FormField
                       control={form.control}
                       name="title"

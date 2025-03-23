@@ -150,7 +150,7 @@ export default function OrderDetailsPage() {
   // Mutation for cancelling an order
   const cancelOrderMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("PATCH", `/api/orders/${id}`, {
+      const res = await apiRequest("PATCH", `/api/orders/${id}/status`, {
         status: "Cancelled"
       });
       if (!res.ok) {

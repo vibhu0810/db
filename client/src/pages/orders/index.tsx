@@ -718,6 +718,7 @@ export default function Orders() {
       notes: "",
       price: 0,
     },
+    mode: "onTouched", // Only validate fields after they've been touched
   });
 
   const onSubmit = (data: CustomOrderFormData) => {

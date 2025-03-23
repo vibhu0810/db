@@ -334,18 +334,18 @@ export default function Orders() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const { toast } = useToast();
   const [columnWidths, setColumnWidths] = useState({
-    sourceUrl: 250,
-    targetUrl: 250,
-    anchorText: 150,
-    textEdit: 150,
-    notes: 200,
-    status: 120,
-    id: 100,
-    price: 100,
-    date: 160,
-    comments: 100,
-    actions: 100,
-    user: 150,
+    sourceUrl: 180,
+    targetUrl: 180,
+    anchorText: 120,
+    textEdit: 120,
+    notes: 150, 
+    status: 100,
+    id: 80,
+    price: 80,
+    date: 120,
+    comments: 80,
+    actions: 80,
+    user: 120,
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -1074,7 +1074,7 @@ export default function Orders() {
 
         {/* Orders Table */}
         <div className="overflow-x-auto" style={{ maxWidth: '100vw' }}>
-          <Table style={{ minWidth: '1400px' }}>
+          <Table style={{ minWidth: '1140px' }}>
             <TableHeader>
               <TableRow>
                 <Resizable

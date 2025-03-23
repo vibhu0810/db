@@ -107,21 +107,19 @@ export default function ProfilePage() {
       let url;
       if (field === "profilePicture") {
         url = await uploadFile(file, "profileImage");
-      } else if (field === "companyLogo") {
-        url = await uploadFile(file, "companyLogo");
       }
       
       if (url) {
         form.setValue(field, url);
         toast({
           title: "Image uploaded",
-          description: `Your ${field === "profilePicture" ? "profile picture" : "company logo"} has been uploaded successfully.`,
+          description: "Your profile picture has been uploaded successfully.",
         });
       }
     } catch (error) {
       toast({
         title: "Upload failed",
-        description: `Failed to upload ${field === "profilePicture" ? "profile picture" : "company logo"}. Please try again.`,
+        description: "Failed to upload profile picture. Please try again.",
         variant: "destructive",
       });
       console.error("Upload error:", error);
@@ -138,17 +136,6 @@ export default function ProfilePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Profile Settings</h2>
-        <div className="hidden md:block">
-          <img 
-            src={user?.companyLogo || ''} 
-            alt={user?.companyName || 'Company logo'} 
-            className="h-12 object-contain"
-            onError={(e) => {
-              // Hide the image if it fails to load
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-        </div>
       </div>
 
       <Card className="border-primary/10">
@@ -195,51 +182,6 @@ export default function ProfilePage() {
                       </FormControl>
                       <FormDescription>
                         Upload a profile picture (max 4MB)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Company Logo Upload */}
-                <FormField
-                  control={form.control}
-                  name="companyLogo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company Logo</FormLabel>
-                      <FormControl>
-                        <div className="flex items-center gap-4">
-                          {field.value && (
-                            <img
-                              src={field.value}
-                              alt="Company Logo"
-                              className="h-16 w-16 object-contain"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleFileUpload(e, "companyLogo")}
-                              disabled={isUploading || updateProfileMutation.isPending}
-                            />
-                          </div>
-                          {field.value && (
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => form.setValue("companyLogo", "")}
-                              disabled={updateProfileMutation.isPending}
-                            >
-                              Remove
-                            </Button>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormDescription>
-                        Upload your company logo (max 4MB)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

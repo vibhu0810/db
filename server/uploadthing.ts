@@ -47,7 +47,7 @@ export const ourFileRouter = {
     pdf: { maxFileSize: "16MB" },
     "application/msword": { maxFileSize: "16MB" },                              // .doc
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": { maxFileSize: "16MB" }, // .docx
-    text: { maxFileSize: "5MB" },                                               // .txt
+    text: { maxFileSize: "4MB" },                                               // .txt
     "application/rtf": { maxFileSize: "16MB" }                                 // .rtf
   })
     .middleware(async ({ req }) => {

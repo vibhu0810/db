@@ -513,12 +513,14 @@ export default function ReportsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[500px] flex flex-col">
+              {/* Fix the fixed height and make it more responsive */}
+              <div className="flex flex-col h-auto max-h-[calc(100vh-300px)] min-h-[300px]">
+                {/* Adjust message container to fill available space and scroll properly */}
                 <div className="flex-1 overflow-y-auto mb-4 space-y-4 pr-4">
                   {chatMessages.map((message, i) => (
                     <div key={i} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`flex gap-3 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                        <Avatar className="h-8 w-8">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
                           {message.role === 'user' ? (
                             <AvatarImage src={user?.profilePicture || ""} />
                           ) : (
@@ -528,7 +530,7 @@ export default function ReportsPage() {
                             {message.role === 'user' ? user?.username?.charAt(0).toUpperCase() : 'AI'}
                           </AvatarFallback>
                         </Avatar>
-                        <div className={`p-3 rounded-lg ${
+                        <div className={`p-3 rounded-lg break-words ${
                           message.role === 'user' 
                             ? 'bg-primary text-primary-foreground' 
                             : 'bg-muted'
@@ -541,7 +543,8 @@ export default function ReportsPage() {
                   <div ref={chatEndRef} />
                 </div>
                 
-                <div className="flex gap-3">
+                {/* Input area with fixed position at bottom */}
+                <div className="flex gap-3 mt-auto">
                   <Textarea 
                     placeholder="Ask a question about link-building strategy..."
                     value={chatInput}
@@ -553,6 +556,7 @@ export default function ReportsPage() {
                       }
                     }}
                     className="resize-none"
+                    rows={3}
                   />
                   <Button type="submit" onClick={sendChatRequest} className="shrink-0" 
                     disabled={chatLoading || !chatInput.trim()}>

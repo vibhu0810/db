@@ -1424,7 +1424,7 @@ export default function Orders() {
                               ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
                               : order.sourceUrl === "not_applicable" 
                                 ? "No title provided" 
-                                : extractDomainFromUrl(order.sourceUrl)}
+                                : order.sourceUrl}
                           </div>
                           <Button
                             variant="ghost"
@@ -1434,7 +1434,7 @@ export default function Orders() {
                               ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
                               : order.sourceUrl === "not_applicable"
                                 ? ""
-                                : extractDomainFromUrl(order.sourceUrl))}
+                                : order.sourceUrl)}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>

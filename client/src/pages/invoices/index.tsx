@@ -1266,15 +1266,38 @@ function UserInvoicesTab() {
               <CardDescription>Use the following details when making payments for your invoices</CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Billing Details */}
+              <div className="mb-6">
+                <h3 className="text-lg font-medium mb-3">Billing Details</h3>
+                <div className="rounded-md bg-muted p-4">
+                  <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:justify-between">
+                      <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Company:</span>
+                      <span className="font-medium sm:w-2/3">Digital Gratified FZ-LLC</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:justify-between">
+                      <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Address:</span>
+                      <span className="font-medium sm:w-2/3">Dubai Silicon Oasis, Dubai, UAE</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:justify-between">
+                      <span className="text-muted-foreground font-medium mb-1 sm:mb-0 sm:w-1/3">Email:</span>
+                      <span className="font-medium sm:w-2/3">billing@digitalgratified.com</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Payment Methods */}
+              <h3 className="text-lg font-medium mb-3">Payment Methods</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">PayPal (5% fee)</h3>
+                <div className="space-y-2">
+                  <h4 className="font-medium">PayPal (5% fee)</h4>
                   <div className="rounded-md bg-muted p-4">
                     <PaymentDetails paymentMethod="paypal" />
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Wire Transfer / Wise (0% fee)</h3>
+                <div className="space-y-2">
+                  <h4 className="font-medium">Wire Transfer / Wise (0% fee)</h4>
                   <div className="rounded-md bg-muted p-4">
                     <PaymentDetails paymentMethod="wire" />
                   </div>
@@ -1375,15 +1398,20 @@ function UserInvoicesTab() {
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h3 className="font-semibold">From</h3>
-                  <p>Digital Gratified FZ-LLC</p>
-                  <p>Dubai Silicon Oasis</p>
-                  <p>United Arab Emirates</p>
+                  <div className="mt-1">
+                    <p className="font-medium">Digital Gratified FZ-LLC</p>
+                    <p>Dubai Silicon Oasis</p>
+                    <p>United Arab Emirates</p>
+                    <p className="mt-1 text-sm text-muted-foreground">billing@digitalgratified.com</p>
+                  </div>
                 </div>
                 <div className="text-right">
                   <h3 className="font-semibold">To</h3>
-                  <p>{user?.companyName || user?.username}</p>
-                  <p>{selectedInvoice.clientEmail || user?.email}</p>
-                  <p>{user?.country ? getCountryName(user.country) : ""}</p>
+                  <div className="mt-1">
+                    <p className="font-medium">{user?.companyName || user?.username}</p>
+                    <p>{selectedInvoice.clientEmail || user?.email}</p>
+                    <p>{user?.country ? getCountryName(user.country) : ""}</p>
+                  </div>
                 </div>
               </div>
               

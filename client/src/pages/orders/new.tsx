@@ -593,10 +593,10 @@ export default function NewOrderPage() {
                     <div className="flex items-center">
                       <FormDescription className="mt-0">
                         {selectedDomain && orderType === "guest_post" && selectedDomain.guestPostPrice 
-                          ? `Standard price: $${selectedDomain.guestPostPrice}` 
+                          ? `Domain price: $${selectedDomain.guestPostPrice}` 
                           : selectedDomain && orderType === "niche_edit" && selectedDomain.nicheEditPrice 
-                            ? `Standard price: $${selectedDomain.nicheEditPrice}` 
-                            : "Price for this order"}
+                            ? `Domain price: $${selectedDomain.nicheEditPrice}` 
+                            : "Service price"}
                       </FormDescription>
                       <Badge className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
                         <Clock className="h-3 w-3 mr-1" />
@@ -613,7 +613,7 @@ export default function NewOrderPage() {
                         className="bg-muted cursor-not-allowed"
                       />
                     </FormControl>
-                    <p className="text-xs text-muted-foreground mt-1">Price is fixed based on domain and service type.</p>
+                    <p className="text-xs text-muted-foreground mt-1">This price is pre-set for this domain and cannot be modified.</p>
                     <FormMessage />
                   </FormItem>
                 )}

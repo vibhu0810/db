@@ -346,13 +346,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Fetching orders for user:", req.user.id);
 
       const orders = await storage.getOrders(req.user.id);
+      const allDomains = await storage.getDomains();
 
-      // Add unread comments count for each order
+      // Add unread comments count for each order and domain information
       const ordersWithUnreadCounts = await Promise.all(orders.map(async (order) => {
         const unreadComments = await storage.getUnreadCommentCount(order.id, req.user.id);
+        
+        // Find the associated domain for this order
+        const domain = allDomains.find(d => d.id === order.domainId);
+        
+        // For guest posts, add the website URL as a virtual field
+        const isGuestPost = order.sourceUrl === "not_applicable" && order.title;
+        
         return {
           ...order,
-          unreadComments
+          unreadComments,
+          website: isGuestPost && domain ? domain.websiteUrl : null
         };
       }));
 
@@ -373,14 +382,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const orders = await storage.getAllOrders();
       const users = await storage.getUsers();
+      const allDomains = await storage.getDomains();
 
       // Join orders with user data and add unread counts
       const ordersWithUserDetails = await Promise.all(orders.map(async (order) => {
         const user = users.find(u => u.id === order.userId);
         const unreadComments = await storage.getUnreadCommentCount(order.id, req.user!.id);
+        
+        // Find the associated domain for this order
+        const domain = allDomains.find(d => d.id === order.domainId);
+        
+        // For guest posts, add the website URL as a virtual field
+        const isGuestPost = order.sourceUrl === "not_applicable" && order.title;
+        
         return {
           ...order,
           unreadComments,
+          website: isGuestPost && domain ? domain.websiteUrl : null,
           user: user ? {
             username: user.username,
             companyName: user.companyName,
@@ -447,8 +465,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Unauthorized: You don't have permission to view this order" });
       }
       
-      console.log("Order found:", order);
-      res.json(order);
+      // Get domain information
+      const allDomains = await storage.getDomains();
+      const domain = allDomains.find(d => d.id === order.domainId);
+      
+      // For guest posts, add the website URL as a virtual field
+      const isGuestPost = order.sourceUrl === "not_applicable" && order.title;
+      
+      // Add website information to the order
+      const orderWithWebsite = {
+        ...order,
+        website: isGuestPost && domain ? domain.websiteUrl : null
+      };
+      
+      console.log("Order found:", orderWithWebsite);
+      res.json(orderWithWebsite);
     } catch (error) {
       console.error("Error fetching order:", error);
       res.status(500).json({ error: "Failed to fetch order" });

@@ -234,18 +234,13 @@ export default function NewOrderPage() {
     }
   }, [selectedDomain, orderType, customOrderForm]);
   
-  // Effect to update price when content option changes
+  // No longer adjusting price based on content option changes
+  // The price is determined solely by the domain and order type
   useEffect(() => {
     if (orderType === 'guest_post' && selectedDomain && selectedDomain.guestPostPrice) {
       let basePrice = parseFloat(selectedDomain.guestPostPrice);
-      
-      if (watchContentOption === 'write') {
-        // Display the price with the writing service cost
-        customOrderForm.setValue('price', basePrice + 100);
-      } else {
-        // Reset to base price if switching back to upload
-        customOrderForm.setValue('price', basePrice);
-      }
+      // Always use the base price regardless of content option
+      customOrderForm.setValue('price', basePrice);
     }
   }, [watchContentOption, selectedDomain, orderType, customOrderForm]);
 
@@ -285,10 +280,8 @@ export default function NewOrderPage() {
         // Add content option information
         payload.contentOption = data.contentOption;
         
-        // If content option is "write", add the extra cost
-        if (data.contentOption === "write") {
-          payload.price += 100; // Add $100 for content writing service
-        }
+        // No longer adding extra cost for content writing service
+        // The price depends on the domain and will be determined by admin
         
         // Remove the file from the payload since it can't be JSON serialized
         if (data.contentDocument) {

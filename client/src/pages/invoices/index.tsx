@@ -1492,42 +1492,38 @@ export default function InvoicesPage() {
   
   if (isLoading) {
     return (
-      <DashboardShell>
-        <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </DashboardShell>
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
   
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
-          <p className="text-muted-foreground">
-            {user?.is_admin 
-              ? "Manage all client invoices and payments" 
-              : "View and manage your invoice history"}
-          </p>
-        </div>
-        
-        <Tabs defaultValue={user?.is_admin ? "admin" : "client"}>
-          {user?.is_admin && (
-            <TabsList>
-              <TabsTrigger value="admin">All Invoices</TabsTrigger>
-            </TabsList>
-          )}
-          
-          <TabsContent value="admin" className="space-y-4">
-            <AdminInvoicesTab />
-          </TabsContent>
-          
-          <TabsContent value="client" className="space-y-4">
-            <UserInvoicesTab />
-          </TabsContent>
-        </Tabs>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
+        <p className="text-muted-foreground">
+          {user?.is_admin 
+            ? "Manage all client invoices and payments" 
+            : "View and manage your invoice history"}
+        </p>
       </div>
-    </DashboardShell>
+      
+      <Tabs defaultValue={user?.is_admin ? "admin" : "client"}>
+        {user?.is_admin && (
+          <TabsList>
+            <TabsTrigger value="admin">All Invoices</TabsTrigger>
+          </TabsList>
+        )}
+        
+        <TabsContent value="admin" className="space-y-4">
+          <AdminInvoicesTab />
+        </TabsContent>
+        
+        <TabsContent value="client" className="space-y-4">
+          <UserInvoicesTab />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

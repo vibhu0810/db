@@ -1403,25 +1403,25 @@ export default function Orders() {
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <div className="truncate max-w-[250px]">
-                            {order.title && order.title !== "not_applicable" 
-                              ? (order.sourceUrl !== "not_applicable" 
-                                  ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-                                  : `${order.title} - ${domains.find(d => d.id.toString() === order.domainId?.toString())?.websiteUrl || "unknown domain"}`)
-                              : order.sourceUrl === "not_applicable" 
-                                ? "No title provided" 
-                                : order.sourceUrl}
+                            {/* For guest post orders, the source URL is "not_applicable" */}
+                            {order.sourceUrl === "not_applicable" 
+                              ? (order.title 
+                                  ? `${order.title} - ${domains.find(d => d.type.includes("guest_post"))?.websiteUrl || "Guest Post Domain"}`
+                                  : "Guest Post (No title provided)")
+                              : /* For niche edit orders, display the source URL */
+                                order.sourceUrl}
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="flex-shrink-0"
-                            onClick={() => copyToClipboard(order.title && order.title !== "not_applicable" 
-                              ? (order.sourceUrl !== "not_applicable" 
-                                  ? `${order.title} - ${extractDomainFromUrl(order.sourceUrl)}`
-                                  : `${order.title} - ${domains.find(d => d.id.toString() === order.domainId?.toString())?.websiteUrl || "unknown domain"}`)
-                              : order.sourceUrl === "not_applicable"
-                                ? ""
-                                : order.sourceUrl)}
+                            onClick={() => copyToClipboard(
+                              order.sourceUrl === "not_applicable" 
+                              ? (order.title 
+                                  ? `${order.title} - ${domains.find(d => d.type.includes("guest_post"))?.websiteUrl || "Guest Post Domain"}`
+                                  : "Guest Post (No title provided)")
+                              : order.sourceUrl
+                            )}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>

@@ -1703,11 +1703,79 @@ export default function Orders() {
 
       {/* Edit Order Sheet */}
       {orderToEdit && (
-        <EditOrderSheet
-          order={orderToEdit}
-          isOpen={orderToEdit !== null}
+        <Sheet
+          open={orderToEdit !== null}
           onOpenChange={(open) => !open && setOrderToEdit(null)}
-        />
+        >
+          <SheetContent className="w-[400px] sm:w-[540px]">
+            <SheetHeader>
+              <SheetTitle>Edit Order #{orderToEdit.id}</SheetTitle>
+              <SheetDescription>
+                Make changes to the order details below.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label htmlFor="sourceUrl" className="text-sm font-medium">Source URL</label>
+                <Input
+                  id="sourceUrl"
+                  value={orderToEdit.sourceUrl}
+                  onChange={(e) => setOrderToEdit({...orderToEdit, sourceUrl: e.target.value})}
+                  placeholder="Source URL"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="targetUrl" className="text-sm font-medium">Target URL</label>
+                <Input
+                  id="targetUrl"
+                  value={orderToEdit.targetUrl}
+                  onChange={(e) => setOrderToEdit({...orderToEdit, targetUrl: e.target.value})}
+                  placeholder="Target URL"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="anchorText" className="text-sm font-medium">Anchor Text</label>
+                <Input
+                  id="anchorText"
+                  value={orderToEdit.anchorText}
+                  onChange={(e) => setOrderToEdit({...orderToEdit, anchorText: e.target.value})}
+                  placeholder="Anchor Text"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="notes" className="text-sm font-medium">Notes</label>
+                <Textarea
+                  id="notes"
+                  value={orderToEdit.notes || ''}
+                  onChange={(e) => setOrderToEdit({...orderToEdit, notes: e.target.value})}
+                  placeholder="Add additional notes..."
+                />
+              </div>
+              <div className="pt-4">
+                <Button 
+                  className="w-full" 
+                  disabled={isActionInProgress || updateOrderMutation.isPending}
+                  onClick={() => {
+                    updateOrderMutation.mutate({
+                      id: orderToEdit.id,
+                      updates: {
+                        sourceUrl: orderToEdit.sourceUrl,
+                        targetUrl: orderToEdit.targetUrl,
+                        anchorText: orderToEdit.anchorText,
+                        notes: orderToEdit.notes
+                      }
+                    });
+                  }}
+                >
+                  {(isActionInProgress || updateOrderMutation.isPending) && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Update Order
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
     </div>
   );

@@ -389,7 +389,7 @@ export default function Orders() {
     }));
   };
   
-  // Apply CSS for resizable columns and horizontal scrolling
+  // Apply CSS for resizable columns
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
@@ -1086,9 +1086,8 @@ export default function Orders() {
         </div>
 
         {/* Orders Table */}
-        <div className="table-scroll-container">
-          <div className="table-content">
-            <Table>
+        <div className="overflow-auto">
+          <Table>
             <TableHeader>
               <TableRow>
                 <Resizable
@@ -1499,7 +1498,6 @@ export default function Orders() {
               )}
             </TableBody>
           </Table>
-          </div>
         </div>
       </div>
       

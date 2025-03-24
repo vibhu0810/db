@@ -605,30 +605,35 @@ export default function ChatPage() {
   return (
     <>
       <div className="h-[calc(90vh-4rem)] flex gap-4">
-        {/* Users list */}
+        {/* Support Tickets List */}
         <div className="w-64 border rounded-lg overflow-hidden flex flex-col">
           <div className="p-4 border-b bg-muted">
             <h2 className="font-semibold">
-              {isAdmin ? "Customers" : "Support Team"}
+              Support Tickets
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               {isAdmin
-                ? "Select a customer to chat with"
-                : "Our support team is here to help"}
+                ? "Handle customer support tickets"
+                : "View your active support tickets"}
             </p>
             
             {/* Support tickets section */}
-            {userTickets.tickets && userTickets.tickets.length > 0 && (
-              <div className="mt-3 pt-3 border-t">
-                <h3 className="text-sm font-medium mb-2">Active Support Tickets</h3>
-                <ScrollArea className="max-h-[300px] h-[300px] border rounded-md p-2">
+            {userTickets.tickets && userTickets.tickets.length > 0 ? (
+              <div className="mt-3 pt-3">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-medium">Active Tickets</h3>
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                    {userTickets.tickets.filter((ticket: any) => ticket.status !== 'closed').length}
+                  </span>
+                </div>
+                <div className="max-h-[70vh] h-[70vh] border rounded-md p-2 overflow-auto">
                   <div className="space-y-2 pr-2">
                     {userTickets.tickets
                       .filter((ticket: any) => ticket.status !== 'closed')
                       .map((ticket: any) => (
                       <Button 
                         key={ticket.id}
-                        variant="outline" 
+                        variant={activeTicketId === ticket.id ? "default" : "outline"} 
                         size="sm"
                         className="w-full justify-start text-xs"
                         onClick={() => {
@@ -661,39 +666,13 @@ export default function ChatPage() {
                               url.searchParams.set('ticket', ticket.id.toString());
                               window.history.pushState({}, '', url);
                               
-                              // For non-admin users, prepare UI to talk with admin about this ticket
-                              if (!isAdmin && users.length > 0) {
-                                const adminUser = users.find((u: ChatUser) => u.is_admin);
-                                if (adminUser) {
-                                  // Do not set a default message - allow user to type their own message
-                                  // just focus the input field
-                                  
-                                  // Focus the input field after a short delay
-                                  setTimeout(() => {
-                                    const inputField = document.querySelector('input[name="messageInput"]');
-                                    if (inputField) {
-                                      (inputField as HTMLInputElement).focus();
-                                    }
-                                  }, 100);
+                              // Focus the input field after a short delay
+                              setTimeout(() => {
+                                const inputField = document.querySelector('input[name="messageInput"]');
+                                if (inputField) {
+                                  (inputField as HTMLInputElement).focus();
                                 }
-                              } else if (isAdmin && ticketDetails.ticket) {
-                                // For admin users, find the customer who created the ticket
-                                const customerId = ticketDetails.ticket.userId;
-                                apiRequest("GET", `/api/users/${customerId}`)
-                                  .then(res => res.json())
-                                  .then(customerData => {
-                                    console.log('Found customer:', customerData);
-                                    setSelectedUserId(customerData.id);
-                                  })
-                                  .catch(err => {
-                                    console.error('Error finding customer:', err);
-                                    toast({
-                                      title: "Error",
-                                      description: "Could not find customer for this ticket.",
-                                      variant: "destructive"
-                                    });
-                                  });
-                              }
+                              }, 100);
                             })
                             .catch(err => {
                               console.error('Error loading ticket details:', err);
@@ -705,87 +684,31 @@ export default function ChatPage() {
                             });
                         }}
                       >
-                        <span className="truncate">
-                          Ticket #{ticket.id} - Order #{ticket.orderId}
-                        </span>
+                        <div className="flex flex-col items-start">
+                          <span className="truncate font-medium">
+                            Ticket #{ticket.id} - Order #{ticket.orderId}
+                          </span>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}
+                          </span>
+                        </div>
                       </Button>
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-8 text-center text-muted-foreground p-4">
+                <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                <p className="text-sm">No active support tickets</p>
+                <p className="text-xs mt-1">
+                  {isAdmin 
+                    ? "You'll see customer tickets here when they need help" 
+                    : "Create a support ticket from your order page if you need help"
+                  }
+                </p>
               </div>
             )}
-          </div>
-          
-          {/* Support team members section */}
-          <div className="mt-3 pt-3 border-t px-4">
-            <h3 className="text-sm font-medium mb-2">Support Team Members</h3>
-            <div className="max-h-[300px] h-[300px] border rounded-md p-2 overflow-auto">
-              <div className="space-y-1 pr-2">
-                {users.length > 0 ? (
-                  users.map((chatUser) => {
-                    // Count unread messages for this user
-                    const unreadMessages = messages?.filter(
-                      (m: any) => m.senderId === chatUser.id && !m.read &&
-                      // Only count messages from conversations other than the currently selected one
-                      (selectedUserId !== chatUser.id)
-                    );
-                    const unreadCount = unreadMessages?.length || 0;
-                    
-                    return (
-                      <button
-                        key={chatUser.id}
-                        onClick={() => setSelectedUserId(chatUser.id)}
-                        className={cn(
-                          "w-full p-4 text-left hover:bg-accent transition-colors flex items-center gap-3 relative",
-                          selectedUserId === chatUser.id && "bg-accent"
-                        )}
-                      >
-                        <div className="relative">
-                          <Avatar>
-                            {chatUser.profilePicture ? (
-                              <img src={chatUser.profilePicture} alt={chatUser.username} />
-                            ) : (
-                              <div className="bg-primary/10 w-full h-full flex items-center justify-center text-primary font-semibold">
-                                {chatUser.username[0].toUpperCase()}
-                              </div>
-                            )}
-                          </Avatar>
-                          {/* Online/Offline indicator */}
-                          <div className={cn(
-                            "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background",
-                            onlineStatus[chatUser.id] ? "bg-emerald-500" : "bg-destructive"
-                          )} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">
-                            {chatUser.companyName || chatUser.username}
-                            {chatUser.is_admin && (
-                              <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                Admin
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground truncate">
-                            {chatUser.is_admin ? "Support Agent" : chatUser.email}
-                          </div>
-                        </div>
-                        {unreadCount > 0 && (
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                            {unreadCount}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })
-                ) : (
-                  <div className="p-4 text-center text-muted-foreground">
-                    {isAdmin
-                      ? "No customers available"
-                      : "No support agents available at the moment"}
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         </div>
 

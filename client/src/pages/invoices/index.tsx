@@ -1261,9 +1261,41 @@ function UserInvoicesTab() {
           </div>
           
           {/* Billing Preferences & Payment Details Section */}
-          <div className="mt-8 space-y-6">            
-            {/* User Billing Preferences */}
-            <BillingPreferences user={user} />
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold mb-4">Billing & Payment Options</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* User Billing Preferences */}
+              <div>
+                <BillingPreferences user={user} />
+              </div>
+              
+              {/* Payment Methods Details */}
+              <div className="flex flex-col">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payment Details</CardTitle>
+                    <CardDescription>
+                      Payment options available for your invoices
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <h3 className="font-medium mb-3">Wire Transfer / Wise (0% fee)</h3>
+                      <div className="rounded-md bg-muted p-4">
+                        <PaymentDetails paymentMethod="wire" />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-medium mb-3">PayPal (5% fee)</h3>
+                      <div className="rounded-md bg-muted p-4">
+                        <PaymentDetails paymentMethod="paypal" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
       ) : (

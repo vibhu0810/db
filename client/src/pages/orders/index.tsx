@@ -45,7 +45,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, LifeBuoy } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,7 +75,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { User, GUEST_POST_STATUSES, NICHE_EDIT_STATUSES } from "@shared/schema";
-import { Plus } from "lucide-react";
+import { Plus, LifeBuoy as LifeBuoyIcon } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Checkbox from "@/components/ui/checkbox";
@@ -1577,6 +1577,12 @@ export default function Orders() {
                                 Edit Order
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem
+                              onClick={() => window.location.href = `/orders/${order.id}#support`}
+                            >
+                              <LifeBuoyIcon className="h-4 w-4 mr-2" />
+                              Support
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {order.status === "In Progress" && (
                               <DropdownMenuItem

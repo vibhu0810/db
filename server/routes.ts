@@ -1203,7 +1203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createOrderComment({
         orderId,
         userId: req.user.id,
-        message: "Update",
+        message: `Order has been edited by ${req.user.username}`,
         isSystemMessage: true
       });
       

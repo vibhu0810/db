@@ -702,7 +702,7 @@ export default function OrderDetailsPage() {
                             >
                               <div className="flex items-center gap-2 mb-2">
                                 {comment.isSystemMessage ? (
-                                  <span className="font-medium text-secondary-foreground">System</span>
+                                  <span className="font-medium text-secondary-foreground">Update</span>
                                 ) : (
                                   <span className="font-medium">{comment.user?.username}</span>
                                 )}

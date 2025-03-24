@@ -225,6 +225,11 @@ function EditOrderSheet({
     editOrderMutation.mutate(data);
   };
 
+  useEffect(() => {
+    // Log for debugging
+    console.log("EditOrderSheet rendered with isOpen:", isOpen, "order:", order);
+  }, [isOpen, order]);
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="w-[400px] sm:w-[540px]">
@@ -417,17 +422,21 @@ export default function Orders() {
 
   // Check for edit parameter in URL when component mounts and orders are loaded
   useEffect(() => {
-    if (!ordersData.length) return; // Skip if orders aren't loaded yet
-    
+    // Check for edit parameter in URL
     const urlParams = new URLSearchParams(location.split('?')[1] || '');
     const editId = urlParams.get('edit');
     
-    if (editId) {
+    // Only proceed if we have an editId and orders data has loaded
+    if (editId && ordersData.length > 0) {
       const orderId = parseInt(editId, 10);
       const orderToEdit = ordersData.find((order: Order) => order.id === orderId);
       
       if (orderToEdit) {
+        // Set the order to edit to open the dialog
         setOrderToEdit(orderToEdit);
+        
+        // Log for debugging
+        console.log(`Setting order to edit: ${orderId}`, orderToEdit);
       } else {
         toast({
           title: "Order not found",
@@ -440,7 +449,7 @@ export default function Orders() {
       // This prevents the edit dialog from opening again after it's closed
       setTimeout(() => {
         setLocation('/orders');
-      }, 100);
+      }, 300); // Increased timeout to ensure the dialog has time to open
     }
   }, [ordersData, location, setLocation, toast]);
   

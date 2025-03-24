@@ -1804,6 +1804,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(status);
   });
 
+  // Test endpoint for creating a test support ticket with welcome message
+  app.post("/api/test-create-ticket", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      // Create a test support ticket
+      const testTicket = {
+        userId: req.user.id,
+        orderId: 1, // Use an existing order ID (this should be an ID that exists in your database)
+        title: 'Test Support Ticket',
+        status: 'open',
+        description: 'This is a test ticket created for testing the automated welcome message.'
+      };
+      
+      console.log("Creating test support ticket:", testTicket);
+      const createdTicket = await storage.createSupportTicket(testTicket);
+      console.log("Created test ticket:", createdTicket);
+      
+      // Get the comments (including welcome message) for this ticket
+      const comments = await storage.getOrderComments(testTicket.orderId, createdTicket.id);
+      console.log("Retrieved ticket comments:", comments);
+      
+      res.json({
+        ticket: createdTicket,
+        comments: comments
+      });
+    } catch (error) {
+      console.error('Error creating test ticket:', error);
+      res.status(500).json({ error: 'Failed to create test ticket', details: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

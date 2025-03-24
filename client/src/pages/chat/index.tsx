@@ -621,7 +621,7 @@ export default function ChatPage() {
             {userTickets.tickets && userTickets.tickets.length > 0 && (
               <div className="mt-3 pt-3 border-t">
                 <h3 className="text-sm font-medium mb-2">Active Support Tickets</h3>
-                <ScrollArea className="max-h-[200px]">
+                <ScrollArea className="max-h-[300px] h-[300px] border rounded-md p-2">
                   <div className="space-y-2 pr-2">
                     {userTickets.tickets
                       .filter((ticket: any) => ticket.status !== 'closed')
@@ -712,7 +712,7 @@ export default function ChatPage() {
                         }}
                       >
                         <span className="truncate">
-                          Ticket #{ticket.id}
+                          Ticket #{ticket.id} - Order #{ticket.orderId}
                         </span>
                       </Button>
                     ))}

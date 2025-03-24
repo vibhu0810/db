@@ -405,8 +405,20 @@ export default function Orders() {
     }));
   };
   
-  // Check for edit parameter in URL when component mounts
+  // Get orders data first before using in the URL effect
+  const { data: ordersData = [], isLoading: isLoadingOrders } = useQuery({
+    queryKey: ['/api/orders'],
+    queryFn: () => {
+      const endpoint = isAdmin ? '/api/orders/all' : '/api/orders';
+      return apiRequest("GET", endpoint).then(res => res.json());
+    },
+    refetchInterval: 10000, // Refetch orders every 10 seconds
+  });
+
+  // Check for edit parameter in URL when component mounts and orders are loaded
   useEffect(() => {
+    if (!orders.length) return; // Skip if orders aren't loaded yet
+    
     const urlParams = new URLSearchParams(location.split('?')[1] || '');
     const editId = urlParams.get('edit');
     
@@ -520,15 +532,6 @@ export default function Orders() {
       });
       console.error("Failed to mark comments as read:", error);
     }
-  });
-
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ['/api/orders'],
-    queryFn: () => {
-      const endpoint = isAdmin ? '/api/orders/all' : '/api/orders';
-      return apiRequest("GET", endpoint).then(res => res.json());
-    },
-    refetchInterval: 10000, // Refetch orders every 10 seconds
   });
 
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({

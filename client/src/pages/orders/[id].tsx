@@ -237,18 +237,19 @@ export default function OrderDetailsPage() {
         
         console.log("Redirecting to ticket chat:", data.ticket.id);
         
-        // Use direct navigation instead of window.location.href to avoid notification click issues
         // Use a delay to allow the toast to show and the ticket to be fully processed
         setTimeout(() => {
           const chatUrl = `/chat?ticket=${data.ticket.id}`;
-          // Force a hard navigation instead of a client-side route change
+          
+          // Force a hard navigation to ensure the chat page loads with the fresh ticket data
           window.location.href = chatUrl;
-        }, 1200); // Increase delay to 1.2 seconds to ensure server has time to process
+        }, 1500); // Increase delay to 1.5 seconds to ensure server has time to process all ticket data
       } else {
         console.error("Missing ticket ID in response:", data);
         toast({
           title: "Ticket Created",
           description: "Support ticket has been created, but there was an issue opening the chat. Please go to the Chat page.",
+          variant: "destructive",
         });
       }
     },

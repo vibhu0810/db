@@ -45,7 +45,7 @@ export default function ChatPage() {
   
   // Parse URL query parameters to get ticket ID if present
   const getTicketIdFromUrl = () => {
-    const searchParams = new URLSearchParams(location.split('?')[1]);
+    const searchParams = new URLSearchParams(location.split('?')[1] || "");
     const ticketId = searchParams.get('ticket');
     return ticketId ? parseInt(ticketId, 10) : null;
   };
@@ -87,8 +87,8 @@ export default function ChatPage() {
     },
     enabled: !!ticketId,
   });
-
-  // Get users based on role - with better caching
+  
+  // Get users based on role
   const { data: users = [], isLoading: usersLoading } = useQuery<ChatUser[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
@@ -104,18 +104,12 @@ export default function ChatPage() {
         filteredUsers = allUsers.filter((chatUser: ChatUser) => chatUser.is_admin);
       }
       
-      // Log for debugging
-      console.log('All users before filtering:', allUsers);
-      console.log(`Filtered users for ${isAdmin ? 'admin' : 'user'} :`, filteredUsers);
-      
       return filteredUsers;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
   });
-
-  // Get messages for selected conversation
+  
+  // Get messages for selected conversation or ticket
   const { data: messages = [], isLoading: initialMessagesLoading } = useQuery({
     queryKey: ['/api/messages', selectedUserId],
     queryFn: async () => {
@@ -127,92 +121,27 @@ export default function ChatPage() {
         const ticketId = Math.abs(selectedUserId);
         
         // For ticket conversations, we need to retrieve ticket-specific messages
-        // These would ideally come from a dedicated API endpoint, but we'll improvise
         try {
-          // Get ticket details first
-          const ticketRes = await apiRequest("GET", `/api/support-tickets/${ticketId}`);
-          const ticketData = await ticketRes.json();
+          // Get ticket comments
+          const commentsRes = await apiRequest("GET", `/api/support-tickets/${ticketId}/comments`);
+          if (!commentsRes.ok) throw new Error('Failed to fetch ticket comments');
           
-          if (!ticketRes.ok) throw new Error('Failed to fetch ticket details');
+          const comments = await commentsRes.json();
           
-          // Let's create a synthetic conversation for this ticket
-          const ticketMessages = [
-            {
-              id: `ticket-${ticketId}-1`,
-              senderId: -100, // System message sender ID
-              receiverId: user?.id || 0,
-              content: `Opened support ticket for Order #${ticketData.ticket.orderId}`,
-              attachmentUrl: null,
-              attachmentType: null,
-              read: true,
-              createdAt: ticketData.ticket.createdAt,
-              isSystemMessage: true
-            }
-          ];
-          
-          // Get any comments on this ticket
-          if (ticketData.ticket.id) {
-            try {
-              const commentsRes = await apiRequest("GET", `/api/support-tickets/${ticketId}/comments`);
-              if (commentsRes.ok) {
-                const comments = await commentsRes.json();
-                
-                // Add each comment as a message in this conversation
-                comments.forEach((comment: any, index: number) => {
-                  // Determine if comment is from admin or customer
-                  const isAdminComment = comment.isFromAdmin;
-                  
-                  ticketMessages.push({
-                    id: `ticket-${ticketId}-comment-${index + 2}`,
-                    senderId: isAdminComment ? -101 : user?.id || 0, // Admin (virtual) or current user
-                    receiverId: isAdminComment ? user?.id || 0 : -101,
-                    content: comment.content,
-                    attachmentUrl: null,
-                    attachmentType: null,
-                    read: true,
-                    createdAt: comment.createdAt,
-                    isSystemMessage: false
-                  });
-                });
-              }
-            } catch (e) {
-              console.error("Error fetching ticket comments:", e);
-            }
-          }
-          
-          // Add status update message if the ticket has been updated
-          if (ticketData.ticket.status !== "open") {
-            ticketMessages.push({
-              id: `ticket-${ticketId}-status`,
-              senderId: -100, // System message
-              receiverId: user?.id || 0,
-              content: `This ticket's status was updated to: ${ticketData.ticket.status.replace("_", " ")}`,
-              attachmentUrl: null,
-              attachmentType: null,
-              read: true,
-              createdAt: ticketData.ticket.updatedAt || ticketData.ticket.createdAt,
-              isSystemMessage: true
-            });
-          }
-          
-          // If the ticket is closed, add a closing message
-          if (ticketData.ticket.status === "closed") {
-            ticketMessages.push({
-              id: `ticket-${ticketId}-closed`,
-              senderId: -100, // System message
-              receiverId: user?.id || 0,
-              content: `This ticket has been closed. ${ticketData.ticket.feedback ? `Feedback: ${ticketData.ticket.feedback}` : ''}`,
-              attachmentUrl: null,
-              attachmentType: null,
-              read: true,
-              createdAt: ticketData.ticket.closedAt || ticketData.ticket.updatedAt || ticketData.ticket.createdAt,
-              isSystemMessage: true
-            });
-          }
-          
-          return ticketMessages;
+          // Transform comments into message format
+          return comments.map((comment: any) => ({
+            id: `ticket-${comment.id}`,
+            senderId: comment.isFromAdmin ? -1 : comment.userId, // -1 for system/admin
+            receiverId: comment.isFromAdmin ? comment.userId : -1,
+            content: comment.message,
+            attachmentUrl: null,
+            attachmentType: null,
+            read: true,
+            createdAt: comment.createdAt,
+            isSystemMessage: comment.isSystemMessage || false
+          }));
         } catch (error) {
-          console.error("Error fetching ticket conversation:", error);
+          console.error("Error fetching ticket comments:", error);
           return [];
         }
       }
@@ -224,261 +153,8 @@ export default function ChatPage() {
     },
     enabled: !!selectedUserId,
     refetchInterval: 3000,
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true,
-    retry: 3,
-    staleTime: 1000,
   });
 
-  // Get typing status of selected user
-  const { data: typingStatus } = useQuery({
-    queryKey: ['/api/typing-status', selectedUserId],
-    queryFn: async () => {
-      if (!selectedUserId) return { isTyping: false };
-      const res = await apiRequest("GET", `/api/typing-status/${selectedUserId}`);
-      return res.json();
-    },
-    enabled: !!selectedUserId,
-    refetchInterval: 2000,
-    retry: false,
-  });
-
-  // Get online status of users
-  const { data: onlineStatus = {} } = useQuery({
-    queryKey: ['/api/users/online-status', users],
-    queryFn: async () => {
-      if (!users.length) return {};
-      const userIds = users.map(u => u.id).join(',');
-      const res = await apiRequest("GET", `/api/users/online-status?userIds=${userIds}`);
-      return res.json();
-    },
-    enabled: users.length > 0,
-    refetchInterval: 10000, // Check online status every 10 seconds
-  });
-
-
-  // Update typing status mutation
-  const updateTypingStatus = useMutation({
-    mutationFn: async (isTyping: boolean) => {
-      if (!selectedUserId) return;
-      await apiRequest("POST", "/api/typing-status", {
-        receiverId: selectedUserId,
-        isTyping,
-      });
-    },
-  });
-
-  // Debounce function for typing status
-  const debounce = (func: Function, wait: number) => {
-    let timeout: NodeJS.Timeout;
-    return (...args: any[]) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
-    };
-  };
-
-  // Debounced version of updateTypingStatus
-  const debouncedUpdateTyping = useCallback(
-    debounce((value: boolean) => {
-      setIsTyping(value);
-      updateTypingStatus.mutate(value);
-    }, 500),
-    [updateTypingStatus]
-  );
-
-  // Handle message input changes
-  const handleMessageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setMessageInput(value);
-
-    if (value.length > 0 && !isTyping) {
-      debouncedUpdateTyping(true);
-    } else if (value.length === 0 && isTyping) {
-      debouncedUpdateTyping(false);
-    }
-  };
-
-  // Message upload states
-  const [imageAttachment, setImageAttachment] = useState<File | null>(null);
-  const [audioAttachment, setAudioAttachment] = useState<File | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const [uploadingAttachment, setUploadingAttachment] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const recordingTimer = useRef<NodeJS.Timeout | null>(null);
-
-  // Send message mutation
-  const sendMessageMutation = useMutation({
-    mutationFn: async ({ 
-      messageText, 
-      attachmentUrl = null, 
-      attachmentType = null 
-    }: { 
-      messageText: string, 
-      attachmentUrl?: string | null, 
-      attachmentType?: string | null 
-    }) => {
-      if (!selectedUserId) throw new Error("No recipient selected");
-      
-      // Check if this is a virtual ticket conversation (selectedUserId is negative)
-      if (selectedUserId < 0) {
-        const ticketId = Math.abs(selectedUserId);
-        
-        // For virtual ticket conversations, we add a comment to the ticket instead
-        const res = await apiRequest("POST", `/api/support-tickets/${ticketId}/comments`, {
-          content: messageText,
-          // We don't handle attachments for ticket comments yet
-          isFromAdmin: isAdmin
-        });
-        
-        if (!res.ok) throw new Error('Failed to add comment to ticket');
-        
-        // Also create a regular message for admin notification if user is not admin
-        if (!isAdmin) {
-          // Find an admin to notify
-          const adminUser = users.find((u: ChatUser) => u.is_admin);
-          if (adminUser) {
-            // Create a notification message for the admin
-            const notifyRes = await apiRequest("POST", "/api/messages", {
-              content: `New comment on Support Ticket #${ticketId}: ${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}`,
-              receiverId: adminUser.id,
-              attachmentUrl,
-              attachmentType
-            });
-            
-            if (!notifyRes.ok) {
-              console.warn('Failed to notify admin about ticket comment');
-            }
-          }
-        }
-        
-        return res.json();
-      } else {
-        // Regular user-to-user message
-        const res = await apiRequest("POST", "/api/messages", {
-          content: messageText,
-          receiverId: selectedUserId,
-          attachmentUrl,
-          attachmentType
-        });
-        
-        if (!res.ok) throw new Error('Failed to send message');
-        return res.json();
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
-      setMessageInput("");
-      setIsTyping(false);
-      updateTypingStatus.mutate(false);
-      setImageAttachment(null);
-      setAudioAttachment(null);
-    },
-  });
-
-  // Handle file upload and message sending
-  const handleSendMessage = async () => {
-    const hasText = messageInput.trim().length > 0;
-    const hasAttachment = imageAttachment || audioAttachment;
-    
-    if (!hasText && !hasAttachment) return;
-    
-    try {
-      if (hasAttachment) {
-        setUploadingAttachment(true);
-        
-        if (imageAttachment) {
-          try {
-            const uploadUrl = await uploadFile(imageAttachment, "chatImage");
-            await sendMessageMutation.mutateAsync({ 
-              messageText: messageInput.trim() || "📷 Image", 
-              attachmentUrl: uploadUrl, 
-              attachmentType: "image" 
-            });
-            toast({
-              title: "Image sent",
-              description: "Your image has been successfully sent.",
-              variant: "default",
-            });
-          } catch (uploadError) {
-            toast({
-              title: "Failed to upload image",
-              description: "There was a problem uploading your image. Please try again.",
-              variant: "destructive",
-            });
-            console.error("Image upload error:", uploadError);
-          }
-        } else if (audioAttachment) {
-          try {
-            const uploadUrl = await uploadFile(audioAttachment, "chatAudio");
-            await sendMessageMutation.mutateAsync({ 
-              messageText: messageInput.trim() || "🎤 Voice message", 
-              attachmentUrl: uploadUrl, 
-              attachmentType: "audio" 
-            });
-            toast({
-              title: "Voice message sent",
-              description: "Your voice message has been successfully sent.",
-              variant: "default",
-            });
-          } catch (uploadError) {
-            toast({
-              title: "Failed to upload voice message",
-              description: "There was a problem uploading your voice message. Please try again.",
-              variant: "destructive",
-            });
-            console.error("Audio upload error:", uploadError);
-          }
-        }
-        
-        setUploadingAttachment(false);
-      } else {
-        // Text-only message
-        await sendMessageMutation.mutateAsync({ messageText: messageInput });
-      }
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      setUploadingAttachment(false);
-      toast({
-        title: "Message not sent",
-        description: "There was a problem sending your message. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Clear typing status when component unmounts or user changes
-  useEffect(() => {
-    return () => {
-      if (isTyping) {
-        updateTypingStatus.mutate(false);
-      }
-    };
-  }, [selectedUserId, isTyping]);
-
-  // Handle recording timer
-  useEffect(() => {
-    if (isRecording) {
-      setRecordingDuration(0);
-      recordingTimer.current = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
-      }, 1000);
-    } else {
-      if (recordingTimer.current) {
-        clearInterval(recordingTimer.current);
-        recordingTimer.current = null;
-      }
-    }
-    
-    return () => {
-      if (recordingTimer.current) {
-        clearInterval(recordingTimer.current);
-        recordingTimer.current = null;
-      }
-    };
-  }, [isRecording]);
-  
   // Close ticket mutation
   const closeTicketMutation = useMutation({
     mutationFn: async ({ ticketId, rating, feedback }: { ticketId: number, rating: number, feedback: string }) => {
@@ -514,6 +190,81 @@ export default function ChatPage() {
     }
   });
   
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ 
+      messageText, 
+      attachmentUrl = null, 
+      attachmentType = null 
+    }: { 
+      messageText: string, 
+      attachmentUrl?: string | null, 
+      attachmentType?: string | null 
+    }) => {
+      if (!selectedUserId) throw new Error("No recipient selected");
+      
+      // Check if this is a virtual ticket conversation (selectedUserId is negative)
+      if (selectedUserId < 0) {
+        const ticketId = Math.abs(selectedUserId);
+        
+        // For virtual ticket conversations, we add a comment to the ticket
+        const res = await apiRequest("POST", `/api/support-tickets/${ticketId}/comments`, {
+          content: messageText,
+          // We don't handle attachments for ticket comments yet
+          isFromAdmin: isAdmin
+        });
+        
+        if (!res.ok) throw new Error('Failed to add comment to ticket');
+        return res.json();
+      } else {
+        // Regular user-to-user message
+        const res = await apiRequest("POST", "/api/messages", {
+          content: messageText,
+          receiverId: selectedUserId,
+          attachmentUrl,
+          attachmentType
+        });
+        
+        if (!res.ok) throw new Error('Failed to send message');
+        return res.json();
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
+      setMessageInput("");
+    },
+    onError: (error) => {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Failed to send message",
+        description: "There was a problem sending your message. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle message input changes
+  const handleMessageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessageInput(e.target.value);
+  };
+
+  // Handle sending a message
+  const handleSendMessage = () => {
+    if (messageInput.trim()) {
+      sendMessageMutation.mutate({ 
+        messageText: messageInput.trim() 
+      });
+    }
+  };
+  
+  // Handle key press in message input
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+  
   // Handle ticket close request
   const handleCloseTicket = (ticketId: number) => {
     setActiveTicketId(ticketId);
@@ -531,29 +282,42 @@ export default function ChatPage() {
     }
   };
   
-  // Effect to set selected user when ticket ID is provided
+  // Effect to set selected user when ticket ID is provided in URL
   useEffect(() => {
-    // Only run this effect when ticket data and users are loaded
-    if (ticketId && ticketData && ticketData.ticket && users.length > 0) {
-      console.log('Ticket data loaded:', ticketData);
-      setActiveTicketId(ticketData.ticket.id);
+    if (ticketId && ticketData && ticketData.ticket) {
+      console.log('Ticket data loaded from URL param:', ticketData);
       
-      // Set the virtual user ID for ticket conversations (negative ticket ID)
-      const virtualTicketUserId = -ticketData.ticket.id;
-      console.log('Setting selected user to virtual ticket user:', virtualTicketUserId);
+      // Set active ticket ID
+      setActiveTicketId(ticketId);
+      
+      // Set virtual user ID for ticket conversations (negative ticket ID)
+      const virtualTicketUserId = -ticketId;
       setSelectedUserId(virtualTicketUserId);
       
-      // Clear any existing message input
-      setMessageInput("");
-      
-      // Show toast for successful navigation
+      // Show toast notification for better UX
       toast({
         title: "Support Ticket Chat",
-        description: `You are now viewing Ticket #${ticketData.ticket.id} for Order #${ticketData.ticket.orderId}`,
+        description: `You are now viewing Ticket #${ticketId}${ticketData.ticket.orderId ? ` for Order #${ticketData.ticket.orderId}` : ''}`,
       });
     }
-  }, [ticketData, users, ticketId, toast]);
-
+  }, [ticketId, ticketData, toast]);
+  
+  // Click handler for ticket selection from sidebar
+  const handleTicketSelect = (ticket: any) => {
+    // Set active ticket
+    setActiveTicketId(ticket.id);
+    
+    // Create a virtual user ID (negative of ticket ID) for this conversation
+    const virtualTicketUserId = -ticket.id;
+    setSelectedUserId(virtualTicketUserId);
+    
+    // Update URL without navigating
+    const url = new URL(window.location.href);
+    url.searchParams.set('ticket', ticket.id.toString());
+    window.history.pushState({}, '', url);
+  };
+  
+  // Loading state
   if (usersLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(90vh-4rem)]">
@@ -561,7 +325,7 @@ export default function ChatPage() {
       </div>
     );
   }
-
+  
   return (
     <>
       <div className="h-[calc(90vh-4rem)] flex gap-4">
@@ -596,57 +360,11 @@ export default function ChatPage() {
                         variant={activeTicketId === ticket.id ? "default" : "outline"} 
                         size="sm"
                         className="w-full justify-start text-xs"
-                        onClick={() => {
-                          // Set active ticket and find the admin to chat with
-                          setActiveTicketId(ticket.id);
-                          
-                          // Fetch detailed ticket information
-                          apiRequest("GET", `/api/support-tickets/${ticket.id}`)
-                            .then(res => res.json())
-                            .then(ticketDetails => {
-                              console.log('Loaded ticket details:', ticketDetails);
-                              
-                              // Create a virtual user ID for this ticket
-                              // We'll use a negative number based on the ticket ID to ensure uniqueness
-                              // This will be used as the selectedUserId for this ticket conversation
-                              const virtualTicketUserId = -1 * ticket.id; 
-                              
-                              // Set the active ticket and selected user (virtual)
-                              setActiveTicketId(ticket.id);
-                              setSelectedUserId(virtualTicketUserId);
-                              
-                              // Store ticket data for display
-                              const ticketData = {
-                                ticket: ticketDetails.ticket || ticket
-                              };
-                              localStorage.setItem(`ticket_${ticket.id}`, JSON.stringify(ticketData));
-                              
-                              // Update the URL with the ticket ID for persistence
-                              const url = new URL(window.location.href);
-                              url.searchParams.set('ticket', ticket.id.toString());
-                              window.history.pushState({}, '', url);
-                              
-                              // Focus the input field after a short delay
-                              setTimeout(() => {
-                                const inputField = document.querySelector('input[name="messageInput"]');
-                                if (inputField) {
-                                  (inputField as HTMLInputElement).focus();
-                                }
-                              }, 100);
-                            })
-                            .catch(err => {
-                              console.error('Error loading ticket details:', err);
-                              toast({
-                                title: "Error",
-                                description: "Could not load ticket details.",
-                                variant: "destructive"
-                              });
-                            });
-                        }}
+                        onClick={() => handleTicketSelect(ticket)}
                       >
                         <div className="flex flex-col items-start">
                           <span className="truncate font-medium">
-                            Ticket #{ticket.id} - Order #{ticket.orderId}
+                            Ticket #{ticket.id} - Order #{ticket.orderId || 'N/A'}
                           </span>
                           <span className="text-xs text-muted-foreground mt-1">
                             {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}
@@ -677,7 +395,7 @@ export default function ChatPage() {
           {selectedUserId ? (
             <>
               {/* Ticket information banner (if applicable) */}
-              {ticketData && ticketData.ticket && (
+              {activeTicketId && ticketData && ticketData.ticket && (
                 <div className="bg-muted p-3 border-b">
                   <div className="flex items-center justify-between">
                     <div>
@@ -688,12 +406,14 @@ export default function ChatPage() {
                       <p className="text-sm text-muted-foreground mt-1">
                         {ticketData.ticket.title || "No title provided"}
                       </p>
-                      <p className="text-xs flex items-center gap-1 mt-1 text-primary">
-                        <LinkIcon className="h-3 w-3" /> 
-                        <Link href={`/orders/${ticketData.ticket.orderId}`} className="hover:underline">
-                          Order #{ticketData.ticket.orderId}
-                        </Link>
-                      </p>
+                      {ticketData.ticket.orderId && (
+                        <p className="text-xs flex items-center gap-1 mt-1 text-primary">
+                          <LinkIcon className="h-3 w-3" /> 
+                          <Link href={`/orders/${ticketData.ticket.orderId}`} className="hover:underline">
+                            Order #{ticketData.ticket.orderId}
+                          </Link>
+                        </p>
+                      )}
                     </div>
                     <div className="text-right text-sm">
                       <div className="font-medium">Status: <span className={
@@ -725,7 +445,7 @@ export default function ChatPage() {
               )}
           
               {/* Messages */}
-              <ScrollArea className="flex-1 p-4">
+              <ScrollArea className="flex-1 p-4" id="message-container">
                 {initialMessagesLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <Loader2 className="h-8 w-8 animate-spin" />
@@ -761,416 +481,108 @@ export default function ChatPage() {
                                   {message.content}
                                 </p>
                               </div>
-                            ) : (message.content && message.content.includes("Support Ticket #")) ? (
-                              // Support ticket notification
-                              <div className="bg-amber-100 dark:bg-amber-950 p-2 rounded-md border border-amber-300 dark:border-amber-800">
-                                <div className="flex gap-2 items-center mb-1 text-amber-800 dark:text-amber-400">
-                                  <FileText className="h-4 w-4" />
-                                  <span className="font-medium text-sm">Support Ticket</span>
-                                </div>
-                                <div className="whitespace-pre-wrap break-words">
-                                  {message.content && message.content.includes("Order #") ? (
-                                    <>
-                                      {message.content.split("Order #").map((part: string, index: number) => {
-                                        if (index === 0) return part;
-                                        
-                                        // Extract order ID from the text
-                                        const orderIdMatch = part.match(/^(\d+)/);
-                                        const orderId = orderIdMatch ? orderIdMatch[1] : null;
-                                        const remainingText = part.replace(/^\d+/, "");
-                                        
-                                        return (
-                                          <React.Fragment key={index}>
-                                            Order #
-                                            {orderId ? (
-                                              <Link 
-                                                href={`/orders/${orderId}`}
-                                                className="text-primary hover:underline"
-                                              >
-                                                {orderId}
-                                              </Link>
-                                            ) : (
-                                              orderId
-                                            )}
-                                            {remainingText}
-                                          </React.Fragment>
-                                        );
-                                      })}
-                                    </>
-                                  ) : (
-                                    message.content
-                                  )}
-                                </div>
-                              </div>
                             ) : (
                               // Regular message
                               <p className="whitespace-pre-wrap break-words">
                                 {message.content}
                               </p>
                             )}
-                            
-                            {/* Display image attachment if present */}
-                            {message.attachmentUrl && message.attachmentType === 'image' && (
-                              <div className="mt-2 rounded-md overflow-hidden">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <ImageIcon className="h-4 w-4" />
-                                  <span className="text-xs font-medium">Image</span>
-                                </div>
-                                <a 
-                                  href={message.attachmentUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="block rounded-md overflow-hidden"
-                                >
-                                  <img 
-                                    src={message.attachmentUrl} 
-                                    alt="Message attachment" 
-                                    className="max-w-full rounded-md hover:opacity-90 transition-opacity border border-border" 
-                                    loading="lazy"
-                                  />
-                                </a>
-                              </div>
-                            )}
-                            
-                            {/* Display audio attachment if present */}
-                            {message.attachmentUrl && message.attachmentType === 'audio' && (
-                              <div className="mt-2 bg-background/20 rounded-md p-2">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Music className="h-4 w-4" />
-                                  <span className="text-xs font-medium">Voice Message</span>
-                                </div>
-                                <audio 
-                                  src={message.attachmentUrl} 
-                                  controls 
-                                  className="max-w-full w-full h-8"
-                                  controlsList="nodownload noplaybackrate"
-                                />
-                              </div>
-                            )}
-                            
-                            {/* Display message metadata */}
-                            <div
-                              className={cn(
-                                "text-xs mt-1 flex items-center gap-1",
-                                message.senderId === user?.id
-                                  ? "text-primary-foreground/70"
-                                  : "text-muted-foreground"
-                              )}
-                            >
-                              <span>
-                                {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                              </span>
-                              {message.senderId === user?.id && (
-                                <span className="flex items-center">
-                                  •
-                                  {message.read ? (
-                                    <CheckCheck className="h-3 w-3 ml-1" />
-                                  ) : (
-                                    <Check className="h-3 w-3 ml-1" />
-                                  )}
-                                </span>
-                              )}
-                            </div>
                           </div>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center text-muted-foreground">
-                        No messages yet. Start the conversation!
-                      </div>
-                    )}
-                    {/* Typing indicator */}
-                    {typingStatus?.isTyping && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <div className="flex gap-1">
-                          <span className="animate-bounce">.</span>
-                          <span className="animate-bounce delay-100">.</span>
-                          <span className="animate-bounce delay-200">.</span>
+                      <div className="flex items-center justify-center h-64">
+                        <div className="text-center text-muted-foreground">
+                          <MessagesSquare className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                          <p>No messages yet</p>
+                          <p className="text-sm mt-1">Start the conversation by sending a message.</p>
                         </div>
-                        <span>Typing</span>
                       </div>
                     )}
                   </div>
                 )}
               </ScrollArea>
-
+          
               {/* Input area */}
               <div className="p-4 border-t">
-                {/* Display selected attachments */}
-                {(imageAttachment || audioAttachment) && (
-                  <div className="mb-3 p-2 border rounded-md bg-muted/50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {imageAttachment && (
-                        <>
-                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                          <span className="text-sm truncate max-w-[200px]">
-                            {imageAttachment.name}
-                          </span>
-                        </>
-                      )}
-                      {audioAttachment && (
-                        <>
-                          <Music className="h-5 w-5 text-muted-foreground" />
-                          <span className="text-sm truncate max-w-[200px]">
-                            {audioAttachment.name || "Voice recording.mp3"}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {(audioAttachment.size / 1024 / 1024).toFixed(2)} MB
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setImageAttachment(null);
-                        setAudioAttachment(null);
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-                
-                {/* Voice recording UI */}
-                {isRecording && (
-                  <div className="mb-3 p-2 border rounded-md bg-destructive/10 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="relative">
-                        <span className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
-                        <span className="absolute -inset-1 rounded-full bg-destructive/30 animate-ping opacity-75" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm text-destructive font-medium">Recording...</span>
-                        <span className="text-xs text-muted-foreground">
-                          {Math.floor(recordingDuration / 60).toString().padStart(2, '0')}:
-                          {(recordingDuration % 60).toString().padStart(2, '0')}
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-destructive border-destructive"
-                      onClick={() => {
-                        if (mediaRecorder) {
-                          mediaRecorder.stop();
-                        }
-                        setIsRecording(false);
-                      }}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-2">
-                  {/* File attachment button */}
-                  <div className="relative">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full"
-                      type="button"
-                      onClick={() => {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'image/*';
-                        input.onchange = (e) => {
-                          const file = (e.target as HTMLInputElement).files?.[0];
-                          if (file) {
-                            setImageAttachment(file);
-                          }
-                        };
-                        input.click();
-                      }}
-                    >
-                      <Paperclip className="h-5 w-5" />
-                    </Button>
-                  </div>
-
-                  {/* Voice recording button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    type="button"
-                    onClick={() => {
-                      if (isRecording) {
-                        if (mediaRecorder) {
-                          mediaRecorder.stop();
-                        }
-                        setIsRecording(false);
-                      } else {
-                        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                          navigator.mediaDevices.getUserMedia({ audio: true })
-                            .then(stream => {
-                              const recorder = new MediaRecorder(stream);
-                              const chunks: Blob[] = [];
-                              
-                              recorder.ondataavailable = e => {
-                                chunks.push(e.data);
-                              };
-                              
-                              recorder.onstop = () => {
-                                const blob = new Blob(chunks, { type: 'audio/mpeg' });
-                                const file = new File([blob], `voice-message-${new Date().getTime()}.mp3`, { type: 'audio/mpeg' });
-                                setAudioAttachment(file);
-                                
-                                // Stop all tracks in the stream to release the microphone
-                                stream.getTracks().forEach(track => track.stop());
-                              };
-                              
-                              // Start recording
-                              recorder.start();
-                              setMediaRecorder(recorder);
-                              setIsRecording(true);
-                              setAudioChunks([]);
-                            })
-                            .catch(err => {
-                              console.error('Error accessing microphone:', err);
-                              toast({
-                                title: "Microphone access denied",
-                                description: "Please allow microphone access to record voice messages.",
-                                variant: "destructive",
-                              });
-                            });
-                        } else {
-                          toast({
-                            title: "Recording not supported",
-                            description: "Your browser does not support voice recording.",
-                            variant: "destructive",
-                          });
-                        }
-                      }
-                    }}
-                  >
-                    {isRecording ? (
-                      <MicOff className="h-5 w-5 text-destructive" />
-                    ) : (
-                      <Mic className="h-5 w-5" />
-                    )}
-                  </Button>
-                  
-                  {/* Message input */}
+                <div className="flex gap-2">
                   <Input
+                    placeholder="Type your message..."
                     value={messageInput}
                     onChange={handleMessageInputChange}
-                    placeholder="Type a message..."
-                    className="flex-1"
+                    onKeyDown={handleKeyPress}
                     name="messageInput"
-                    onKeyDown={e => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
+                    className="flex-1"
+                    disabled={sendMessageMutation.isPending}
                   />
-                  
-                  {/* Send button */}
                   <Button
-                    variant={messageInput.trim() || imageAttachment || audioAttachment ? "default" : "ghost"}
-                    size="icon"
-                    className="rounded-full"
-                    disabled={uploadingAttachment || (!messageInput.trim() && !imageAttachment && !audioAttachment)}
                     onClick={handleSendMessage}
+                    disabled={!messageInput.trim() || sendMessageMutation.isPending}
                   >
-                    {uploadingAttachment ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                    {sendMessageMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Send className="h-5 w-5" />
+                      <Send className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground flex-col p-8">
-              <FileText className="h-16 w-16 mb-4 text-muted-foreground/50" />
-              <h3 className="text-xl font-medium mb-2">Support Tickets</h3>
-              <p className="text-center max-w-md">
-                {isAdmin 
-                  ? "Select a support ticket from the sidebar to respond to customer inquiries."
-                  : "Select a ticket from the sidebar or create a new support ticket from your order page."
-                }
-              </p>
-              {!isAdmin && (
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => { navigate('/orders'); }}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Go to Orders
-                </Button>
-              )}
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-muted-foreground">
+                <TicketIcon className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                <p>No conversation selected</p>
+                <p className="text-sm mt-1">Select a support ticket from the list to view the conversation.</p>
+              </div>
             </div>
           )}
         </div>
       </div>
       
-      {/* Ticket rating dialog */}
+      {/* Rating Dialog */}
       <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Close Support Ticket</DialogTitle>
+            <DialogTitle>Rate your support experience</DialogTitle>
             <DialogDescription>
-              Please rate your support experience before closing this ticket.
+              Please rate your experience and provide any feedback before closing this ticket.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex justify-center space-x-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  className={cn(
-                    "p-1 text-lg",
-                    star <= ticketRating ? "text-yellow-500" : "text-muted-foreground"
-                  )}
-                  onClick={() => setTicketRating(star)}
+          
+          <div className="flex justify-center my-4">
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <Button
+                  key={rating}
+                  variant={ticketRating >= rating ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTicketRating(rating)}
+                  className="w-10 h-10 rounded-full p-0"
                 >
-                  <Star className={cn(
-                    "h-8 w-8",
-                    star <= ticketRating ? "fill-yellow-500" : "fill-none"
-                  )} />
-                </button>
+                  <Star className={ticketRating >= rating ? "fill-current" : ""}/>
+                </Button>
               ))}
             </div>
-            <div className="grid gap-2">
-              <label className="text-sm font-medium" htmlFor="feedback">
-                Additional Feedback (Optional)
-              </label>
-              <Textarea
-                id="feedback"
-                value={ticketFeedback}
-                onChange={(e) => setTicketFeedback(e.target.value)}
-                placeholder="Tell us more about your experience..."
-                className="resize-none"
-                rows={4}
-              />
-            </div>
           </div>
+          
+          <Textarea
+            placeholder="Additional feedback (optional)"
+            value={ticketFeedback}
+            onChange={(e) => setTicketFeedback(e.target.value)}
+            className="min-h-[100px]"
+          />
+          
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowRatingDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowRatingDialog(false)}>
               Cancel
             </Button>
-            <Button 
-              type="submit"
-              onClick={submitTicketRating}
-              disabled={closeTicketMutation.isPending}
-            >
+            <Button onClick={submitTicketRating} disabled={closeTicketMutation.isPending}>
               {closeTicketMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : "Submit & Close Ticket"}
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting</>
+              ) : (
+                "Submit & Close Ticket"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

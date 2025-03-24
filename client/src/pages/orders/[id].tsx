@@ -239,7 +239,7 @@ export default function OrderDetailsPage() {
         
         // Use a delay to allow the toast to show and the ticket to be fully processed
         setTimeout(() => {
-          const chatUrl = `/chat?ticket=${data.ticket.id}`;
+          const chatUrl = `/chat/ticket/${data.ticket.id}`;
           
           // Force a hard navigation to ensure the chat page loads with the fresh ticket data
           window.location.href = chatUrl;

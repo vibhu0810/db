@@ -10,6 +10,8 @@ import {
   Users,
   BarChart,
   Kanban,
+  Settings,
+  Wrench,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/ui/logo";

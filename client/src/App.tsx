@@ -15,6 +15,7 @@ import ReportsPage from "./pages/reports";
 import KanbanPage from "./pages/kanban";
 import InvoicesPage from "./pages/invoices";
 import AuthDebugPage from "./pages/debug/auth";
+import AdminTicketTools from "./pages/admin/ticket-tools";
 
 function App() {
   return (
@@ -90,6 +91,11 @@ function App() {
             <DashboardShell>
               <InvoicesPage />
             </DashboardShell>
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/ticket-tools">
+          <ProtectedRoute>
+            <AdminTicketTools />
           </ProtectedRoute>
         </Route>
         <Route path="/debug/auth">

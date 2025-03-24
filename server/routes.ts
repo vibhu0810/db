@@ -404,6 +404,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch support ticket" });
     }
   });
+  
+  // Admin endpoint to close all active support tickets
+  app.post("/api/support-tickets/close-all", async (req, res) => {
+    try {
+      if (!req.user || !req.user.is_admin) {
+        return res.status(403).json({ error: "Unauthorized - Admin only operation" });
+      }
+
+      // Get all open tickets
+      const tickets = await storage.getAllSupportTickets();
+      const openTickets = tickets.filter(ticket => ticket.status.toLowerCase() === 'open');
+      
+      // Close each open ticket
+      const closePromises = openTickets.map(ticket => 
+        storage.closeSupportTicket(ticket.id)
+      );
+      
+      await Promise.all(closePromises);
+      
+      res.json({ 
+        success: true, 
+        message: `Closed ${openTickets.length} tickets successfully` 
+      });
+    } catch (error) {
+      console.error("Error closing all tickets:", error);
+      res.status(500).json({ error: "Failed to close all tickets" });
+    }
+  });
 
   app.get("/api/support-tickets", async (req, res) => {
     try {

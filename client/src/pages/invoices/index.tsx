@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,7 +32,10 @@ import {
   Banknote,
   MoreHorizontal,
   Pencil,
-  Search
+  Search,
+  ChevronDown,
+  UserCircle,
+  CreditCard
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -1266,34 +1270,50 @@ function UserInvoicesTab() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* User Billing Preferences - hide payment details since we're showing them separately */}
               <div>
-                <BillingPreferences user={user} hidePaymentDetails={true} />
+                <Collapsible className="w-full">
+                  <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
+                    <div className="flex items-center space-x-2 font-medium">
+                      <UserCircle className="h-5 w-5" />
+                      <span>Billing Preferences</span>
+                    </div>
+                    <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border border-t-0 rounded-b-md p-4">
+                    <BillingPreferences user={user} hidePaymentDetails={true} />
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
               
               {/* Payment Methods Details */}
               <div className="flex flex-col">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Payment Details</CardTitle>
-                    <CardDescription>
-                      Payment options available for your invoices
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div>
-                      <h3 className="font-medium mb-3">Wire Transfer / Wise (0% fee)</h3>
-                      <div className="rounded-md bg-muted p-4">
-                        <PaymentDetails paymentMethod="wire" />
-                      </div>
+                <Collapsible className="w-full">
+                  <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
+                    <div className="flex items-center space-x-2 font-medium">
+                      <CreditCard className="h-5 w-5" />
+                      <span>Payment Details</span>
                     </div>
-                    
-                    <div>
-                      <h3 className="font-medium mb-3">PayPal (5% fee)</h3>
-                      <div className="rounded-md bg-muted p-4">
-                        <PaymentDetails paymentMethod="paypal" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border border-t-0 rounded-b-md">
+                    <Card className="border-0 shadow-none">
+                      <CardContent className="space-y-6 pt-4">
+                        <div>
+                          <h3 className="font-medium mb-3">Wire Transfer / Wise (0% fee)</h3>
+                          <div className="rounded-md bg-muted p-4">
+                            <PaymentDetails paymentMethod="wire" />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h3 className="font-medium mb-3">PayPal (5% fee)</h3>
+                          <div className="rounded-md bg-muted p-4">
+                            <PaymentDetails paymentMethod="paypal" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </div>
           </div>

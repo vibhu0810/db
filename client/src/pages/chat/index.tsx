@@ -377,7 +377,7 @@ export default function ChatPage() {
                     {userTickets.tickets.filter((ticket: any) => ticket.status !== 'closed').length}
                   </span>
                 </div>
-                <ScrollArea className="h-[25vh] border rounded-md p-2 mb-4">
+                <ScrollArea className="h-[35vh] border rounded-md p-2 mb-4">
                   <div className="space-y-2 pr-2">
                     {userTickets.tickets
                       .filter((ticket: any) => ticket.status !== 'closed')
@@ -410,7 +410,7 @@ export default function ChatPage() {
                       {userTickets.tickets.filter((ticket: any) => ticket.status === 'closed').length}
                     </span>
                   </div>
-                  <ScrollArea className="h-[20vh] border rounded-md p-2">
+                  <ScrollArea className="h-[25vh] border rounded-md p-2">
                     <div className="space-y-2 pr-2">
                       {userTickets.tickets
                         .filter((ticket: any) => {

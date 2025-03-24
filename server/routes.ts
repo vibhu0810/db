@@ -545,6 +545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user.is_admin && ticket.userId !== req.user.id) {
         // Ensure ticket.userId is not null before creating notification
         if (ticket.userId) {
+          // Create notification for the user
           await storage.createNotification({
             userId: ticket.userId,
             type: "support_ticket",
@@ -553,6 +554,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
             read: false,
             ticketId: ticket.id as number
           });
+          
+          // Also send an email notification
+          try {
+            // Get the user details
+            const ticketOwner = await storage.getUser(ticket.userId);
+            if (ticketOwner && ticketOwner.email) {
+              await sendTicketResponseEmail(
+                {
+                  id: ticket.id,
+                  title: ticket.title,
+                  orderId: ticket.orderId
+                },
+                {
+                  email: ticketOwner.email,
+                  username: ticketOwner.username,
+                  companyName: ticketOwner.companyName
+                },
+                req.user.username
+              );
+            }
+          } catch (emailError) {
+            console.error("Error sending ticket response email:", emailError);
+            // Continue without failing the comment creation
+          }
         }
       }
       

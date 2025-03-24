@@ -133,17 +133,20 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
       // Calculate average rating
       const validRatings = ratings.filter(r => r > 0);
       const averageRating = validRatings.length 
-        ? validRatings.reduce((acc, curr) => acc + curr, 0) / validRatings.length 
-        : 0;
+        ? (validRatings.reduce((acc, curr) => acc + curr, 0) / validRatings.length).toFixed(1)
+        : "0";
         
-      return apiRequest(`/api/feedback/${feedback.id}`, {
+      const response = await apiRequest(`/api/feedback/${feedback.id}`, {
         method: "PUT",
         body: JSON.stringify({
           ratings,
           averageRating,
-          comments
+          comments,
+          isCompleted: true
         }),
       });
+      
+      return response;
     },
     onSuccess: () => {
       toast({
@@ -358,13 +361,15 @@ function AdminFeedbackTab() {
     queryKey: ['/api/feedback/all'],
   });
   
-  const generateMutation = useMutation({
+  const generateMutation = useMutation<{ count: number }>({
     mutationFn: async () => {
-      return apiRequest("/api/feedback/generate", {
+      const response = await apiRequest("/api/feedback/generate", {
         method: "POST",
       });
+      const data = await response.json();
+      return data;
     },
-    onSuccess: (data: { count: number }) => {
+    onSuccess: (data) => {
       toast({
         title: "Feedback requests generated",
         description: `Successfully generated ${data.count} feedback requests`,

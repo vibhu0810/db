@@ -2081,17 +2081,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Submit or update feedback
-  app.post("/api/feedback/:id?", async (req, res) => {
+  app.all("/api/feedback/:id?", async (req, res) => {
+    // Handle both POST and PUT requests
+    if (req.method !== 'POST' && req.method !== 'PUT') {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+    
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       
-      const { ratings = {}, comments } = req.body;
+      const { ratings = {}, comments, averageRating: clientAvgRating } = req.body;
       
-      // Calculate average rating from all question ratings
-      const ratingValues = ratings && typeof ratings === 'object' ? Object.values(ratings) as number[] : [];
-      const averageRating = ratingValues.length > 0 
-        ? Number((ratingValues.reduce((sum, val) => sum + val, 0) / ratingValues.length).toFixed(2))
-        : 0;
+      // Calculate average rating from all question ratings if not provided
+      let averageRating;
+      
+      if (clientAvgRating !== undefined) {
+        // Use client-provided average if available
+        averageRating = Number(clientAvgRating);
+      } else {
+        const ratingValues = ratings && typeof ratings === 'object' ? Object.values(ratings) as number[] : [];
+        averageRating = ratingValues.length > 0 
+          ? Number((ratingValues.reduce((sum, val) => sum + val, 0) / ratingValues.length).toFixed(2))
+          : 0;
+      }
       
       if (req.params.id) {
         // Update existing feedback

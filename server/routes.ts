@@ -32,11 +32,12 @@ function updateUserActivity(userId: number) {
 // Clean up old activity records
 setInterval(() => {
   const now = Date.now();
-  for (const [userId, data] of onlineUsers.entries()) {
+  // Convert Map entries to array to avoid TypeScript downlevelIteration issues
+  Array.from(onlineUsers.entries()).forEach(([userId, data]) => {
     if (now - data.lastActive > OFFLINE_THRESHOLD) {
       onlineUsers.delete(userId);
     }
-  }
+  });
 }, 60000); // Clean up every minute
 
 const GUEST_POST_STATUSES = [

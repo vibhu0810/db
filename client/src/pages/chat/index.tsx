@@ -813,7 +813,7 @@ export default function ChatPage() {
                                 <div className="whitespace-pre-wrap break-words">
                                   {message.content && message.content.includes("Order #") ? (
                                     <>
-                                      {message.content.split("Order #").map((part, index) => {
+                                      {message.content && message.content.split("Order #").map((part: string, index: number) => {
                                         if (index === 0) return part;
                                         
                                         // Extract order ID from the text
@@ -1142,7 +1142,7 @@ export default function ChatPage() {
                 <Button 
                   variant="outline" 
                   className="mt-4"
-                  onClick={() => navigate('/orders')}
+                  onClick={() => { navigate('/orders'); }}
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Go to Orders

@@ -38,7 +38,7 @@ export function FloatingChatButton() {
             className="absolute bottom-16 right-0 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border mb-2 w-64"
           >
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-medium">Need help?</h3>
+              <h3 className="font-medium">SEO Expert Support</h3>
               <Button 
                 variant="ghost"
                 size="icon"
@@ -49,13 +49,13 @@ export function FloatingChatButton() {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mb-3">
-              Chat directly with our support team for any questions or assistance.
+              Chat directly with the SEO team for any questions or assistance.
             </p>
             <Button
               onClick={handleChatClick}
               className="w-full"
             >
-              Start Chat
+              Chat with SEO Expert
             </Button>
           </motion.div>
         )}

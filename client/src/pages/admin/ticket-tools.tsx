@@ -100,11 +100,25 @@ export default function AdminTicketTools() {
   const today = new Date();
   const lastWeek = new Date(today);
   lastWeek.setDate(today.getDate() - 7);
+
+  // Get date 6 months ago for filtering closed tickets
+  const sixMonthsAgo = new Date(today);
+  sixMonthsAgo.setMonth(today.getMonth() - 6);
   
+  // Filter tickets for various stats
   const ticketsLastWeek = tickets.filter((ticket: SupportTicket) => {
     const ticketDate = new Date(ticket.createdAt);
     return ticketDate >= lastWeek;
   }).length;
+
+  // Filter closed tickets from last 6 months
+  const recentlyClosedTickets = tickets.filter((ticket: SupportTicket) => {
+    if (ticket.status.toLowerCase() !== 'closed' || !ticket.closedAt) return false;
+    const closedDate = new Date(ticket.closedAt);
+    return closedDate >= sixMonthsAgo;
+  });
+  
+  const recentlyClosedCount = recentlyClosedTickets.length;
 
   return (
     <DashboardShell>
@@ -188,19 +202,19 @@ export default function AdminTicketTools() {
           </CardContent>
         </Card>
         
-        {/* Ticket Table */}
+        {/* Active Tickets Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Support Tickets</CardTitle>
+            <CardTitle>Active Support Tickets</CardTitle>
             <CardDescription>
-              View and manage all support tickets
+              View and manage open support tickets
             </CardDescription>
           </CardHeader>
           <CardContent>
             {ticketsLoading || usersLoading ? (
               <div className="text-center py-4">Loading tickets...</div>
-            ) : tickets.length === 0 ? (
-              <div className="text-center py-4">No support tickets found</div>
+            ) : tickets.filter(t => t.status.toLowerCase() === 'open').length === 0 ? (
+              <div className="text-center py-4">No active support tickets found</div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -217,18 +231,9 @@ export default function AdminTicketTools() {
                   </TableHeader>
                   <TableBody>
                     {tickets
-                      .sort((a: SupportTicket, b: SupportTicket) => {
-                        // Sort by status first (open tickets first)
-                        if (a.status.toLowerCase() === 'open' && b.status.toLowerCase() !== 'open') {
-                          return -1;
-                        }
-                        if (a.status.toLowerCase() !== 'open' && b.status.toLowerCase() === 'open') {
-                          return 1;
-                        }
-                        // Then sort by creation date (newest first)
-                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                      })
-                      .slice(0, 10) // Only show the 10 most recent/important tickets
+                      .filter(t => t.status.toLowerCase() === 'open')
+                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .slice(0, 10) // Only show the 10 most recent open tickets
                       .map((ticket: SupportTicket) => {
                         const ticketUser = users.find((u: User) => u.id === ticket.userId);
                         const createdDate = new Date(ticket.createdAt).toLocaleDateString();
@@ -253,25 +258,119 @@ export default function AdminTicketTools() {
                               {ticket.title}
                             </TableCell>
                             <TableCell>
-                              {ticket.status.toLowerCase() === 'open' ? (
-                                <Badge className="bg-yellow-500">
-                                  <AlertCircle className="h-3.5 w-3.5 mr-1" />
-                                  Open
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                                  <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                                  Closed
-                                </Badge>
-                              )}
+                              <Badge className="bg-yellow-500">
+                                <AlertCircle className="h-3.5 w-3.5 mr-1" />
+                                Open
+                              </Badge>
                             </TableCell>
                             <TableCell>{createdDate}</TableCell>
                             <TableCell>
-                              <Link href={`/orders/${ticket.orderId}`}>
-                                <Button variant="ghost" size="sm" className="cursor-pointer">
-                                  View Order
-                                </Button>
+                              <div className="flex space-x-2">
+                                <Link href={`/chat/ticket/${ticket.id}`}>
+                                  <Button variant="outline" size="sm" className="cursor-pointer">
+                                    <MessageSquare className="h-3.5 w-3.5 mr-1" />
+                                    Chat
+                                  </Button>
+                                </Link>
+                                <Link href={`/orders/${ticket.orderId}`}>
+                                  <Button variant="ghost" size="sm" className="cursor-pointer">
+                                    View Order
+                                  </Button>
+                                </Link>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Recently Closed Tickets Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recently Closed Tickets</CardTitle>
+            <CardDescription>
+              Tickets closed within the last 6 months (Total: {recentlyClosedCount})
+            </CardDescription>
+          </CardHeader>
+          <CardContent style={{ maxHeight: '37.2vh', overflowY: 'auto' }}>
+            {ticketsLoading || usersLoading ? (
+              <div className="text-center py-4">Loading tickets...</div>
+            ) : recentlyClosedTickets.length === 0 ? (
+              <div className="text-center py-4">No recently closed tickets found</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Closed Date</TableHead>
+                      <TableHead>Rating</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentlyClosedTickets
+                      .sort((a, b) => new Date(b.closedAt!).getTime() - new Date(a.closedAt!).getTime())
+                      .map((ticket: SupportTicket) => {
+                        const ticketUser = users.find((u: User) => u.id === ticket.userId);
+                        const closedDate = ticket.closedAt ? new Date(ticket.closedAt).toLocaleDateString() : "Unknown";
+                        return (
+                          <TableRow key={ticket.id}>
+                            <TableCell>{ticket.id}</TableCell>
+                            <TableCell>
+                              <Link href={`/orders/${ticket.orderId}`} className="text-primary hover:underline">
+                                #{ticket.orderId}
                               </Link>
+                            </TableCell>
+                            <TableCell>
+                              {ticketUser ? (
+                                <span title={ticketUser.email}>
+                                  {ticketUser.companyName || ticketUser.username}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">Unknown User</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="max-w-[200px] truncate" title={ticket.title}>
+                              {ticket.title}
+                            </TableCell>
+                            <TableCell>{closedDate}</TableCell>
+                            <TableCell>
+                              {ticket.rating ? (
+                                <div className="flex">
+                                  {Array(ticket.rating).fill(0).map((_, i) => (
+                                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                  ))}
+                                  {Array(5 - (ticket.rating || 0)).fill(0).map((_, i) => (
+                                    <Star key={i} className="h-4 w-4 text-gray-300" />
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">No rating</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Link href={`/chat/ticket/${ticket.id}`}>
+                                  <Button variant="outline" size="sm" className="cursor-pointer">
+                                    <History className="h-3.5 w-3.5 mr-1" />
+                                    History
+                                  </Button>
+                                </Link>
+                                <Link href={`/orders/${ticket.orderId}`}>
+                                  <Button variant="ghost" size="sm" className="cursor-pointer">
+                                    View Order
+                                  </Button>
+                                </Link>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );

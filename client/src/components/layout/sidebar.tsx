@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/ui/logo";
 import { useSidebar } from "@/hooks/use-sidebar";
+import { usePendingFeedback } from "@/hooks/use-pending-feedback";
 
 const userNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -47,6 +48,7 @@ export function Sidebar() {
   const [location] = useLocation();
   const { isAdmin, user } = useAuth();
   const { expanded } = useSidebar();
+  const { hasPendingFeedback } = usePendingFeedback();
   
   const navigation = isAdmin ? adminNavigation : userNavigation;
 
@@ -103,12 +105,20 @@ export function Sidebar() {
                   : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
-              <Icon className="h-5 w-5 min-w-[20px]" />
+              <div className="relative">
+                <Icon className="h-5 w-5 min-w-[20px]" />
+                {item.name === "Feedback" && hasPendingFeedback && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
+                )}
+              </div>
               <span className={cn(
                 "transition-opacity duration-300 whitespace-nowrap",
                 expanded ? "opacity-100 inline" : "hidden"
               )}>
                 {item.name}
+                {item.name === "Feedback" && hasPendingFeedback && (
+                  <span className="ml-2 text-xs font-medium text-red-500">New</span>
+                )}
               </span>
               
               {/* Tooltip for when sidebar is collapsed */}

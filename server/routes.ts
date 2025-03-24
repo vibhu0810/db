@@ -1148,6 +1148,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // General order update endpoint
+  app.patch("/api/orders/:orderId", async (req, res) => {
+    try {
+      // Special handling for "new" route - cannot update a new order that doesn't exist
+      if (req.params.orderId === "new") {
+        return res.status(400).json({ error: "Cannot update a non-existent order" });
+      }
+      
+      const orderId = parseInt(req.params.orderId);
+      
+      // Get the order first
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      // Check permissions
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Users can only update their own orders, admins can update any
+      if (!req.user.is_admin && order.userId !== req.user.id) {
+        return res.status(403).json({ error: "You don't have permission to update this order" });
+      }
+      
+      // Only allow editing orders that are "In Progress"
+      if (order.status !== "In Progress" && !req.user.is_admin) {
+        return res.status(403).json({ 
+          error: "Only orders in 'In Progress' status can be edited"
+        });
+      }
+      
+      // User can only update specific fields
+      const allowedFields = ['sourceUrl', 'targetUrl', 'anchorText', 'textEdit', 'notes', 'title'];
+      
+      // Extract only allowed fields from request body
+      const updates: any = {};
+      for (const field of allowedFields) {
+        if (field in req.body) {
+          updates[field] = req.body[field];
+        }
+      }
+      
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+      
+      // Update the order
+      const updatedOrder = await storage.updateOrder(orderId, updates);
+      
+      // Add system comment about edit
+      await storage.createOrderComment({
+        orderId,
+        userId: req.user.id,
+        message: `Order has been edited by ${req.user.username}`,
+        isSystemMessage: true
+      });
+      
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      res.status(500).json({ error: "An error occurred while updating the order" });
+    }
+  });
+
   // Update order status
   app.patch("/api/orders/:orderId/status", async (req, res) => {
     try {

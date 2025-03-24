@@ -291,3 +291,31 @@ export const updateTicketSchema = z.object({
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 export type UpdateTicket = z.infer<typeof updateTicketSchema>;
 export type SupportTicket = typeof supportTickets.$inferSelect;
+
+// Feedback schema
+export const feedbackQuestions = [
+  "How satisfied are you with the quality of our link building services?",
+  "How would you rate the communication during the order process?",
+  "How satisfied are you with the turnaround time for your orders?", 
+  "How likely are you to recommend our services to others?",
+  "How would you rate the value for money of our services?"
+];
+
+export const feedback = pgTable("feedback", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  month: integer("month").notNull(),
+  year: integer("year").notNull(),
+  ratings: text("ratings").notNull(), // Will store JSON as string
+  averageRating: decimal("average_rating", { precision: 3, scale: 2 }).notNull(),
+  comments: text("comments"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isCompleted: boolean("is_completed").default(false).notNull()
+});
+
+export const insertFeedbackSchema = createInsertSchema(feedback, {
+  id: undefined
+});
+
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type Feedback = typeof feedback.$inferSelect;

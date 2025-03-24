@@ -1,11 +1,12 @@
-import { users, orders, orderComments, notifications, messages, domains, invoices, supportTickets } from "@shared/schema";
+import { users, orders, orderComments, notifications, messages, domains, invoices, supportTickets, feedback, feedbackQuestions } from "@shared/schema";
 import type {
   User, InsertUser, Domain, InsertDomain,
   Order, OrderComment, InsertOrderComment,
   Notification, InsertNotification,
   Message, InsertMessage,
   Invoice, InsertInvoice,
-  SupportTicket, InsertTicket, UpdateTicket
+  SupportTicket, InsertTicket, UpdateTicket,
+  Feedback, InsertFeedback
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, or, and, desc, gte, lte, between, asc, isNull } from "drizzle-orm";
@@ -78,6 +79,17 @@ export interface IStorage {
   createSupportTicket(ticket: InsertTicket): Promise<SupportTicket>;
   updateSupportTicket(id: number, updates: UpdateTicket): Promise<SupportTicket>;
   closeSupportTicket(id: number, rating?: number, feedback?: string): Promise<SupportTicket>;
+  
+  // Feedback operations
+  getFeedback(id: number): Promise<Feedback | undefined>;
+  getUserFeedback(userId: number): Promise<Feedback[]>;
+  getCurrentMonthFeedback(userId: number): Promise<Feedback | undefined>;
+  getAllFeedback(): Promise<Feedback[]>;
+  createFeedback(feedback: InsertFeedback): Promise<Feedback>;
+  updateFeedback(id: number, updates: Partial<Feedback>): Promise<Feedback>;
+  getUserAverageRating(userId: number): Promise<number | null>;
+  checkFeedbackNeeded(userId: number): Promise<boolean>;
+  generateMonthlyFeedbackRequests(): Promise<number>; // Returns number of feedback requests created
 
   // Session store
   sessionStore: session.Store;
@@ -85,6 +97,132 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
+  
+  // Feedback operations implementation
+  async getFeedback(id: number): Promise<Feedback | undefined> {
+    const [result] = await db.select().from(feedback).where(eq(feedback.id, id));
+    return result;
+  }
+  
+  async getUserFeedback(userId: number): Promise<Feedback[]> {
+    return await db.select().from(feedback).where(eq(feedback.userId, userId)).orderBy(desc(feedback.createdAt));
+  }
+  
+  async getCurrentMonthFeedback(userId: number): Promise<Feedback | undefined> {
+    const currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-indexed
+    const currentYear = new Date().getFullYear();
+    
+    const [result] = await db.select().from(feedback).where(
+      and(
+        eq(feedback.userId, userId),
+        eq(feedback.month, currentMonth),
+        eq(feedback.year, currentYear)
+      )
+    );
+    
+    return result;
+  }
+  
+  async getAllFeedback(): Promise<Feedback[]> {
+    return await db.select().from(feedback).orderBy(desc(feedback.createdAt));
+  }
+  
+  async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {
+    const [result] = await db.insert(feedback).values(feedbackData).returning();
+    return result;
+  }
+  
+  async updateFeedback(id: number, updates: Partial<Feedback>): Promise<Feedback> {
+    const [result] = await db.update(feedback).set(updates).where(eq(feedback.id, id)).returning();
+    return result;
+  }
+  
+  async getUserAverageRating(userId: number): Promise<number | null> {
+    // Get all completed feedback for this user
+    const userFeedbacks = await db.select().from(feedback)
+      .where(and(
+        eq(feedback.userId, userId),
+        eq(feedback.isCompleted, true)
+      ));
+    
+    if (userFeedbacks.length === 0) {
+      return null;
+    }
+    
+    // Calculate overall average from all feedback averages
+    const sum = userFeedbacks.reduce((acc, curr) => acc + Number(curr.averageRating), 0);
+    return Number((sum / userFeedbacks.length).toFixed(2));
+  }
+  
+  async checkFeedbackNeeded(userId: number): Promise<boolean> {
+    // Check if user has any completed orders
+    const completedOrders = await db.select().from(orders)
+      .where(and(
+        eq(orders.userId, userId),
+        eq(orders.status, 'Completed')
+      ));
+    
+    if (completedOrders.length === 0) {
+      return false; // No completed orders, no feedback needed
+    }
+    
+    // Check if user already has feedback for current month
+    const currentMonthFeedback = await this.getCurrentMonthFeedback(userId);
+    return !currentMonthFeedback; // Returns true if no feedback for current month
+  }
+  
+  async generateMonthlyFeedbackRequests(): Promise<number> {
+    // Get all users with completed orders
+    const usersWithCompletedOrders = await db.select({
+      userId: orders.userId
+    })
+    .from(orders)
+    .where(eq(orders.status, 'Completed'))
+    .groupBy(orders.userId);
+    
+    // Current month and year
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+    
+    let createdCount = 0;
+    
+    // Create feedback requests for each user
+    for (const { userId } of usersWithCompletedOrders) {
+      // Check if feedback already exists for this month
+      const [existingFeedback] = await db.select().from(feedback).where(
+        and(
+          eq(feedback.userId, userId),
+          eq(feedback.month, currentMonth),
+          eq(feedback.year, currentYear)
+        )
+      );
+      
+      if (!existingFeedback) {
+        // Create a new feedback request
+        await this.createFeedback({
+          userId,
+          month: currentMonth,
+          year: currentYear,
+          ratings: JSON.stringify({}), // Empty ratings initially
+          averageRating: 0,
+          isCompleted: false,
+          createdAt: new Date()
+        });
+        
+        // Create notification for user
+        await this.createNotification({
+          userId,
+          type: "feedback",
+          message: "Please provide feedback on your experience with our services this month",
+          createdAt: new Date()
+        });
+        
+        createdCount++;
+      }
+    }
+    
+    return createdCount;
+  }
 
   constructor() {
     // In production or if PostgreSQL is available, use PostgreSQL for session storage

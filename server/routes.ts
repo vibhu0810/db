@@ -530,7 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createOrderComment({
         orderId: ticket.orderId,
         userId: -1, // System user ID
-        message: "Thank you for contacting our support team. Please provide any additional details about your issue, and our team will respond as soon as possible.",
+        message: `Thank you for contacting our support team regarding Order #${ticket.orderId}. Please provide any additional details about your issue, and our team will respond as soon as possible.`,
         ticketId: ticket.id,
         isFromAdmin: true,
         isSystemMessage: true

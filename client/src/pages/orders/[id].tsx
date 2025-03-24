@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { format } from "date-fns";
-import { Loader2, Copy, MessageSquare, ArrowLeft, LifeBuoy, Star } from "lucide-react";
+import { Loader2, Copy, MessageSquare, ArrowLeft, LifeBuoy, Star, Pencil } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { X, FileText, ExternalLink, AlertTriangle } from "lucide-react";
 import {
@@ -483,12 +483,26 @@ export default function OrderDetailsPage() {
               </div>
             )}
             
-            {/* Add Cancel Order button if order is In Progress and user owns the order */}
+            {/* Add Edit Order and Cancel Order buttons if order is In Progress and user owns the order */}
             {order.status === "In Progress" && order.userId === user?.id && (
-              <div className="mt-4">
+              <div className="mt-4 flex space-x-2">
+                {/* Edit Order Button */}
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    // Navigate to edit page or open edit dialog
+                    window.location.href = `/orders?edit=${order.id}`;
+                  }}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Order
+                </Button>
+                
+                {/* Cancel Order Button */}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="w-full">
+                    <Button variant="destructive" className="flex-1">
                       <X className="h-4 w-4 mr-2" />
                       Cancel Order
                     </Button>

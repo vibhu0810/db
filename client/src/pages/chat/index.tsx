@@ -711,7 +711,7 @@ export default function ChatPage() {
                         }}
                       >
                         <span className="truncate">
-                          Ticket #{ticket.id}: {ticket.subject || 'Support Request'}
+                          Ticket #{ticket.id}
                         </span>
                       </Button>
                     ))}

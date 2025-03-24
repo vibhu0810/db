@@ -637,11 +637,11 @@ export class DatabaseStorage implements IStorage {
     
     // Create an automated welcome message as a system comment
     await this.createOrderComment({
-      orderId: ticket.orderId,
-      userId: 0, // System user
+      orderId: ticket.orderId || 0, // Use 0 if orderId is null/undefined
+      userId: -1, // System user (using -1 for system user consistent with the client code)
       message: `Thank you for opening a support ticket! Our team will respond to your inquiry as soon as possible. 
       
-Please provide any additional details that might help us assist you better with your order #${ticket.orderId}.`,
+Please provide any additional details that might help us assist you better with your order #${ticket.orderId || 'N/A'}.`,
       ticketId: newTicket.id,
       isSystemMessage: true,
       isFromAdmin: true,

@@ -601,18 +601,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user.id
       });
       
+      // The createSupportTicket function in storage already creates an automated welcome message,
+      // so we don't need to create a duplicate one here.
       const ticket = await storage.createSupportTicket(ticketData);
-      
-      // Add an automated welcome message as a comment to the ticket
-      const orderId = ticket.orderId || 0;
-      await storage.createOrderComment({
-        orderId: orderId,
-        userId: -1, // System user ID
-        message: `Thank you for contacting our support team regarding Order #${orderId || 'N/A'}. Please provide any additional details about your issue, and our team will respond as soon as possible.`,
-        ticketId: ticket.id,
-        isFromAdmin: true,
-        isSystemMessage: true
-      });
       
       res.status(201).json({ ticket });
     } catch (error) {

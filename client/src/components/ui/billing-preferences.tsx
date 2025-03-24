@@ -54,9 +54,10 @@ type BillingFormValues = z.infer<typeof billingFormSchema>;
 
 interface BillingPreferencesProps {
   user: any; // User object with billing information
+  hidePaymentDetails?: boolean; // Option to hide payment details section
 }
 
-export function BillingPreferences({ user }: BillingPreferencesProps) {
+export function BillingPreferences({ user, hidePaymentDetails = false }: BillingPreferencesProps) {
   const { toast } = useToast();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   
@@ -385,8 +386,8 @@ export function BillingPreferences({ user }: BillingPreferencesProps) {
           </form>
         </Form>
         
-        {/* Show payment details based on selection */}
-        {selectedPaymentMethod && (
+        {/* Show payment details based on selection, but only if not hidden */}
+        {selectedPaymentMethod && !hidePaymentDetails && (
           <div className="mt-8">
             <h3 className="text-lg font-medium mb-4">Payment Details</h3>
             <div className="rounded-md bg-muted p-4">

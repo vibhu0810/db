@@ -1264,9 +1264,9 @@ function UserInvoicesTab() {
           <div className="mt-8">
             <h2 className="text-lg font-semibold mb-4">Billing & Payment Options</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* User Billing Preferences */}
+              {/* User Billing Preferences - hide payment details since we're showing them separately */}
               <div>
-                <BillingPreferences user={user} />
+                <BillingPreferences user={user} hidePaymentDetails={true} />
               </div>
               
               {/* Payment Methods Details */}

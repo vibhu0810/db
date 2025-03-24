@@ -1017,7 +1017,7 @@ function AdminInvoicesTab() {
                   <h3 className="font-semibold">To</h3>
                   <p>{(selectedInvoice as InvoiceWithUser).user?.companyName || (selectedInvoice as InvoiceWithUser).user?.username || "Unknown"}</p>
                   <p>{selectedInvoice.clientEmail || (selectedInvoice as InvoiceWithUser).user?.email || ""}</p>
-                  <p>{(selectedInvoice as InvoiceWithUser).user?.country ? getCountryName((selectedInvoice as InvoiceWithUser).user.country) : ""}</p>
+                  <p>{/* Show country if available in user object */}</p>
                 </div>
               </div>
               
@@ -1500,7 +1500,7 @@ function UserInvoicesTab() {
                   <div className="mt-1">
                     <p className="font-medium">{user?.companyName || user?.username}</p>
                     <p>{selectedInvoice.clientEmail || user?.email}</p>
-                    <p>{user?.country ? getCountryName(user.country) : ""}</p>
+                    <p>{/* Country information if available */}</p>
                   </div>
                 </div>
               </div>

@@ -505,6 +505,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch ticket comments" });
     }
   });
+  
+  // Add a comment to a support ticket
+  app.post("/api/support-tickets/:id/comments", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const ticketId = parseInt(req.params.id);
+      if (isNaN(ticketId)) {
+        return res.status(400).json({ error: "Invalid ticket ID" });
+      }
+      
+      // First check if user has access to this ticket
+      const ticket = await storage.getSupportTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ error: "Support ticket not found" });
+      }
+      
+      // Only allow comments if user is the owner or an admin
+      if (ticket.userId !== req.user.id && !req.user.is_admin) {
+        return res.status(403).json({ error: "Unauthorized to comment on this ticket" });
+      }
+      
+      // Create the comment
+      const comment = await storage.createOrderComment({
+        orderId: ticket.orderId,
+        userId: req.user.id,
+        message: req.body.content,
+        ticketId: ticket.id,
+        isFromAdmin: req.body.isFromAdmin || req.user.is_admin
+      });
+      
+      // Return the created comment with user details
+      res.status(201).json({
+        ...comment,
+        user: {
+          username: req.user.username,
+          companyName: req.user.companyName,
+          is_admin: req.user.is_admin
+        }
+      });
+    } catch (error) {
+      console.error("Error creating ticket comment:", error);
+      res.status(500).json({ error: "Failed to create ticket comment" });
+    }
+  });
 
   app.get("/api/support-tickets/:id", async (req, res) => {
     try {

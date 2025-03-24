@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startMetricsUpdates } from "./services/domain-metrics";
 import http from 'http';
+import { setupAuth } from "./auth";
 
 const app = express();
 app.use(express.json());
@@ -29,16 +30,21 @@ app.use((req, res, next) => {
   try {
     log("Initializing server...");
     
-    // Setup Vite first - we only want it to handle non-API routes
+    // Setup auth (sessions & passport) FIRST - before any routes
+    setupAuth(app);
+    log("Authentication setup complete");
+    
+    // Register API routes
+    await registerRoutes(app);
+    log("API routes registered");
+    
+    // Setup Vite for development or static files for production
     if (app.get("env") === "development") {
-      // Register API routes first to ensure they take precedence over Vite
-      await registerRoutes(app);
-      
-      // Then set up Vite for all other routes
       await setupVite(app, server);
+      log("Vite middleware setup complete");
     } else {
-      await registerRoutes(app);
       serveStatic(app);
+      log("Static file serving setup complete");
     }
     
     // Start domain metrics update service

@@ -199,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get a specific order
   app.get("/api/orders/:id", async (req, res) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     const user = req.user;
@@ -338,7 +338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get comments for an order
   app.get("/api/orders/:id/comments", async (req, res) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     const user = req.user;
@@ -444,7 +444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get all notifications for the current user
   app.get("/api/notifications", async (req, res) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     const user = req.user;
@@ -584,7 +584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get user's chat history (recent conversations)
   app.get("/api/chat/history", async (req, res) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     const user = req.user;
@@ -701,10 +701,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get invoices routes
   app.get("/api/invoices", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     try {
       let invoices;
@@ -722,10 +722,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get a specific invoice
   app.get("/api/invoices/:id", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     try {
       const invoiceId = parseInt(req.params.id);
@@ -749,10 +749,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create a new invoice (admin only)
   app.post("/api/invoices", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     if (!user.is_admin) {
       return res.status(403).json({ error: "Not authorized" });

@@ -549,7 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createNotification({
             userId: ticket.userId,
             type: "support_ticket",
-            message: "An admin has responded to your support ticket",
+            message: `You have got a response on your support ticket for Order #${ticket.orderId}`,
             createdAt: new Date(),
             read: false,
             ticketId: ticket.id as number

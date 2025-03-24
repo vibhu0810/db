@@ -342,7 +342,7 @@ export async function sendTicketResponseEmail(
   }
   
   const emailContent = `
-    <p>The support team has responded to your ticket: <strong>${ticket.title || `Ticket #${ticket.id}`}</strong>.</p>
+    <p>You have got a response on your support ticket for Order #${ticket.orderId}: <strong>${ticket.title || `Ticket #${ticket.id}`}</strong>.</p>
     
     <p>Please click the button below to view the response and continue the conversation.</p>
   `;

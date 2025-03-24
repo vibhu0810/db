@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { NotificationsDropdown } from "@/components/ui/notifications";
+import { FloatingChatButton } from "@/components/ui/floating-chat-button";
 import { SidebarProvider, useSidebar } from "@/hooks/use-sidebar";
 import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -72,6 +73,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <DashboardContent>{children}</DashboardContent>
+      <FloatingChatButton />
     </SidebarProvider>
   );
 }

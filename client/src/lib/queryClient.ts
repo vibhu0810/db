@@ -46,9 +46,16 @@ export async function apiRequest(
   if (method !== 'GET' && method !== 'HEAD' && body !== undefined) {
     options.headers = { 
       ...options.headers,
-      "Content-Type": "application/json" 
+      "Content-Type": "application/json",
+      "Accept": "application/json"
     };
     options.body = JSON.stringify(body);
+  } else {
+    // Always set Accept header for all requests
+    options.headers = {
+      ...options.headers,
+      "Accept": "application/json"
+    };
   }
 
   console.log(`Making ${method} request to ${url}`, body ? 'with body' : 'without body');
@@ -63,6 +70,12 @@ export async function apiRequest(
     if (res.status === 401) {
       console.warn(`Unauthorized access to ${url}`);
       return res;
+    }
+
+    // Check content type to ensure we're getting JSON
+    const contentType = res.headers.get('content-type');
+    if (contentType && !contentType.includes('application/json')) {
+      console.warn(`Warning: Response from ${url} is not JSON (${contentType})`);
     }
 
     // For other non-ok responses, we'll handle them based on the calling requirements

@@ -57,14 +57,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("/api/login", credentials);
       
       if (!res.ok) {
-        const errorText = await res.text();
+        let errorText;
+        try {
+          errorText = await res.text();
+        } catch (e) {
+          console.error("Error parsing error response:", e);
+          errorText = "Failed to parse error response";
+        }
         throw new Error(errorText || res.statusText || "Login failed");
       }
       
       console.log("Login response status:", res.status);
-      const userData = await res.json();
-      console.log("Login successful, user data received:", !!userData);
-      return userData;
+      
+      try {
+        const userData = await res.json();
+        console.log("Login successful, user data received:", !!userData);
+        return userData;
+      } catch (error) {
+        console.error("Error parsing JSON response:", error);
+        throw new Error("Invalid response format from server. Please try again.");
+      }
     },
     onSuccess: (user: SelectUser) => {
       console.log("Login mutation success, updating auth state with user:", user.username);
@@ -90,14 +102,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("/api/register", credentials);
       
       if (!res.ok) {
-        const errorText = await res.text();
+        let errorText;
+        try {
+          errorText = await res.text();
+        } catch (e) {
+          console.error("Error parsing error response:", e);
+          errorText = "Failed to parse error response";
+        }
         throw new Error(errorText || res.statusText || "Registration failed");
       }
       
       console.log("Register response status:", res.status);
-      const userData = await res.json();
-      console.log("Registration successful, user data received:", !!userData);
-      return userData;
+      
+      try {
+        const userData = await res.json();
+        console.log("Registration successful, user data received:", !!userData);
+        return userData;
+      } catch (error) {
+        console.error("Error parsing JSON response:", error);
+        throw new Error("Invalid response format from server. Please try again.");
+      }
     },
     onSuccess: (user: SelectUser) => {
       console.log("Registration mutation success, updating auth state with user:", user.username);
@@ -123,7 +147,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("/api/logout", {}); // Empty object will make it a POST request
       
       if (!res.ok) {
-        const errorText = await res.text();
+        let errorText;
+        try {
+          errorText = await res.text();
+        } catch (e) {
+          console.error("Error parsing error response:", e);
+          errorText = "Failed to parse error response";
+        }
         throw new Error(errorText || res.statusText || "Logout failed");
       }
       

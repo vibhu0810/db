@@ -475,7 +475,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get comments for this ticket
-      const comments = await storage.getOrderComments(ticket.orderId, ticketId);
+      // Make sure we have a valid order ID, default to 0 if missing
+      const orderId = ticket.orderId || 0;
+      const comments = await storage.getOrderComments(orderId, ticketId);
       const users = await storage.getUsers();
       
       // Map user details to comments
@@ -529,8 +531,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create the comment
+      const orderId = ticket.orderId || 0;
       const comment = await storage.createOrderComment({
-        orderId: ticket.orderId,
+        orderId: orderId,
         userId: req.user.id,
         message: req.body.content,
         ticketId: ticket.id,
@@ -601,10 +604,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ticket = await storage.createSupportTicket(ticketData);
       
       // Add an automated welcome message as a comment to the ticket
+      const orderId = ticket.orderId || 0;
       await storage.createOrderComment({
-        orderId: ticket.orderId,
+        orderId: orderId,
         userId: -1, // System user ID
-        message: `Thank you for contacting our support team regarding Order #${ticket.orderId}. Please provide any additional details about your issue, and our team will respond as soon as possible.`,
+        message: `Thank you for contacting our support team regarding Order #${orderId || 'N/A'}. Please provide any additional details about your issue, and our team will respond as soon as possible.`,
         ticketId: ticket.id,
         isFromAdmin: true,
         isSystemMessage: true
@@ -679,8 +683,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allDomains = await storage.getDomains();
 
       // Add unread comments count for each order and domain information
+      // At this point, we know req.user exists because of the check above
+      const userId = req.user!.id;
       const ordersWithUnreadCounts = await Promise.all(orders.map(async (order) => {
-        const unreadComments = await storage.getUnreadCommentCount(order.id, req.user.id);
+        const unreadComments = await storage.getUnreadCommentCount(order.id, userId);
         
         // For guest posts, identify if there's a matching domain based on price
         const isGuestPost = order.sourceUrl === "not_applicable" && order.title;

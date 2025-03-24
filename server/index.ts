@@ -3,10 +3,14 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startMetricsUpdates } from "./services/domain-metrics";
+import http from 'http';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Create HTTP server
+const server = http.createServer(app);
 
 // Add request logging middleware
 app.use((req, res, next) => {
@@ -24,8 +28,19 @@ app.use((req, res, next) => {
 (async () => {
   try {
     log("Initializing server...");
-    const server = await registerRoutes(app);
-
+    
+    // Setup Vite first - we only want it to handle non-API routes
+    if (app.get("env") === "development") {
+      // Register API routes first to ensure they take precedence over Vite
+      await registerRoutes(app);
+      
+      // Then set up Vite for all other routes
+      await setupVite(app, server);
+    } else {
+      await registerRoutes(app);
+      serveStatic(app);
+    }
+    
     // Start domain metrics update service
     try {
       startMetricsUpdates();
@@ -42,13 +57,6 @@ app.use((req, res, next) => {
       const message = err.message || "Internal Server Error";
       res.status(status).json({ message });
     });
-
-    // Setup Vite for development or serve static files for production
-    if (app.get("env") === "development") {
-      await setupVite(app, server);
-    } else {
-      serveStatic(app);
-    }
 
     // Start server
     const port = 5000;

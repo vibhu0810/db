@@ -1814,10 +1814,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a test support ticket
       const testTicket = {
         userId: req.user.id,
-        orderId: 1, // Use an existing order ID (this should be an ID that exists in your database)
+        orderId: 108, // Using an existing order ID from our database
         title: 'Test Support Ticket',
-        status: 'open',
-        description: 'This is a test ticket created for testing the automated welcome message.'
+        status: "open" as "open" | "closed"
       };
       
       console.log("Creating test support ticket:", testTicket);
@@ -1832,9 +1831,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ticket: createdTicket,
         comments: comments
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating test ticket:', error);
-      res.status(500).json({ error: 'Failed to create test ticket', details: error.message });
+      res.status(500).json({ 
+        error: 'Failed to create test ticket', 
+        details: error.message || String(error) 
+      });
     }
   });
 

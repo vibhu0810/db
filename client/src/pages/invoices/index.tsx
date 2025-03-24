@@ -824,24 +824,63 @@ function AdminInvoicesTab() {
   
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-        <div className="flex items-center w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search invoices..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+      {/* Billing & Payment Options Section - Moved to top */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        {/* User Billing Preferences */}
+        <div>
+          <Collapsible className="w-full">
+            <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
+              <div className="flex items-center space-x-2 font-medium">
+                <UserCircle className="h-5 w-5" />
+                <span>Billing Preferences</span>
+              </div>
+              <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="border border-t-0 rounded-b-md p-4">
+              <BillingPreferences user={null} hidePaymentDetails={true} />
+            </CollapsibleContent>
+          </Collapsible>
         </div>
         
+        {/* Payment Methods Details */}
+        <div>
+          <Collapsible className="w-full">
+            <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
+              <div className="flex items-center space-x-2 font-medium">
+                <CreditCard className="h-5 w-5" />
+                <span>Payment Details</span>
+              </div>
+              <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="border border-t-0 rounded-b-md">
+              <Card className="border-0 shadow-none">
+                <CardContent className="space-y-6 pt-4">
+                  <div>
+                    <h3 className="font-medium mb-3">Wire Transfer / Wise (0% fee)</h3>
+                    <div className="rounded-md bg-muted p-4">
+                      <PaymentDetails paymentMethod="wire" />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-3">PayPal (5% fee)</h3>
+                    <div className="rounded-md bg-muted p-4">
+                      <PaymentDetails paymentMethod="paypal" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      </div>
+
+      {/* Filters - Removed search box */}
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4 mb-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
           <DatePickerWithRange
             date={dateRange}
-            setDate={setDateRange}
+            setDate={(date) => setDateRange(date || { from: undefined })}
             className="w-full sm:w-auto"
           />
           
@@ -1210,24 +1249,63 @@ function UserInvoicesTab() {
   
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-        <div className="flex items-center w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search invoices..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+      {/* Billing & Payment Options Section - Moved to top */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        {/* User Billing Preferences */}
+        <div>
+          <Collapsible className="w-full">
+            <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
+              <div className="flex items-center space-x-2 font-medium">
+                <UserCircle className="h-5 w-5" />
+                <span>Billing Preferences</span>
+              </div>
+              <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="border border-t-0 rounded-b-md p-4">
+              <BillingPreferences user={user} hidePaymentDetails={true} />
+            </CollapsibleContent>
+          </Collapsible>
         </div>
         
+        {/* Payment Methods Details */}
+        <div>
+          <Collapsible className="w-full">
+            <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
+              <div className="flex items-center space-x-2 font-medium">
+                <CreditCard className="h-5 w-5" />
+                <span>Payment Details</span>
+              </div>
+              <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="border border-t-0 rounded-b-md">
+              <Card className="border-0 shadow-none">
+                <CardContent className="space-y-6 pt-4">
+                  <div>
+                    <h3 className="font-medium mb-3">Wire Transfer / Wise (0% fee)</h3>
+                    <div className="rounded-md bg-muted p-4">
+                      <PaymentDetails paymentMethod="wire" />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-3">PayPal (5% fee)</h3>
+                    <div className="rounded-md bg-muted p-4">
+                      <PaymentDetails paymentMethod="paypal" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      </div>
+
+      {/* Filters - Removed search box */}
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
           <DatePickerWithRange
             date={dateRange}
-            setDate={setDateRange}
+            setDate={(date) => setDateRange(date || { from: undefined })}
           />
           
           <Select

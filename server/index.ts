@@ -3,25 +3,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startMetricsUpdates } from "./services/domain-metrics";
-import http from 'http';
-import { setupAuth } from "./auth";
-import cors from 'cors';
 
 const app = express();
-
-// Apply global middleware
-// 1. CORS setup for development environment
-app.use(cors({
-  origin: process.env.NODE_ENV === "production" ? false : true,
-  credentials: true
-}));
-
-// 2. Body parsing
-app.use(express.json({limit: '10mb'}));
+app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// Create HTTP server
-const server = http.createServer(app);
 
 // Add request logging middleware
 app.use((req, res, next) => {
@@ -37,23 +22,14 @@ app.use((req, res, next) => {
 
 // Initialize server with error handling
 (async () => {
-  try {    
-    // Set up authentication first - must be done before registering routes!
-    setupAuth(app);
-    
-    // Register API routes
-    await registerRoutes(app);
-    
-    // Setup Vite for development or static files for production
-    if (app.get("env") === "development") {
-      await setupVite(app, server);
-    } else {
-      serveStatic(app);
-    }
-    
+  try {
+    log("Initializing server...");
+    const server = await registerRoutes(app);
+
     // Start domain metrics update service
     try {
       startMetricsUpdates();
+      log("Domain metrics update service started");
     } catch (error) {
       console.error("Failed to start domain metrics service:", error);
       // Continue server startup even if metrics service fails
@@ -66,6 +42,13 @@ app.use((req, res, next) => {
       const message = err.message || "Internal Server Error";
       res.status(status).json({ message });
     });
+
+    // Setup Vite for development or serve static files for production
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
 
     // Start server
     const port = 5000;

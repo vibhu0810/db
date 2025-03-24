@@ -1,7 +1,4 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import fetchCookie from 'fetch-cookie';
-
-const fetchWithCookies = fetchCookie(fetch);
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -49,22 +46,15 @@ export async function apiRequest(
   if (method !== 'GET' && method !== 'HEAD' && body !== undefined) {
     options.headers = { 
       ...options.headers,
-      "Content-Type": "application/json",
-      "Accept": "application/json"
+      "Content-Type": "application/json" 
     };
     options.body = JSON.stringify(body);
-  } else {
-    // Always set Accept header for all requests
-    options.headers = {
-      ...options.headers,
-      "Accept": "application/json"
-    };
   }
 
   console.log(`Making ${method} request to ${url}`, body ? 'with body' : 'without body');
   
   try {
-    const res = await fetchWithCookies(url, options);
+    const res = await fetch(url, options);
     
     console.log(`Response from ${url}: status=${res.status}`);
     
@@ -73,12 +63,6 @@ export async function apiRequest(
     if (res.status === 401) {
       console.warn(`Unauthorized access to ${url}`);
       return res;
-    }
-
-    // Check content type to ensure we're getting JSON
-    const contentType = res.headers.get('content-type');
-    if (contentType && !contentType.includes('application/json')) {
-      console.warn(`Warning: Response from ${url} is not JSON (${contentType})`);
     }
 
     // For other non-ok responses, we'll handle them based on the calling requirements
@@ -99,20 +83,11 @@ export const getQueryFn: <T>(options: {
     console.log(`Fetching data from ${url}`);
     
     try {
-      const res = await fetchWithCookies(url, {
+      const res = await fetch(url, {
         credentials: "include",
-        headers: {
-          "Accept": "application/json"
-        }
       });
       
       console.log(`Response from ${url}: status=${res.status}`);
-      
-      // Check content type to ensure we're getting JSON
-      const contentType = res.headers.get('content-type');
-      if (contentType && !contentType.includes('application/json')) {
-        console.warn(`Warning: Response from ${url} is not JSON (${contentType})`);
-      }
       
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {
         console.log(`Unauthorized access to ${url}, returning null as configured`);
@@ -120,29 +95,19 @@ export const getQueryFn: <T>(options: {
       }
 
       if (!res.ok) {
-        let text = "";
-        try {
-          text = await res.text();
-        } catch (error) {
-          console.error("Error parsing error response:", error);
-          text = "Failed to parse error response";
-        }
+        const text = await res.text();
         console.error(`Error response from ${url}: ${res.status} - ${text || res.statusText}`);
         throw new Error(`${res.status}: ${text || res.statusText}`);
       }
 
-      try {
-        const data = await res.json();
-        console.log(`Successful data fetch from ${url}, data:`, 
-          url.includes('/api/user') ? (data ? 'User data present' : 'No user data') : 'Data received');
-        return data;
-      } catch (error) {
-        console.error(`Error parsing JSON from ${url}:`, error);
-        throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`);
-      }
+      const data = await res.json();
+      console.log(`Successful data fetch from ${url}, data:`, 
+        url.includes('/api/user') ? (data ? 'User data present' : 'No user data') : 'Data received');
+      
+      return data;
     } catch (error) {
       console.error(`Error fetching ${url}:`, error);
-      throw error instanceof Error ? error : new Error(String(error));
+      throw error;
     }
   };
 
@@ -152,7 +117,7 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: Infinity,
       retry: false,
     },
     mutations: {

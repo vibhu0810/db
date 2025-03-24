@@ -1,5 +1,6 @@
 import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
+import AuthPage from "./pages/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ProtectedRoute } from "@/lib/protected-route";
 import Dashboard from "./pages/dashboard";
@@ -15,9 +16,6 @@ import KanbanPage from "./pages/kanban";
 import InvoicesPage from "./pages/invoices";
 import AuthDebugPage from "./pages/debug/auth";
 import AdminTicketTools from "./pages/admin/ticket-tools";
-// Import the auth page that was working in the last deployed version
-import AuthPage from "./pages/auth";
-import NotFound from "./pages/not-found";
 
 function App() {
   return (
@@ -118,7 +116,6 @@ function App() {
             </DashboardShell>
           </ProtectedRoute>
         </Route>
-        <Route component={NotFound} />
       </Switch>
       <Toaster />
     </div>

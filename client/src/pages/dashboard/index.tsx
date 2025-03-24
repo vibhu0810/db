@@ -46,36 +46,11 @@ export default function Dashboard() {
   // Use different endpoints based on user role
   const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
     queryKey: [isAdmin ? "/api/orders/all" : "/api/orders"],
-    queryFn: async () => {
-      try {
-        const res = await apiRequest("GET", isAdmin ? "/api/orders/all" : "/api/orders");
-        if (!res.ok) {
-          console.warn(`Error fetching orders: ${res.status}`);
-          return [];
-        }
-        return res.json();
-      } catch (err) {
-        console.error("Failed to fetch orders:", err);
-        return [];
-      }
-    },
+    queryFn: () => apiRequest("GET", isAdmin ? "/api/orders/all" : "/api/orders").then(res => res.json()),
   });
 
   const { data: domains = [], isLoading: domainsLoading } = useQuery<Domain[]>({
     queryKey: ["/api/domains"],
-    queryFn: async () => {
-      try {
-        const res = await apiRequest("GET", "/api/domains");
-        if (!res.ok) {
-          console.warn(`Error fetching domains: ${res.status}`);
-          return [];
-        }
-        return res.json();
-      } catch (err) {
-        console.error("Failed to fetch domains:", err);
-        return [];
-      }
-    },
   });
 
   const isLoading = ordersLoading || domainsLoading;
@@ -84,10 +59,8 @@ export default function Dashboard() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  // Ensure orders is an array before calling filter
-  const safeOrders = Array.isArray(orders) ? orders : [];
-  const recentOrders = safeOrders.filter(order => 
-    order && order.dateOrdered && new Date(order.dateOrdered) >= thirtyDaysAgo
+  const recentOrders = orders.filter(order =>
+    new Date(order.dateOrdered) >= thirtyDaysAgo
   );
 
   // Calculate metrics
@@ -108,12 +81,12 @@ export default function Dashboard() {
 
   // Get recent orders for clients - all orders sorted by date, or orders needing attention for admins
   const recentOrdersList = isAdmin
-    ? safeOrders
-        .filter(o => o && (o.status === "Sent" || o.status === "Revision"))
-        .sort((a, b) => new Date(b.dateOrdered || Date.now()).getTime() - new Date(a.dateOrdered || Date.now()).getTime())
+    ? orders
+        .filter(o => o.status === "Sent" || o.status === "Revision")
+        .sort((a, b) => new Date(b.dateOrdered).getTime() - new Date(a.dateOrdered).getTime())
         .slice(0, 5)
-    : safeOrders
-        .sort((a, b) => new Date(b.dateOrdered || Date.now()).getTime() - new Date(a.dateOrdered || Date.now()).getTime())
+    : orders
+        .sort((a, b) => new Date(b.dateOrdered).getTime() - new Date(a.dateOrdered).getTime())
         .slice(0, 5);
 
   // Prepare chart data for the last 30 days

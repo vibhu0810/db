@@ -539,6 +539,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ticketId: ticket.id,
         isFromAdmin: req.body.isFromAdmin || req.user.is_admin
       });
+
+      // If the comment is from an admin, create a notification for the ticket owner
+      if (req.user.is_admin && ticket.userId !== req.user.id) {
+        await storage.createNotification({
+          userId: ticket.userId,
+          type: "support_ticket",
+          message: "An admin has responded to your support ticket",
+          createdAt: new Date(),
+          read: false,
+          ticketId: ticket.id
+        });
+      }
       
       // Return the created comment with user details
       res.status(201).json({

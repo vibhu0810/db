@@ -359,6 +359,11 @@ export class DatabaseStorage implements IStorage {
 
   // Notification methods
   async createNotification(notificationData: InsertNotification): Promise<Notification> {
+    // Validate userId is a valid number (not null or undefined)
+    if (typeof notificationData.userId !== 'number') {
+      throw new Error('Invalid userId: must be a number');
+    }
+    
     const [notification] = await db
       .insert(notifications)
       .values({

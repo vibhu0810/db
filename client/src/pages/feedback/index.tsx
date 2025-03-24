@@ -227,7 +227,7 @@ function UserFeedbackTab() {
   const { user } = useAuth();
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   
-  const { data: feedbackData, isLoading } = useQuery({
+  const { data: feedbackData = [], isLoading } = useQuery<Feedback[]>({
     queryKey: ['/api/feedback'],
     enabled: !!user
   });
@@ -354,7 +354,7 @@ function UserFeedbackTab() {
 function AdminFeedbackTab() {
   const { toast } = useToast();
   
-  const { data: feedbackData, isLoading } = useQuery({
+  const { data: feedbackData = [], isLoading } = useQuery<Feedback[]>({
     queryKey: ['/api/feedback/all'],
   });
   
@@ -364,7 +364,7 @@ function AdminFeedbackTab() {
         method: "POST",
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { count: number }) => {
       toast({
         title: "Feedback requests generated",
         description: `Successfully generated ${data.count} feedback requests`,

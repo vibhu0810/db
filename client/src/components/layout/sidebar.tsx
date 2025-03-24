@@ -12,6 +12,7 @@ import {
   Kanban,
   Settings,
   Wrench,
+  Star,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/ui/logo";
@@ -24,6 +25,7 @@ const userNavigation = [
   { name: "Reports", href: "/reports", icon: BarChart },
   { name: "Kanban Board", href: "/kanban", icon: Kanban },
   { name: "Invoices", href: "/invoices", icon: FileText },
+  { name: "Feedback", href: "/feedback", icon: Star },
   { name: "Chat with Support", href: "/chat", icon: MessageSquare },
   { name: "Profile", href: "/profile", icon: User },
 ];
@@ -36,6 +38,7 @@ const adminNavigation = [
   { name: "Kanban Board", href: "/kanban", icon: Kanban },
   { name: "Invoices", href: "/invoices", icon: FileText },
   { name: "Users", href: "/users", icon: Users },
+  { name: "Feedback", href: "/feedback", icon: Star },
   { name: "Chat Support", href: "/chat", icon: MessageSquare },
   { name: "Ticket Tools", href: "/admin/ticket-tools", icon: Wrench },
 ];

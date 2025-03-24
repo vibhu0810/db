@@ -877,7 +877,7 @@ export default function ChatPage() {
                                   {message.content}
                                 </p>
                               </div>
-                            ) : message.content.includes("Support Ticket #") ? (
+                            ) : message.content && message.content.includes("Support Ticket #") ? (
                               // Support ticket notification
                               <div className="bg-amber-100 dark:bg-amber-950 p-2 rounded-md border border-amber-300 dark:border-amber-800">
                                 <div className="flex gap-2 items-center mb-1 text-amber-800 dark:text-amber-400">

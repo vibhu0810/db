@@ -307,7 +307,7 @@ export const feedback = pgTable("feedback", {
   month: integer("month").notNull(),
   year: integer("year").notNull(),
   ratings: text("ratings").notNull(), // Will store JSON as string
-  averageRating: decimal("average_rating", { precision: 3, scale: 2 }).notNull(),
+  averageRating: text("average_rating").notNull(),
   comments: text("comments"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   isCompleted: boolean("is_completed").default(false).notNull()

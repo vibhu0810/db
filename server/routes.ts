@@ -581,6 +581,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     updateUserActivity(user.id);
     res.status(204).send();
   });
+  
+  // Get user's chat history (recent conversations)
+  app.get("/api/chat/history", async (req, res) => {
+    const { user } = req.session as any;
+    if (!user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      // For regular users, we get their conversations with admins
+      // For admins, we get their conversations with all users
+      const chatHistory = [];
+      const allUsers = await storage.getUsers();
+      
+      // Get all users we've had conversations with
+      const conversations = new Set<number>();
+      
+      // Find all users the current user has exchanged messages with
+      for (const otherUser of allUsers) {
+        // Skip self
+        if (otherUser.id === user.id) continue;
+        
+        // Only show conversations that match the user's role:
+        // - Regular users should only see admins
+        // - Admins should see all users they've messaged
+        if (!user.is_admin && !otherUser.is_admin) continue;
+        
+        // Check if there are any messages between these users
+        const messages = await storage.getMessages(user.id, otherUser.id);
+        if (messages && messages.length > 0) {
+          // We have a conversation with this user
+          conversations.add(otherUser.id);
+          
+          // Get the last message and count unread
+          const lastMessage = messages[messages.length - 1];
+          const unreadCount = messages.filter(m => 
+            m.senderId === otherUser.id && !m.read
+          ).length;
+          
+          chatHistory.push({
+            userId: otherUser.id,
+            username: otherUser.companyName || otherUser.username,
+            lastMessage: lastMessage.content,
+            timestamp: lastMessage.createdAt,
+            unread: unreadCount
+          });
+        }
+      }
+      
+      // Sort by most recent message
+      chatHistory.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
+      res.json(chatHistory);
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+      res.status(500).json({ error: "Failed to fetch chat history" });
+    }
+  });
 
   // Get all active admins
   app.get("/api/admins/active", async (req, res) => {

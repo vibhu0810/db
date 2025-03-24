@@ -39,7 +39,7 @@ export function FloatingChatButton() {
   });
 
   // Get real chat history from API
-  const { data: chatHistory, isLoading: isLoadingChatHistory } = useQuery({
+  const { data: chatHistory = [], isLoading: isLoadingChatHistory } = useQuery({
     queryKey: ['/api/chat/history'],
     queryFn: getQueryFn<any[]>({ on401: 'returnNull' }),
     refetchInterval: 30000, // Refresh every 30 seconds

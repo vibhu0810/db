@@ -538,7 +538,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user.id,
         message: req.body.content,
         ticketId: ticket.id,
-        isFromAdmin: req.body.isFromAdmin || req.user.is_admin
+        isFromAdmin: req.body.isFromAdmin || req.user.is_admin,
+        attachmentUrl: req.body.attachmentUrl || null,
+        attachmentType: req.body.attachmentType || null
       });
 
       // If the comment is from an admin, create a notification for the ticket owner

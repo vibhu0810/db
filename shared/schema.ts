@@ -145,6 +145,8 @@ export const orderComments = pgTable("order_comments", {
   isSystemMessage: boolean("is_system_message").notNull().default(false),
   readByUser: boolean("read_by_user").notNull().default(false),
   readByAdmin: boolean("read_by_admin").notNull().default(false),
+  attachmentUrl: text("attachment_url"),
+  attachmentType: text("attachment_type"), // 'image', 'audio', etc.
 });
 
 // Create insert schema for comments
@@ -157,6 +159,8 @@ export const insertOrderCommentSchema = createInsertSchema(orderComments).omit({
   isSystemMessage: z.boolean().optional(),
   readByUser: z.boolean().optional(),
   readByAdmin: z.boolean().optional(),
+  attachmentUrl: z.string().nullable().optional(),
+  attachmentType: z.string().nullable().optional(),
 });
 
 // Types

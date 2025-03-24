@@ -275,12 +275,140 @@ export default function ChatPage() {
   const handleMessageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessageInput(e.target.value);
   };
+  
+  // Handle image selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+  
+  // Handle voice recording
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Start a timer to track recording time
+      const timer = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      // Store timer ID to clear it later
+      recorder.onerror = () => {
+        clearInterval(timer);
+        setIsRecording(false);
+        toast({
+          title: "Recording Error",
+          description: "There was a problem with the recording. Please try again.",
+          variant: "destructive",
+        });
+      };
+      
+      // When recording stops, create the audio file
+      recorder.onstop = () => {
+        clearInterval(timer);
+        setIsRecording(false);
+        
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        setAudioChunks([]);
+        
+        // Create a File object from the Blob
+        const fileName = `voice-message-${new Date().getTime()}.webm`;
+        const audioFile = new File([audioBlob], fileName, { type: 'audio/webm' });
+        setAudioFile(audioFile);
+      };
+      
+      // Collect audio chunks
+      recorder.ondataavailable = (e) => {
+        setAudioChunks(prev => [...prev, e.data]);
+      };
+      
+      // Start recording
+      recorder.start(200); // Collect data in 200ms chunks
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      toast({
+        title: "Cannot Access Microphone",
+        description: "Please make sure you have granted microphone permissions for this site.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Stop recording
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      // The onstop handler will create the audio file
+      
+      // Stop all audio tracks
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  // Upload file to server and get URL
+  const uploadAttachment = async (file: File, type: 'image' | 'audio'): Promise<string | null> => {
+    try {
+      // Use the appropriate uploadthing endpoint
+      const fileType = type === 'image' ? 'chatImage' : 'chatAudio';
+      const url = await uploadFile(file, fileType);
+      return url;
+    } catch (error) {
+      console.error(`Error uploading ${type}:`, error);
+      toast({
+        title: `Failed to upload ${type}`,
+        description: `There was a problem uploading your ${type}. Please try again.`,
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
 
   // Handle sending a message
-  const handleSendMessage = () => {
-    if (messageInput.trim()) {
+  const handleSendMessage = async () => {
+    // Don't send if there's no content (text, image, or audio)
+    if (!messageInput.trim() && !imageFile && !audioFile) {
+      return;
+    }
+    
+    try {
+      let attachmentUrl = null;
+      let attachmentType = null;
+      
+      // Handle image attachment
+      if (imageFile) {
+        attachmentUrl = await uploadAttachment(imageFile, 'image');
+        if (attachmentUrl) {
+          attachmentType = 'image';
+        }
+        setImageFile(null); // Clear the image regardless of upload success
+      }
+      
+      // Handle audio attachment
+      if (audioFile) {
+        attachmentUrl = await uploadAttachment(audioFile, 'audio');
+        if (attachmentUrl) {
+          attachmentType = 'audio';
+        }
+        setAudioFile(null); // Clear the audio regardless of upload success
+      }
+      
+      // Send the message with any attachments
       sendMessageMutation.mutate({ 
-        messageText: messageInput.trim() 
+        messageText: messageInput.trim(),
+        attachmentUrl,
+        attachmentType
+      });
+    } catch (error) {
+      console.error("Error sending message with attachment:", error);
+      toast({
+        title: "Failed to send message",
+        description: "There was a problem sending your message. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -566,9 +694,41 @@ export default function ChatPage() {
                               </div>
                             ) : (
                               // Regular message
-                              <p className="whitespace-pre-wrap break-words">
-                                {message.content}
-                              </p>
+                              <div className="flex flex-col gap-2">
+                                {/* Text content */}
+                                {message.content && (
+                                  <p className="whitespace-pre-wrap break-words">
+                                    {message.content}
+                                  </p>
+                                )}
+                                
+                                {/* Image attachment */}
+                                {message.attachmentType === 'image' && message.attachmentUrl && (
+                                  <div className="mt-2">
+                                    <img 
+                                      src={message.attachmentUrl} 
+                                      alt="Image attachment" 
+                                      className="max-w-full h-auto rounded-md max-h-60 object-contain"
+                                      loading="lazy"
+                                      onClick={() => window.open(message.attachmentUrl, '_blank')}
+                                      style={{ cursor: 'pointer' }}
+                                    />
+                                  </div>
+                                )}
+                                
+                                {/* Audio attachment */}
+                                {message.attachmentType === 'audio' && message.attachmentUrl && (
+                                  <div className="mt-2">
+                                    <audio 
+                                      controls
+                                      src={message.attachmentUrl}
+                                      className="max-w-full w-full"
+                                    >
+                                      Your browser does not support the audio element.
+                                    </audio>
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>

@@ -44,21 +44,24 @@ export default function ChatPage() {
   const [activeTicketId, setActiveTicketId] = useState<number | null>(null);
   
   // Parse URL query parameters to get ticket ID if present
-  const getTicketIdFromUrl = () => {
+  const getTicketIdFromUrl = useCallback(() => {
     try {
-      const searchParams = new URLSearchParams(location.split('?')[1] || "");
+      const queryString = location.split('?')[1] || "";
+      const searchParams = new URLSearchParams(queryString);
       const ticketId = searchParams.get('ticket');
+      
+      console.log("URL query parameters:", queryString);
+      console.log("Extracted ticket ID:", ticketId);
+      
       return ticketId && !isNaN(parseInt(ticketId, 10)) ? parseInt(ticketId, 10) : null;
     } catch (error) {
       console.error("Error parsing ticket ID from URL:", error);
       return null;
     }
-  };
+  }, [location]);
   
   // Get ticket ID from URL if available
   const ticketId = getTicketIdFromUrl();
-  
-  console.log("Current location:", location, "Extracted ticketId:", ticketId);
   
   // Query for all user support tickets
   const { data: userTickets = { tickets: [] }, isLoading: userTicketsLoading } = useQuery({
@@ -488,9 +491,10 @@ export default function ChatPage() {
                                   <Info className="h-4 w-4" />
                                   <span className="font-medium text-xs">System</span>
                                 </div>
-                                <p className="whitespace-pre-wrap break-words text-muted-foreground">
-                                  {message.content}
-                                </p>
+                                <div 
+                                  className="whitespace-pre-wrap break-words text-muted-foreground"
+                                  dangerouslySetInnerHTML={{ __html: message.content }}
+                                ></div>
                               </div>
                             ) : (
                               // Regular message

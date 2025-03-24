@@ -646,7 +646,7 @@ export class DatabaseStorage implements IStorage {
       userId: -1, // System user (using -1 for system user consistent with the client code)
       message: `Thank you for opening a support ticket! Our team will respond to your inquiry as soon as possible. 
       
-Please provide any additional details that might help us assist you better with your order #${ticket.orderId || 'N/A'}.`,
+Please provide any additional details that might help us assist you better with ${ticket.orderId ? `<a href="/orders/${ticket.orderId}" class="text-primary hover:underline">order #${ticket.orderId}</a>` : 'your request'}.`,
       ticketId: newTicket.id,
       isSystemMessage: true,
       isFromAdmin: true,

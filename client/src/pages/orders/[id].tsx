@@ -40,13 +40,16 @@ export default function OrderDetailsPage() {
   const [previousStatus, setPreviousStatus] = useState<string | null>(null);
   
   // Query for existing support ticket for this order
-  const { data: supportTicket } = useQuery({
+  const { data: supportTicketResponse } = useQuery({
     queryKey: ['/api/support-tickets/order', id],
     queryFn: () => apiRequest("GET", `/api/support-tickets/order/${id}`)
-      .then(res => res.ok ? res.json() : null)
-      .catch(() => null),
+      .then(res => res.ok ? res.json() : { ticket: null })
+      .catch(() => ({ ticket: null })),
     enabled: !!id && !!user,
   });
+  
+  // Extract the ticket from the response
+  const supportTicket = supportTicketResponse?.ticket;
   
   const { data: order, isLoading } = useQuery({
     queryKey: ['/api/orders', id],
@@ -600,7 +603,7 @@ export default function OrderDetailsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {supportTicket ? (
+              {supportTicket && supportTicket.id ? (
                 <>
                   <div className="p-4 rounded-md bg-muted">
                     <div className="flex justify-between items-start mb-2">

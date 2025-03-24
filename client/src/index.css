@@ -18,6 +18,15 @@
   a.text-primary:hover, button.text-primary:hover, .text-primary:hover {
     color: hsl(210 100% 40%);
   }
+  
+  /* System message styling */
+  .system-message-content a {
+    @apply text-primary hover:underline;
+  }
+  
+  .system-message-content a[href^="/orders/"] {
+    @apply font-medium;
+  }
 }
 
 /* Resizable handle styles */

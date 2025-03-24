@@ -306,6 +306,12 @@ export default function ChatPage() {
     if (ticketId) {
       console.log('Ticket ID detected in URL:', ticketId);
       
+      // If we're using the old URL format (query parameter), redirect to the new format
+      if (location.includes('?ticket=') && !location.includes('/chat/ticket/')) {
+        navigate(`/chat/ticket/${ticketId}`);
+        return;
+      }
+      
       // Set active ticket ID immediately (don't wait for ticketData)
       setActiveTicketId(ticketId);
       
@@ -323,7 +329,7 @@ export default function ChatPage() {
         });
       }
     }
-  }, [ticketId, ticketData, toast]);
+  }, [ticketId, ticketData, toast, location, navigate]);
   
   // Click handler for ticket selection from sidebar
   const handleTicketSelect = (ticket: any) => {

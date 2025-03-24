@@ -1,3 +1,4 @@
+import React from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -5,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { 
   Loader2, Send, Check, CheckCheck, Image as ImageIcon, 
   Mic, MicOff, X, FileText, Paperclip, Music, Star, Ticket as TicketIcon,
-  Info, Link as LinkIcon
+  Info, Link as LinkIcon, MessagesSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { User } from "@shared/schema";
 import { uploadFile } from "@/utils/uploadthing";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation, Link } from "wouter";
+import { useLocation, Link, useRoute } from "wouter";
 
 interface ChatUser extends User {
   companyName: string;
@@ -30,6 +31,7 @@ interface ChatUser extends User {
 export default function ChatPage() {
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -1129,10 +1131,23 @@ export default function ChatPage() {
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground flex-col p-8">
               <FileText className="h-16 w-16 mb-4 text-muted-foreground/50" />
-              <h3 className="text-xl font-medium mb-2">Select a conversation</h3>
+              <h3 className="text-xl font-medium mb-2">Support Tickets</h3>
               <p className="text-center max-w-md">
-                Select a user from the sidebar to start chatting, or create a support ticket for an order.
+                {isAdmin 
+                  ? "Select a support ticket from the sidebar to respond to customer inquiries."
+                  : "Select a ticket from the sidebar or create a new support ticket from your order page."
+                }
               </p>
+              {!isAdmin && (
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => navigate('/orders')}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Go to Orders
+                </Button>
+              )}
             </div>
           )}
         </div>

@@ -534,67 +534,25 @@ export default function ChatPage() {
   // Effect to set selected user when ticket ID is provided
   useEffect(() => {
     // Only run this effect when ticket data and users are loaded
-    if (ticketData && ticketData.ticket && users.length > 0) {
+    if (ticketId && ticketData && ticketData.ticket && users.length > 0) {
       console.log('Ticket data loaded:', ticketData);
       setActiveTicketId(ticketData.ticket.id);
       
-      // Handle based on user role
-      if (isAdmin) {
-        // For admin users, set the customer who created the ticket as the selected user
-        console.log('Admin user handling ticket, finding customer with ID:', ticketData.ticket.userId);
-        
-        // This might not be in the filtered users list, so fetch the specific user directly
-        apiRequest("GET", `/api/users/${ticketData.ticket.userId}`)
-          .then(res => res.json())
-          .then(customerData => {
-            console.log('Found customer user:', customerData);
-            setSelectedUserId(customerData.id);
-            
-            // Do not set initial message - let the admin type their own message
-            setMessageInput("");
-          })
-          .catch(err => {
-            console.error('Error fetching customer user:', err);
-            toast({
-              title: "Error",
-              description: "Could not find the customer for this support ticket.",
-              variant: "destructive",
-            });
-          });
-      } else {
-        // For regular users, find an admin to chat with
-        console.log('Regular user handling ticket, finding an admin user');
-        
-        // Get all users to find admins, regardless of the current filter
-        apiRequest("GET", "/api/users")
-          .then(res => res.json())
-          .then(allUsers => {
-            const admins = allUsers.filter((u: ChatUser) => u.is_admin);
-            console.log('Found admins:', admins);
-            
-            if (admins.length > 0) {
-              const adminUser = admins[0];
-              console.log('Setting selected user to admin:', adminUser.username);
-              setSelectedUserId(adminUser.id);
-            } else {
-              toast({
-                title: "No Admin Found",
-                description: "Could not find an admin to handle your support ticket.",
-                variant: "destructive",
-              });
-            }
-          })
-          .catch(err => {
-            console.error('Error fetching admin users:', err);
-            toast({
-              title: "Error",
-              description: "Could not find admin support for this ticket.",
-              variant: "destructive",
-            });
-          });
-      }
+      // Set the virtual user ID for ticket conversations (negative ticket ID)
+      const virtualTicketUserId = -ticketData.ticket.id;
+      console.log('Setting selected user to virtual ticket user:', virtualTicketUserId);
+      setSelectedUserId(virtualTicketUserId);
+      
+      // Clear any existing message input
+      setMessageInput("");
+      
+      // Show toast for successful navigation
+      toast({
+        title: "Support Ticket Chat",
+        description: `You are now viewing Ticket #${ticketData.ticket.id} for Order #${ticketData.ticket.orderId}`,
+      });
     }
-  }, [ticketData, users, isAdmin, ticketId]);
+  }, [ticketData, users, ticketId, toast]);
 
   if (usersLoading) {
     return (

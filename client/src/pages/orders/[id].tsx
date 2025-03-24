@@ -229,19 +229,27 @@ export default function OrderDetailsPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/support-tickets/order', id] });
       
       // Direct navigation to chat page with the ticket
-      if (data && data.id) {
+      if (data && data.ticket && data.ticket.id) {
         toast({
           title: "Support Ticket Created",
           description: "Support ticket has been created successfully. Opening chat with support team...",
         });
         
+        console.log("Redirecting to ticket chat:", data.ticket.id);
+        
         // Use direct navigation instead of window.location.href to avoid notification click issues
         // Use a delay to allow the toast to show and the ticket to be fully processed
         setTimeout(() => {
-          const chatUrl = `/chat?ticket=${data.id}`;
+          const chatUrl = `/chat?ticket=${data.ticket.id}`;
           // Force a hard navigation instead of a client-side route change
-          window.location.replace(chatUrl);
-        }, 800);
+          window.location.href = chatUrl;
+        }, 1200); // Increase delay to 1.2 seconds to ensure server has time to process
+      } else {
+        console.error("Missing ticket ID in response:", data);
+        toast({
+          title: "Ticket Created",
+          description: "Support ticket has been created, but there was an issue opening the chat. Please go to the Chat page.",
+        });
       }
     },
     onError: (error: Error) => {

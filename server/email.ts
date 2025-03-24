@@ -9,6 +9,8 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 const ADMIN_EMAIL = "info@digitalgratified.com";
+const FROM_EMAIL = ADMIN_EMAIL;
+const APP_NAME = "SaaSxLinks";
 const APP_URL = process.env.APP_URL || "https://saasxlinks.com";
 
 // Helper function to check if email service is configured
@@ -318,6 +320,53 @@ export async function sendStatusUpdateEmail(
     });
   } catch (error) {
     console.error('Error sending status update email:', error);
+    // Don't throw error to prevent app disruption
+  }
+}
+
+export async function sendTicketResponseEmail(
+  ticket: { id: number; title: string; orderId?: number | null; },
+  user: { email: string; username: string; companyName?: string | null; },
+  adminName: string = "Support Team"
+) {
+  if (!isEmailConfigured()) {
+    console.warn('SendGrid API key not configured, skipping email notification');
+    return;
+  }
+
+  const ticketURL = `${APP_URL}/chat/ticket/${ticket.id}`;
+  
+  let title = `Support Ticket #${ticket.id} Update`;
+  if (ticket.orderId) {
+    title += ` for Order #${ticket.orderId}`;
+  }
+  
+  const emailContent = `
+    <p>The support team has responded to your ticket: <strong>${ticket.title || `Ticket #${ticket.id}`}</strong>.</p>
+    
+    <p>Please click the button below to view the response and continue the conversation.</p>
+  `;
+
+  try {
+    await mailService.send({
+      to: user.email,
+      from: {
+        email: FROM_EMAIL,
+        name: APP_NAME + ' Support'
+      },
+      subject: title,
+      html: generateEmailTemplate(
+        title,
+        emailContent,
+        'View Response',
+        ticketURL,
+        null // Using default logo here
+      )
+    });
+    
+    console.log(`Sent ticket response email to ${user.email} for ticket #${ticket.id}`);
+  } catch (error) {
+    console.error('Error sending ticket response email:', error);
     // Don't throw error to prevent app disruption
   }
 }

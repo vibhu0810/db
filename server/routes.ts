@@ -16,7 +16,8 @@ import {
   sendOrderNotificationEmail,
   sendCommentNotificationEmail,
   sendStatusUpdateEmail,
-  sendChatNotificationEmail
+  sendChatNotificationEmail,
+  sendTicketResponseEmail
 } from "./email";
 import { uploadthingHandler } from "./uploadthingHandler";
 
@@ -542,14 +543,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If the comment is from an admin, create a notification for the ticket owner
       if (req.user.is_admin && ticket.userId !== req.user.id) {
-        await storage.createNotification({
-          userId: ticket.userId,
-          type: "support_ticket",
-          message: "An admin has responded to your support ticket",
-          createdAt: new Date(),
-          read: false,
-          ticketId: ticket.id
-        });
+        // Ensure ticket.userId is not null before creating notification
+        if (ticket.userId) {
+          await storage.createNotification({
+            userId: ticket.userId,
+            type: "support_ticket",
+            message: "An admin has responded to your support ticket",
+            createdAt: new Date(),
+            read: false,
+            ticketId: ticket.id as number
+          });
+        }
       }
       
       // Return the created comment with user details

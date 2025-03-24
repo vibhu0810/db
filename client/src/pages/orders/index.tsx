@@ -33,6 +33,7 @@ import { format } from "date-fns";
 import { FileDown, Loader2, MessageSquare, Copy, ChevronDown, X } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import { Resizable } from "react-resizable";
 import { cn } from "@/lib/utils";
 import 'react-resizable/css/styles.css';
@@ -344,6 +345,9 @@ export default function Orders() {
   const [newComment, setNewComment] = useState<string>("");
   const [sortField, setSortField] = useState<string>("dateOrdered");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  
+  // Get the edit parameter from URL if present
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const [columnWidths, setColumnWidths] = useState({
     sourceUrl: 180,
@@ -400,6 +404,33 @@ export default function Orders() {
       [column]: newWidth,
     }));
   };
+  
+  // Check for edit parameter in URL when component mounts
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.split('?')[1] || '');
+    const editId = urlParams.get('edit');
+    
+    if (editId) {
+      const orderId = parseInt(editId, 10);
+      const orderToEdit = orders.find((order: Order) => order.id === orderId);
+      
+      if (orderToEdit) {
+        setOrderToEdit(orderToEdit);
+      } else {
+        toast({
+          title: "Order not found",
+          description: `Could not find order #${editId} to edit`,
+          variant: "destructive",
+        });
+      }
+      
+      // Remove the edit parameter from URL by redirecting to the orders page
+      // This prevents the edit dialog from opening again after it's closed
+      setTimeout(() => {
+        setLocation('/orders');
+      }, 100);
+    }
+  }, [orders, location, setLocation, toast]);
   
   // Apply CSS for resizable columns
   useEffect(() => {

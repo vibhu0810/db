@@ -630,10 +630,14 @@ export default function OrderDetailsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.location.replace(`/chat?ticket=${supportTicket.id}`)}
+                        onClick={() => {
+                          // Use a direct navigation approach for consistency
+                          const chatUrl = `/chat?ticket=${supportTicket.id}`;
+                          window.location.href = chatUrl;
+                        }}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
-                        View Conversation
+                        View Ticket Chat
                       </Button>
                       
                       {supportTicket.status === 'Open' && (

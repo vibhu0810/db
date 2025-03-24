@@ -45,13 +45,20 @@ export default function ChatPage() {
   
   // Parse URL query parameters to get ticket ID if present
   const getTicketIdFromUrl = () => {
-    const searchParams = new URLSearchParams(location.split('?')[1] || "");
-    const ticketId = searchParams.get('ticket');
-    return ticketId ? parseInt(ticketId, 10) : null;
+    try {
+      const searchParams = new URLSearchParams(location.split('?')[1] || "");
+      const ticketId = searchParams.get('ticket');
+      return ticketId && !isNaN(parseInt(ticketId, 10)) ? parseInt(ticketId, 10) : null;
+    } catch (error) {
+      console.error("Error parsing ticket ID from URL:", error);
+      return null;
+    }
   };
   
   // Get ticket ID from URL if available
   const ticketId = getTicketIdFromUrl();
+  
+  console.log("Current location:", location, "Extracted ticketId:", ticketId);
   
   // Query for all user support tickets
   const { data: userTickets = { tickets: [] }, isLoading: userTicketsLoading } = useQuery({
@@ -284,21 +291,25 @@ export default function ChatPage() {
   
   // Effect to set selected user when ticket ID is provided in URL
   useEffect(() => {
-    if (ticketId && ticketData && ticketData.ticket) {
-      console.log('Ticket data loaded from URL param:', ticketData);
+    if (ticketId) {
+      console.log('Ticket ID detected in URL:', ticketId);
       
-      // Set active ticket ID
+      // Set active ticket ID immediately (don't wait for ticketData)
       setActiveTicketId(ticketId);
       
       // Set virtual user ID for ticket conversations (negative ticket ID)
       const virtualTicketUserId = -ticketId;
       setSelectedUserId(virtualTicketUserId);
       
-      // Show toast notification for better UX
-      toast({
-        title: "Support Ticket Chat",
-        description: `You are now viewing Ticket #${ticketId}${ticketData.ticket.orderId ? ` for Order #${ticketData.ticket.orderId}` : ''}`,
-      });
+      // Only show toast when we have ticket data
+      if (ticketData && ticketData.ticket) {
+        console.log('Ticket data loaded from URL param:', ticketData);
+        
+        toast({
+          title: "Support Ticket Chat",
+          description: `You are now viewing Ticket #${ticketId}${ticketData.ticket.orderId ? ` for Order #${ticketData.ticket.orderId}` : ''}`,
+        });
+      }
     }
   }, [ticketId, ticketData, toast]);
   

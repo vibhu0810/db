@@ -5,9 +5,19 @@ import { setupVite, serveStatic, log } from "./vite";
 import { startMetricsUpdates } from "./services/domain-metrics";
 import http from 'http';
 import { setupAuth } from "./auth";
+import cors from 'cors';
 
 const app = express();
-app.use(express.json());
+
+// Apply global middleware
+// 1. CORS setup for development environment
+app.use(cors({
+  origin: process.env.NODE_ENV === "production" ? false : true,
+  credentials: true
+}));
+
+// 2. Body parsing
+app.use(express.json({limit: '10mb'}));
 app.use(express.urlencoded({ extended: false }));
 
 // Create HTTP server

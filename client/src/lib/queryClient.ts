@@ -1,4 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import fetchCookie from 'fetch-cookie';
+
+const fetchWithCookies = fetchCookie(fetch);
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -61,7 +64,7 @@ export async function apiRequest(
   console.log(`Making ${method} request to ${url}`, body ? 'with body' : 'without body');
   
   try {
-    const res = await fetch(url, options);
+    const res = await fetchWithCookies(url, options);
     
     console.log(`Response from ${url}: status=${res.status}`);
     
@@ -96,7 +99,7 @@ export const getQueryFn: <T>(options: {
     console.log(`Fetching data from ${url}`);
     
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithCookies(url, {
         credentials: "include",
         headers: {
           "Accept": "application/json"
@@ -149,7 +152,7 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      staleTime: 5 * 60 * 1000, // 5 minutes
       retry: false,
     },
     mutations: {

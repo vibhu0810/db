@@ -1,11 +1,13 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import cookieParser from "cookie-parser";
+import memorystore from "memorystore";
 
 declare global {
   namespace Express {
@@ -38,20 +40,35 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   console.log("Initializing session store...");
+  
+  // Use cookie parser for enhanced cookie handling
+  app.use(cookieParser());
+  
+  // Session settings with custom store
+  console.log("Using PostgreSQL session store for persistence");
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    rolling: true, // Reset expiration on every response
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
+      sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/',
     }
   };
 
-  app.set("trust proxy", 1);
+  // Trust proxy headers if in production
+  if (app.get('env') === 'production') {
+    app.set('trust proxy', 1);
+    if (sessionSettings.cookie) sessionSettings.cookie.secure = true;
+  }
+  
   app.use(session(sessionSettings));
+  console.log("Session store initialized");
   
   // Initialize Passport and restore authentication state from session
   app.use(passport.initialize());
@@ -86,6 +103,9 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        return done(null, false);
+      }
       done(null, user);
     } catch (error) {
       done(error);
@@ -127,7 +147,7 @@ export function setupAuth(app: Express) {
         if (err) {
           return next(err);
         }
-        res.json(user);
+        return res.json(user);
       });
     })(req, res, next);
   });
@@ -135,14 +155,18 @@ export function setupAuth(app: Express) {
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
-      res.sendStatus(200);
+      req.session.destroy((err) => {
+        if (err) return next(err);
+        res.clearCookie('connect.sid');
+        res.sendStatus(200);
+      });
     });
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.user) {
+    if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    res.json(req.user);
+    return res.json(req.user);
   });
 }

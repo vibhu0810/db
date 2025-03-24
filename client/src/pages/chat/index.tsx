@@ -626,7 +626,7 @@ export default function ChatPage() {
                     {userTickets.tickets.filter((ticket: any) => ticket.status !== 'closed').length}
                   </span>
                 </div>
-                <div className="max-h-[70vh] h-[70vh] border rounded-md p-2 overflow-auto">
+                <ScrollArea className="h-[70vh] border rounded-md p-2">
                   <div className="space-y-2 pr-2">
                     {userTickets.tickets
                       .filter((ticket: any) => ticket.status !== 'closed')
@@ -695,7 +695,7 @@ export default function ChatPage() {
                       </Button>
                     ))}
                   </div>
-                </div>
+                </ScrollArea>
               </div>
             ) : (
               <div className="mt-8 text-center text-muted-foreground p-4">
@@ -808,9 +808,39 @@ export default function ChatPage() {
                                   <FileText className="h-4 w-4" />
                                   <span className="font-medium text-sm">Support Ticket</span>
                                 </div>
-                                <p className="whitespace-pre-wrap break-words">
-                                  {message.content}
-                                </p>
+                                <div className="whitespace-pre-wrap break-words">
+                                  {message.content && message.content.includes("Order #") ? (
+                                    <>
+                                      {message.content.split("Order #").map((part, index) => {
+                                        if (index === 0) return part;
+                                        
+                                        // Extract order ID from the text
+                                        const orderIdMatch = part.match(/^(\d+)/);
+                                        const orderId = orderIdMatch ? orderIdMatch[1] : null;
+                                        const remainingText = part.replace(/^\d+/, "");
+                                        
+                                        return (
+                                          <React.Fragment key={index}>
+                                            Order #
+                                            {orderId ? (
+                                              <Link 
+                                                href={`/orders/${orderId}`}
+                                                className="text-primary hover:underline"
+                                              >
+                                                {orderId}
+                                              </Link>
+                                            ) : (
+                                              orderId
+                                            )}
+                                            {remainingText}
+                                          </React.Fragment>
+                                        );
+                                      })}
+                                    </>
+                                  ) : (
+                                    message.content
+                                  )}
+                                </div>
                               </div>
                             ) : (
                               // Regular message

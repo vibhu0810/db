@@ -48,6 +48,9 @@ type NicheEditStatus = typeof NICHE_EDIT_STATUSES[number];
 type OrderStatus = GuestPostStatus | NicheEditStatus;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
+  
   const server = createServer(app);
 
   app.use("/api/uploadthing", uploadthingHandler);

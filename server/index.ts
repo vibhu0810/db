@@ -28,29 +28,19 @@ app.use((req, res, next) => {
 // Initialize server with error handling
 (async () => {
   try {
-    log("Initializing server...");
-    
-    // Setup auth (sessions & passport) FIRST - before any routes
-    setupAuth(app);
-    log("Authentication setup complete");
-    
     // Register API routes
     await registerRoutes(app);
-    log("API routes registered");
     
     // Setup Vite for development or static files for production
     if (app.get("env") === "development") {
       await setupVite(app, server);
-      log("Vite middleware setup complete");
     } else {
       serveStatic(app);
-      log("Static file serving setup complete");
     }
     
     // Start domain metrics update service
     try {
       startMetricsUpdates();
-      log("Domain metrics update service started");
     } catch (error) {
       console.error("Failed to start domain metrics service:", error);
       // Continue server startup even if metrics service fails

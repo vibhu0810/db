@@ -612,7 +612,7 @@ export default function OrderDetailsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {supportTicket && supportTicket.id ? (
+              {supportTicket && supportTicket.id && supportTicket.status !== 'closed' ? (
                 <>
                   <div className="p-4 rounded-md bg-muted">
                     <div className="flex justify-between items-start mb-2">
@@ -710,10 +710,43 @@ export default function OrderDetailsPage() {
                   )}
                 </>
               ) : (
-                <div className="space-y-4">
-                  <p className="text-sm">
-                    Need help with this order? Raise a support ticket to get assistance from our team.
-                  </p>
+                // Display previous closed ticket if exists
+                <div>
+                  {supportTicket && supportTicket.id && supportTicket.status === 'closed' && (
+                    <div className="p-4 rounded-md bg-muted/50 mb-4 border border-dashed">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-medium flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            Previous Ticket: {supportTicket.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {supportTicket.closedAt 
+                              ? `Closed on ${format(new Date(supportTicket.closedAt), "MMMM d, yyyy")}`
+                              : `Created on ${format(new Date(supportTicket.createdAt), "MMMM d, yyyy")}`}
+                          </p>
+                        </div>
+                        <StatusBadge status="closed" />
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-1"
+                        onClick={() => {
+                          const chatUrl = `/chat/ticket/${supportTicket.id}`;
+                          window.location.href = chatUrl;
+                        }}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        View History
+                      </Button>
+                    </div>
+                  )}
+                  <div className="space-y-4">
+                    <p className="text-sm">
+                      Need help with this order? Raise a support ticket to get assistance from our team.
+                    </p>
                   
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -760,6 +793,7 @@ export default function OrderDetailsPage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  </div>
                 </div>
               )}
             </div>

@@ -621,10 +621,11 @@ export default function ChatPage() {
             {userTickets.tickets && userTickets.tickets.length > 0 && (
               <div className="mt-3 pt-3 border-t">
                 <h3 className="text-sm font-medium mb-2">Active Support Tickets</h3>
-                <div className="space-y-2">
-                  {userTickets.tickets
-                    .filter((ticket: any) => ticket.status !== 'closed')
-                    .map((ticket: any) => (
+                <ScrollArea className="max-h-[200px]">
+                  <div className="space-y-2 pr-2">
+                    {userTickets.tickets
+                      .filter((ticket: any) => ticket.status !== 'closed')
+                      .map((ticket: any) => (
                       <Button 
                         key={ticket.id}
                         variant="outline" 
@@ -715,7 +716,8 @@ export default function ChatPage() {
                         </span>
                       </Button>
                     ))}
-                </div>
+                  </div>
+                </ScrollArea>
               </div>
             )}
           </div>

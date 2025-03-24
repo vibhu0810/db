@@ -2052,6 +2052,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Check if user has pending feedback
+  app.get("/api/feedback/pending", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const feedbackList = await storage.getUserFeedback(req.user.id);
+      const pendingFeedback = feedbackList.find(feedback => !feedback.isCompleted);
+      
+      res.json({ hasPendingFeedback: !!pendingFeedback });
+    } catch (error) {
+      console.error("Error checking pending feedback:", error);
+      res.status(500).json({ error: "Failed to check pending feedback" });
+    }
+  });
+  
   // Get user's average rating
   app.get("/api/feedback/rating", async (req, res) => {
     try {
@@ -2070,10 +2085,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       
-      const { ratings, comments } = req.body;
+      const { ratings = {}, comments } = req.body;
       
       // Calculate average rating from all question ratings
-      const ratingValues = Object.values(ratings) as number[];
+      const ratingValues = ratings && typeof ratings === 'object' ? Object.values(ratings) as number[] : [];
       const averageRating = ratingValues.length > 0 
         ? Number((ratingValues.reduce((sum, val) => sum + val, 0) / ratingValues.length).toFixed(2))
         : 0;

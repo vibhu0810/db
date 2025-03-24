@@ -37,6 +37,15 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [location] = useLocation();
   
+  // For file uploads
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  
   // Support ticket states
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [ticketRating, setTicketRating] = useState(5);
@@ -579,26 +588,121 @@ export default function ChatPage() {
           
               {/* Input area */}
               <div className="p-4 border-t">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type your message..."
-                    value={messageInput}
-                    onChange={handleMessageInputChange}
-                    onKeyDown={handleKeyPress}
-                    name="messageInput"
-                    className="flex-1"
-                    disabled={sendMessageMutation.isPending}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!messageInput.trim() || sendMessageMutation.isPending}
-                  >
-                    {sendMessageMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
+                <div className="flex flex-col gap-2">
+                  {/* Preview for image uploads */}
+                  {imageFile && (
+                    <div className="relative mb-2 rounded-md border border-border p-1 w-fit">
+                      <img 
+                        src={URL.createObjectURL(imageFile)} 
+                        alt="Upload preview" 
+                        className="h-20 w-20 object-cover rounded"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
+                        onClick={() => setImageFile(null)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Preview for voice uploads */}
+                  {audioFile && (
+                    <div className="relative mb-2 rounded-md border border-border p-2 w-full max-w-xs">
+                      <div className="flex items-center gap-2">
+                        <Mic className="h-5 w-5 text-primary" />
+                        <span className="text-sm truncate">
+                          {audioFile.name}
+                        </span>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="h-5 w-5 rounded-full ml-auto"
+                          onClick={() => setAudioFile(null)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Audio recording indicator */}
+                  {isRecording && (
+                    <div className="rounded-md border border-border p-2 bg-muted/50 w-full">
+                      <div className="flex items-center gap-2">
+                        <div className="animate-pulse">
+                          <Mic className="h-5 w-5 text-red-500" />
+                        </div>
+                        <span className="text-sm">Recording... {recordingTime}s</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="ml-auto"
+                          onClick={stopRecording}
+                        >
+                          Stop
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                
+                  <div className="flex gap-2">
+                    {/* Attachment buttons */}
+                    <div className="flex gap-1">
+                      {/* Image upload button */}
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon"
+                        onClick={() => imageInputRef.current?.click()}
+                        disabled={isRecording || sendMessageMutation.isPending}
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                      </Button>
+                      <input 
+                        type="file"
+                        ref={imageInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                      
+                      {/* Voice recording button */}
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon"
+                        onClick={isRecording ? stopRecording : startRecording}
+                        className={isRecording ? "bg-red-100 text-red-600 border-red-200" : ""}
+                        disabled={sendMessageMutation.isPending}
+                      >
+                        <Mic className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <Input
+                      placeholder="Type your message..."
+                      value={messageInput}
+                      onChange={handleMessageInputChange}
+                      onKeyDown={handleKeyPress}
+                      name="messageInput"
+                      className="flex-1"
+                      disabled={sendMessageMutation.isPending || isRecording}
+                    />
+                    
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={((!messageInput.trim() && !imageFile && !audioFile) || sendMessageMutation.isPending)}
+                    >
+                      {sendMessageMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </>

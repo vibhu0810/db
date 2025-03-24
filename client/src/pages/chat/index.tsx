@@ -43,22 +43,31 @@ export default function ChatPage() {
   const [ticketFeedback, setTicketFeedback] = useState("");
   const [activeTicketId, setActiveTicketId] = useState<number | null>(null);
   
-  // Parse URL query parameters to get ticket ID if present
+  // Check URL for ticket ID (from both route params and query string)
+  const [, params] = useRoute('/chat/ticket/:id');
+  
   const getTicketIdFromUrl = useCallback(() => {
+    // First check route params (higher priority)
+    if (params && params.id && !isNaN(parseInt(params.id, 10))) {
+      console.log("Found ticket ID in route params:", params.id);
+      return parseInt(params.id, 10);
+    }
+    
+    // Otherwise check query parameters
     try {
       const queryString = location.split('?')[1] || "";
       const searchParams = new URLSearchParams(queryString);
       const ticketId = searchParams.get('ticket');
       
       console.log("URL query parameters:", queryString);
-      console.log("Extracted ticket ID:", ticketId);
+      console.log("Extracted ticket ID from query:", ticketId);
       
       return ticketId && !isNaN(parseInt(ticketId, 10)) ? parseInt(ticketId, 10) : null;
     } catch (error) {
       console.error("Error parsing ticket ID from URL:", error);
       return null;
     }
-  }, [location]);
+  }, [location, params]);
   
   // Get ticket ID from URL if available
   const ticketId = getTicketIdFromUrl();
@@ -325,10 +334,8 @@ export default function ChatPage() {
     const virtualTicketUserId = -ticket.id;
     setSelectedUserId(virtualTicketUserId);
     
-    // Update URL without navigating
-    const url = new URL(window.location.href);
-    url.searchParams.set('ticket', ticket.id.toString());
-    window.history.pushState({}, '', url);
+    // Navigate to the ticket-specific URL
+    navigate(`/chat/ticket/${ticket.id}`);
   };
   
   // Loading state
@@ -492,7 +499,7 @@ export default function ChatPage() {
                                   <span className="font-medium text-xs">System</span>
                                 </div>
                                 <div 
-                                  className="whitespace-pre-wrap break-words text-muted-foreground"
+                                  className="whitespace-pre-wrap break-words text-muted-foreground system-message-content"
                                   dangerouslySetInnerHTML={{ __html: message.content }}
                                 ></div>
                               </div>

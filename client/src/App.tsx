@@ -58,6 +58,14 @@ function App() {
             </DashboardShell>
           </ProtectedRoute>
         </Route>
+        {/* Special route for direct ticket access */}
+        <Route path="/chat/ticket/:id">
+          <ProtectedRoute>
+            <DashboardShell>
+              <ChatPage />
+            </DashboardShell>
+          </ProtectedRoute>
+        </Route>
         <Route path="/users">
           <ProtectedRoute>
             <DashboardShell>

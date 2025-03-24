@@ -139,7 +139,7 @@ export default function ChatPage() {
               id: `ticket-${ticketId}-1`,
               senderId: -100, // System message sender ID
               receiverId: user?.id || 0,
-              content: `Support Ticket #${ticketId}: ${ticketData.ticket.subject || 'Support Request'}\n\n${ticketData.ticket.description || 'No description provided'}`,
+              content: `Opened support ticket for Order #${ticketData.ticket.orderId}`,
               attachmentUrl: null,
               attachmentType: null,
               read: true,
@@ -548,8 +548,8 @@ export default function ChatPage() {
             console.log('Found customer user:', customerData);
             setSelectedUserId(customerData.id);
             
-            // Set initial message to acknowledge ticket
-            setMessageInput(`I'm here to help with your support ticket #${ticketId}.`);
+            // Do not set initial message - let the admin type their own message
+            setMessageInput("");
           })
           .catch(err => {
             console.error('Error fetching customer user:', err);
@@ -661,18 +661,12 @@ export default function ChatPage() {
                               url.searchParams.set('ticket', ticket.id.toString());
                               window.history.pushState({}, '', url);
                               
-                              // For non-admin users, prepare a message to the admin about this ticket
+                              // For non-admin users, prepare UI to talk with admin about this ticket
                               if (!isAdmin && users.length > 0) {
                                 const adminUser = users.find((u: ChatUser) => u.is_admin);
                                 if (adminUser) {
-                                  // Set a message specific to this ticket
-                                  const ticketMessage = `I need help with support ticket #${ticket.id}: ${ticket.subject || 'Support Request'}`;
-                                  
-                                  // Add the ticket ID directly in the message to help track conversations 
-                                  setMessageInput(`${ticketMessage}\n\nTicket ID: ${ticket.id}`);
-                                  
-                                  // Create a special class for virtual ticket chat that shows previous messages
-                                  // We'll fetch previous ticket messages in the chat display section
+                                  // Do not set a default message - allow user to type their own message
+                                  // just focus the input field
                                   
                                   // Focus the input field after a short delay
                                   setTimeout(() => {

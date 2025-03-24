@@ -2090,7 +2090,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       
-      const { ratings = {}, comments, averageRating: clientAvgRating } = req.body;
+      const { ratings, comments, averageRating: clientAvgRating, isCompleted } = req.body;
+      
+      // Ensure ratings is properly formatted in the database
+      // It should be a JSON string either from the client or stringified here
+      let processedRatings = ratings;
+      if (ratings && typeof ratings !== 'string') {
+        // If it's not already a string, stringify it
+        processedRatings = JSON.stringify(ratings);
+      }
       
       // Calculate average rating from all question ratings if not provided
       let averageRating;
@@ -2099,9 +2107,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Use client-provided average if available
         averageRating = Number(clientAvgRating);
       } else {
-        const ratingValues = ratings && typeof ratings === 'object' ? Object.values(ratings) as number[] : [];
+        // Parse ratings to get values if it's a string
+        let ratingValues: number[] = [];
+        try {
+          if (typeof processedRatings === 'string') {
+            const parsedRatings = JSON.parse(processedRatings);
+            ratingValues = Array.isArray(parsedRatings) ? parsedRatings : Object.values(parsedRatings);
+          }
+        } catch (e) {
+          console.error("Error parsing ratings:", e);
+          ratingValues = [];
+        }
+        
         averageRating = ratingValues.length > 0 
-          ? Number((ratingValues.reduce((sum, val) => sum + val, 0) / ratingValues.length).toFixed(2))
+          ? Number((ratingValues.reduce((sum, val) => sum + Number(val), 0) / ratingValues.length).toFixed(2))
           : 0;
       }
       
@@ -2119,7 +2138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         const updatedFeedback = await storage.updateFeedback(feedbackId, {
-          ratings: JSON.stringify(ratings),
+          ratings: processedRatings,
           averageRating: averageRating.toString(),
           comments,
           isCompleted: true
@@ -2135,7 +2154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.user.id,
           month: currentMonth,
           year: currentYear,
-          ratings: JSON.stringify(ratings),
+          ratings: processedRatings,
           averageRating: averageRating.toString(),
           comments,
           isCompleted: true,

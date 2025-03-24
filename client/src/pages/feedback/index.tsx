@@ -78,8 +78,27 @@ function formatMonth(month: number): string {
 }
 
 function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
-  // Parse the ratings JSON
-  const ratings = JSON.parse(feedback.ratings);
+  // Parse the ratings JSON with error handling
+  let ratings: number[] = [];
+  try {
+    // Handle different formats: string (JSON), object, or array
+    if (typeof feedback.ratings === 'string') {
+      ratings = JSON.parse(feedback.ratings);
+    } else if (Array.isArray(feedback.ratings)) {
+      ratings = feedback.ratings;
+    } else if (typeof feedback.ratings === 'object' && feedback.ratings !== null) {
+      ratings = Object.values(feedback.ratings);
+    }
+    
+    // Ensure ratings is an array
+    if (!Array.isArray(ratings)) {
+      ratings = [];
+    }
+  } catch (e) {
+    console.error("Error parsing ratings:", e);
+    ratings = [];
+  }
+  
   const averageRating = parseFloat(feedback.averageRating || "0");
   
   return (
@@ -139,7 +158,7 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
       const response = await apiRequest(`/api/feedback/${feedback.id}`, {
         method: "PUT",
         body: JSON.stringify({
-          ratings,
+          ratings: JSON.stringify(ratings), // Convert array to JSON string for consistent storage
           averageRating,
           comments,
           isCompleted: true

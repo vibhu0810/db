@@ -37,6 +37,7 @@ const adminNavigation = [
   { name: "Invoices", href: "/invoices", icon: FileText },
   { name: "Users", href: "/users", icon: Users },
   { name: "Chat Support", href: "/chat", icon: MessageSquare },
+  { name: "Ticket Tools", href: "/admin/ticket-tools", icon: Wrench },
 ];
 
 export function Sidebar() {

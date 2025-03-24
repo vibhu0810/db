@@ -98,9 +98,18 @@ export const getQueryFn: <T>(options: {
     try {
       const res = await fetch(url, {
         credentials: "include",
+        headers: {
+          "Accept": "application/json"
+        }
       });
       
       console.log(`Response from ${url}: status=${res.status}`);
+      
+      // Check content type to ensure we're getting JSON
+      const contentType = res.headers.get('content-type');
+      if (contentType && !contentType.includes('application/json')) {
+        console.warn(`Warning: Response from ${url} is not JSON (${contentType})`);
+      }
       
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {
         console.log(`Unauthorized access to ${url}, returning null as configured`);
@@ -108,19 +117,29 @@ export const getQueryFn: <T>(options: {
       }
 
       if (!res.ok) {
-        const text = await res.text();
+        let text = "";
+        try {
+          text = await res.text();
+        } catch (error) {
+          console.error("Error parsing error response:", error);
+          text = "Failed to parse error response";
+        }
         console.error(`Error response from ${url}: ${res.status} - ${text || res.statusText}`);
         throw new Error(`${res.status}: ${text || res.statusText}`);
       }
 
-      const data = await res.json();
-      console.log(`Successful data fetch from ${url}, data:`, 
-        url.includes('/api/user') ? (data ? 'User data present' : 'No user data') : 'Data received');
-      
-      return data;
+      try {
+        const data = await res.json();
+        console.log(`Successful data fetch from ${url}, data:`, 
+          url.includes('/api/user') ? (data ? 'User data present' : 'No user data') : 'Data received');
+        return data;
+      } catch (error) {
+        console.error(`Error parsing JSON from ${url}:`, error);
+        throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`);
+      }
     } catch (error) {
       console.error(`Error fetching ${url}:`, error);
-      throw error;
+      throw error instanceof Error ? error : new Error(String(error));
     }
   };
 

@@ -417,14 +417,14 @@ export default function Orders() {
 
   // Check for edit parameter in URL when component mounts and orders are loaded
   useEffect(() => {
-    if (!orders.length) return; // Skip if orders aren't loaded yet
+    if (!ordersData.length) return; // Skip if orders aren't loaded yet
     
     const urlParams = new URLSearchParams(location.split('?')[1] || '');
     const editId = urlParams.get('edit');
     
     if (editId) {
       const orderId = parseInt(editId, 10);
-      const orderToEdit = orders.find((order: Order) => order.id === orderId);
+      const orderToEdit = ordersData.find((order: Order) => order.id === orderId);
       
       if (orderToEdit) {
         setOrderToEdit(orderToEdit);
@@ -442,7 +442,7 @@ export default function Orders() {
         setLocation('/orders');
       }, 100);
     }
-  }, [orders, location, setLocation, toast]);
+  }, [ordersData, location, setLocation, toast]);
   
   // Apply CSS for resizable columns
   useEffect(() => {
@@ -642,7 +642,7 @@ export default function Orders() {
     mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
       setIsActionInProgress(true);
       // Store the current status in case we need to roll back
-      const currentOrder = orders.find(o => o.id === orderId);
+      const currentOrder = ordersData.find((o: any) => o.id === orderId);
       if (currentOrder) {
         setPreviousOrderStatuses(prev => ({
           ...prev,
@@ -797,7 +797,7 @@ export default function Orders() {
   };
 
   // Filter and sort orders
-  const filteredOrders = orders
+  const filteredOrders = ordersData
     .filter((order: Order) => {
       // Filter by type (niche edit or guest post)
       if (selectedType !== "all") {
@@ -884,7 +884,7 @@ export default function Orders() {
   };
 
   // If data is loading, show a loading spinner
-  if (isLoading) {
+  if (isLoadingOrders) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

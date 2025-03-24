@@ -5,13 +5,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { format } from "date-fns";
-import { Loader2, Copy, MessageSquare, ArrowLeft, LifeBuoy, Star, Pencil } from "lucide-react";
+import { Loader2, Copy, MessageSquare, ArrowLeft, LifeBuoy, Star, Pencil, Save, X, FileText, ExternalLink, AlertTriangle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { X, FileText, ExternalLink, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,15 @@ export default function OrderDetailsPage() {
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [ticketRating, setTicketRating] = useState(5);
   const [ticketFeedback, setTicketFeedback] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedOrder, setEditedOrder] = useState<{
+    sourceUrl: string,
+    targetUrl: string,
+    anchorText: string,
+    textEdit: string,
+    notes: string,
+    title: string | null
+  } | null>(null);
 
   // Keep track of previous order status to detect changes
   const [previousStatus, setPreviousStatus] = useState<string | null>(null);
@@ -297,6 +306,55 @@ export default function OrderDetailsPage() {
       });
     },
   });
+  
+  // Mutation for updating an order
+  const updateOrderMutation = useMutation({
+    mutationFn: async () => {
+      if (!editedOrder || !id) throw new Error("No changes to save");
+      
+      const res = await apiRequest("PATCH", `/api/orders/${id}`, {
+        ...editedOrder
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update order");
+      }
+      
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders', id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      setIsEditing(false);
+      
+      toast({
+        title: "Order Updated",
+        description: `Order #${id} has been updated successfully.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Initialize edited order when edit mode is enabled
+  useEffect(() => {
+    if (isEditing && order && !editedOrder) {
+      setEditedOrder({
+        sourceUrl: order.sourceUrl,
+        targetUrl: order.targetUrl,
+        anchorText: order.anchorText,
+        textEdit: order.textEdit || "",
+        notes: order.notes || "",
+        title: order.title
+      });
+    }
+  }, [isEditing, order, editedOrder]);
 
   if (isLoading) {
     return (
@@ -487,48 +545,78 @@ export default function OrderDetailsPage() {
             {order.status === "In Progress" && order.userId === user?.id && (
               <div className="mt-4 flex space-x-2">
                 {/* Edit Order Button */}
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => {
-                    // Navigate to edit page or open edit dialog
-                    window.location.href = `/orders?edit=${order.id}`;
-                  }}
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit Order
-                </Button>
+                {isEditing ? (
+                  <Button 
+                    variant="default" 
+                    className="flex-1"
+                    onClick={() => updateOrderMutation.mutate()}
+                    disabled={updateOrderMutation.isPending}
+                  >
+                    {updateOrderMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    Save Changes
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit Order
+                  </Button>
+                )}
                 
-                {/* Cancel Order Button */}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="flex-1">
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel Order
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Cancel Order</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to cancel this order? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>No, Keep Order</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => cancelOrderMutation.mutate()}
-                        disabled={cancelOrderMutation.isPending}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        {cancelOrderMutation.isPending && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        Yes, Cancel Order
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                {/* Cancel Edit Button - only shows when editing */}
+                {isEditing && (
+                  <Button 
+                    variant="secondary" 
+                    className="flex-1"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditedOrder(null);
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel Edit
+                  </Button>
+                )}
+                
+                {/* Cancel Order Button - only shows when not editing */}
+                {!isEditing && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="flex-1">
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel Order
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to cancel this order? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>No, Keep Order</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => cancelOrderMutation.mutate()}
+                          disabled={cancelOrderMutation.isPending}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {cancelOrderMutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          Yes, Cancel Order
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             )}
           </CardContent>

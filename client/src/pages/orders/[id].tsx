@@ -632,7 +632,7 @@ export default function OrderDetailsPage() {
                         size="sm"
                         onClick={() => {
                           // Use a direct navigation approach for consistency
-                          const chatUrl = `/chat?ticket=${supportTicket.id}`;
+                          const chatUrl = `/chat/ticket/${supportTicket.id}`;
                           window.location.href = chatUrl;
                         }}
                       >

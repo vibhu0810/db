@@ -377,7 +377,7 @@ export default function ChatPage() {
                     {userTickets.tickets.filter((ticket: any) => ticket.status !== 'closed').length}
                   </span>
                 </div>
-                <ScrollArea className="h-[70vh] border rounded-md p-2">
+                <ScrollArea className="h-[35vh] border rounded-md p-2 mb-4">
                   <div className="space-y-2 pr-2">
                     {userTickets.tickets
                       .filter((ticket: any) => ticket.status !== 'closed')
@@ -401,6 +401,52 @@ export default function ChatPage() {
                     ))}
                   </div>
                 </ScrollArea>
+                
+                {/* Closed tickets section */}
+                <div className="mt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-sm font-medium">Closed Tickets</h3>
+                    <span className="text-xs bg-muted px-2 py-1 rounded-full">
+                      {userTickets.tickets.filter((ticket: any) => ticket.status === 'closed').length}
+                    </span>
+                  </div>
+                  <ScrollArea className="h-[30vh] border rounded-md p-2">
+                    <div className="space-y-2 pr-2">
+                      {userTickets.tickets
+                        .filter((ticket: any) => {
+                          // Only show closed tickets from the last 6 months
+                          if (ticket.status !== 'closed') return false;
+                          
+                          const sixMonthsAgo = new Date();
+                          sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+                          
+                          const closedDate = ticket.closedAt 
+                            ? new Date(ticket.closedAt)
+                            : new Date(ticket.createdAt); // fallback if closedAt isn't set
+                            
+                          return closedDate > sixMonthsAgo;
+                        })
+                        .map((ticket: any) => (
+                        <Button 
+                          key={ticket.id}
+                          variant={activeTicketId === ticket.id ? "default" : "outline"} 
+                          size="sm"
+                          className="w-full justify-start text-xs opacity-75 hover:opacity-100"
+                          onClick={() => handleTicketSelect(ticket)}
+                        >
+                          <div className="flex flex-col items-start">
+                            <span className="truncate font-medium">
+                              Ticket #{ticket.id} - Order #{ticket.orderId || 'N/A'}
+                            </span>
+                            <span className="text-xs text-muted-foreground mt-1">
+                              Closed {formatDistanceToNow(new Date(ticket.closedAt || ticket.createdAt), { addSuffix: true })}
+                            </span>
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
               </div>
             ) : (
               <div className="mt-8 text-center text-muted-foreground p-4">

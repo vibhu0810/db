@@ -128,14 +128,14 @@ export function NotificationsDropdown() {
           // We need to extract the ticket ID from the notification - first check if it's a property
           if (notification.ticketId) {
             console.log('Using ticketId from notification:', notification.ticketId);
-            setLocation(`/chat?ticket=${notification.ticketId}`);
+            setLocation(`/chat/ticket/${notification.ticketId}`);
           } else {
             // Try to parse ticket ID from the message
             const ticketIdMatch = notification.message.match(/ticket\s+#?(\d+)/i);
             if (ticketIdMatch && ticketIdMatch[1]) {
               const parsedTicketId = parseInt(ticketIdMatch[1], 10);
               console.log('Extracted ticket ID from message:', parsedTicketId);
-              setLocation(`/chat?ticket=${parsedTicketId}`);
+              setLocation(`/chat/ticket/${parsedTicketId}`);
             } else {
               // Extract the ticket info from notification data somehow - for now, just go to chat
               console.log('No ticketId found, redirecting to main chat page');

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Link } from 'wouter';
+import { useLocation } from 'wouter';
 import { MessageCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
 
 /**
  * FloatingChatButton - A floating button component that appears on the bottom right of the screen
@@ -10,6 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
  */
 export function FloatingChatButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const [, navigate] = useLocation();
   const { user } = useAuth();
   
   // If user is an admin, don't show the floating chat button
@@ -20,6 +22,11 @@ export function FloatingChatButton() {
   // Admin user ID - in a production app, this would be dynamically fetched
   const adminId = 133;
   
+  const handleChatClick = () => {
+    navigate(`/chat?user=${adminId}`);
+    setIsOpen(false);
+  };
+  
   return (
     <div className="fixed bottom-6 right-6 z-50">
       <AnimatePresence>
@@ -28,28 +35,28 @@ export function FloatingChatButton() {
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
-            className="absolute bottom-16 right-0 p-4 bg-white rounded-lg shadow-lg border mb-2 w-64"
+            className="absolute bottom-16 right-0 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border mb-2 w-64"
           >
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-medium">Need help?</h3>
-              <button 
+              <Button 
+                variant="ghost"
+                size="icon"
                 onClick={() => setIsOpen(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="h-6 w-6 p-0"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
             <p className="text-sm text-muted-foreground mb-3">
               Chat directly with our support team for any questions or assistance.
             </p>
-            <Link href={`/chat?user=${adminId}`}>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-2 rounded-md text-sm font-medium"
-              >
-                Start Chat
-              </button>
-            </Link>
+            <Button
+              onClick={handleChatClick}
+              className="w-full"
+            >
+              Start Chat
+            </Button>
           </motion.div>
         )}
       </AnimatePresence>

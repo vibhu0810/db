@@ -411,70 +411,118 @@ export default function OrderDetailsPage() {
           <CardContent className="max-h-[450px] overflow-auto p-6">
             <div className="space-y-4">
               <label className="text-sm font-medium text-muted-foreground">Source URL / Guest Post Title</label>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="truncate">
-                  {order.sourceUrl === "not_applicable" 
-                    ? (order.title && order.title !== "not_applicable" 
-                       ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
-                       : "No source URL provided")
-                    : order.sourceUrl
-                  }
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="flex-shrink-0"
-                  onClick={() => copyToClipboard(
-                    order.sourceUrl === "not_applicable"
+              {isEditing && editedOrder ? (
+                <Input
+                  value={order.sourceUrl === "not_applicable" ? (editedOrder.title || "") : editedOrder.sourceUrl}
+                  onChange={(e) => {
+                    if (order.sourceUrl === "not_applicable") {
+                      setEditedOrder({...editedOrder, title: e.target.value});
+                    } else {
+                      setEditedOrder({...editedOrder, sourceUrl: e.target.value});
+                    }
+                  }}
+                  className="mt-1"
+                />
+              ) : (
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="truncate">
+                    {order.sourceUrl === "not_applicable" 
                       ? (order.title && order.title !== "not_applicable" 
                          ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
-                         : "")
+                         : "No source URL provided")
                       : order.sourceUrl
-                  )}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
+                    }
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="flex-shrink-0"
+                    onClick={() => copyToClipboard(
+                      order.sourceUrl === "not_applicable"
+                        ? (order.title && order.title !== "not_applicable" 
+                           ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
+                           : "")
+                        : order.sourceUrl
+                    )}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div>
               <label className="text-sm font-medium text-muted-foreground">Target URL</label>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="truncate">{order.targetUrl}</div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="flex-shrink-0"
-                  onClick={() => copyToClipboard(order.targetUrl)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
+              {isEditing && editedOrder ? (
+                <Input
+                  value={editedOrder.targetUrl}
+                  onChange={(e) => setEditedOrder({...editedOrder, targetUrl: e.target.value})}
+                  className="mt-1"
+                />
+              ) : (
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="truncate">{order.targetUrl}</div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="flex-shrink-0"
+                    onClick={() => copyToClipboard(order.targetUrl)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div>
               <label className="text-sm font-medium text-muted-foreground">Anchor Text</label>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="truncate">{order.anchorText}</div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="flex-shrink-0"
-                  onClick={() => copyToClipboard(order.anchorText)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
+              {isEditing && editedOrder ? (
+                <Input
+                  value={editedOrder.anchorText}
+                  onChange={(e) => setEditedOrder({...editedOrder, anchorText: e.target.value})}
+                  className="mt-1"
+                />
+              ) : (
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="truncate">{order.anchorText}</div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="flex-shrink-0"
+                    onClick={() => copyToClipboard(order.anchorText)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div>
               <label className="text-sm font-medium text-muted-foreground">Text Edit/Article</label>
-              <div className="mt-1 whitespace-pre-wrap">{order.textEdit || "No content"}</div>
+              {isEditing && editedOrder ? (
+                <Textarea
+                  value={editedOrder.textEdit}
+                  onChange={(e) => setEditedOrder({...editedOrder, textEdit: e.target.value})}
+                  className="mt-1"
+                  rows={5}
+                />
+              ) : (
+                <div className="mt-1 whitespace-pre-wrap">{order.textEdit || "No content"}</div>
+              )}
             </div>
 
             <div>
               <label className="text-sm font-medium text-muted-foreground">Notes</label>
-              <div className="mt-1 whitespace-pre-wrap">{order.notes || "No notes"}</div>
+              {isEditing && editedOrder ? (
+                <Textarea
+                  value={editedOrder.notes}
+                  onChange={(e) => setEditedOrder({...editedOrder, notes: e.target.value})}
+                  className="mt-1"
+                  rows={3}
+                />
+              ) : (
+                <div className="mt-1 whitespace-pre-wrap">{order.notes || "No notes"}</div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

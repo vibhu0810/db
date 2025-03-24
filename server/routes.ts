@@ -199,10 +199,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get a specific order
   app.get("/api/orders/:id", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     try {
       const orderId = parseInt(req.params.id);
@@ -226,10 +226,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create a new order
   app.post("/api/orders", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     try {
       // Set the user ID from the session
@@ -338,10 +338,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get comments for an order
   app.get("/api/orders/:id/comments", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     try {
       const orderId = parseInt(req.params.id);

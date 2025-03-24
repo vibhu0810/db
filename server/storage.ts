@@ -286,7 +286,7 @@ export class DatabaseStorage implements IStorage {
           orderId: comment.orderId,
           userId: comment.userId,
           message: comment.message,
-          ticketId: comment.ticketId, // Include ticket ID if provided
+          ticketId: comment.ticketId || undefined, // Include ticket ID if provided
           isFromAdmin: isFromAdmin,
           isSystemMessage: isSystemMessage,
           readByUser: isFromAdmin ? false : true, // If from admin, not read by user yet
@@ -662,7 +662,7 @@ Please provide any additional details that might help us assist you better with 
         message: `New support ticket: ${ticket.title}`,
         createdAt: new Date(),
         read: false,
-        ticketId: newTicket.id ? newTicket.id : undefined, // Include the ticket ID in the notification for admins too
+        ticketId: newTicket.id, // Include the ticket ID in the notification for admins too
       });
       
       // Create initial message from user to admin for each admin
@@ -670,7 +670,7 @@ Please provide any additional details that might help us assist you better with 
       await this.createMessage({
         senderId: ticket.userId,
         receiverId: admin.id,
-        content: `Support Ticket #${newTicket.id}: ${ticket.title}\n\nI've created this support ticket for assistance. Order ID: ${ticket.orderId}`,
+        content: `Support Ticket #${newTicket.id}: ${ticket.title}\n\nI've created this support ticket for assistance. Order ID: ${ticket.orderId || 'N/A'}`,
         read: false,
       });
     }
@@ -682,7 +682,7 @@ Please provide any additional details that might help us assist you better with 
       message: "Your support ticket has been created. Our team will respond shortly.",
       createdAt: new Date(),
       read: false,
-      ticketId: newTicket.id ? newTicket.id : undefined, // Include the ticket ID in the notification
+      ticketId: newTicket.id, // Include the ticket ID in the notification
     });
     
     return newTicket;
@@ -708,10 +708,10 @@ Please provide any additional details that might help us assist you better with 
     if (updatedTicket) {
       // Add a system message about the status change
       await this.createOrderComment({
-        orderId: updatedTicket.orderId,
-        userId: 0, // System user
+        orderId: updatedTicket.orderId || 0,
+        userId: -1, // System user (consistent with other places)
         message: `Support ticket status has been updated to "${updates.status || updatedTicket.status}".`,
-        ticketId: updatedTicket.id ? updatedTicket.id : undefined,
+        ticketId: updatedTicket.id,
         isSystemMessage: true,
         isFromAdmin: true,
       });
@@ -722,7 +722,7 @@ Please provide any additional details that might help us assist you better with 
         message: `Your support ticket status has been updated to ${updates.status || updatedTicket.status}`,
         createdAt: new Date(),
         read: false,
-        ticketId: updatedTicket.id ? updatedTicket.id : undefined, // Include the ticket ID in the notification
+        ticketId: updatedTicket.id,
       });
     }
     
@@ -756,10 +756,10 @@ Please provide any additional details that might help us assist you better with 
     if (fullTicket) {
       // Create closing system message
       await this.createOrderComment({
-        orderId: fullTicket.orderId,
-        userId: 0, // System user
+        orderId: fullTicket.orderId || 0,
+        userId: -1, // System user (consistent with other places)
         message: `This support ticket has been closed. ${feedback ? `User feedback: "${feedback}"` : ''} ${rating ? `Rating: ${rating}/5 stars` : ''}`,
-        ticketId: fullTicket.id ? fullTicket.id : undefined,
+        ticketId: fullTicket.id,
         isSystemMessage: true,
         isFromAdmin: true,
       });
@@ -770,7 +770,7 @@ Please provide any additional details that might help us assist you better with 
         message: "Your support ticket has been closed. Thank you for your feedback!",
         createdAt: new Date(),
         read: false,
-        ticketId: fullTicket.id ? fullTicket.id : undefined, // Include the ticket ID in the notification
+        ticketId: fullTicket.id,
       });
       
       // Also notify admin about the feedback
@@ -787,7 +787,7 @@ Please provide any additional details that might help us assist you better with 
             message: `User provided feedback on ticket #${id}: ${rating ? `${rating}/5 stars` : ''} ${feedback || ''}`,
             createdAt: new Date(),
             read: false,
-            ticketId: id ? id : undefined, // Include the ticket ID in the notification
+            ticketId: id, // Include the ticket ID in the notification
           });
         }
       }

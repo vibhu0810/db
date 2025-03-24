@@ -28,6 +28,9 @@ app.use((req, res, next) => {
 // Initialize server with error handling
 (async () => {
   try {
+    // Set up authentication first
+    setupAuth(app);
+    
     // Register API routes
     await registerRoutes(app);
     

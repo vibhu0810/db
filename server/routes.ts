@@ -48,9 +48,7 @@ type NicheEditStatus = typeof NICHE_EDIT_STATUSES[number];
 type OrderStatus = GuestPostStatus | NicheEditStatus;
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup authentication
-  setupAuth(app);
-  
+  // Authentication is now set up in server/index.ts
   const server = createServer(app);
 
   app.use("/api/uploadthing", uploadthingHandler);
@@ -106,10 +104,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profile", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     try {
       const profileData = updateProfileSchema.parse(req.body);

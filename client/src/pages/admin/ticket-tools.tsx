@@ -9,7 +9,7 @@ import { Redirect, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertCircle, CheckCircle, AlertTriangle, Clock } from "lucide-react";
+import { AlertCircle, CheckCircle, AlertTriangle, Clock, MessageSquare, Star } from "lucide-react";
 
 interface SupportTicket {
   id: number;
@@ -361,7 +361,7 @@ export default function AdminTicketTools() {
                               <div className="flex space-x-2">
                                 <Link href={`/chat/ticket/${ticket.id}`}>
                                   <Button variant="outline" size="sm" className="cursor-pointer">
-                                    <History className="h-3.5 w-3.5 mr-1" />
+                                    <Clock className="h-3.5 w-3.5 mr-1" />
                                     History
                                   </Button>
                                 </Link>

@@ -38,23 +38,34 @@ export function FloatingChatButton() {
     refetchInterval: 60000, // Refresh every minute
   });
 
-  // Simulate chat history for the UI
-  const recentConversations = [
-    {
-      id: 133,
-      name: 'Digital Gratified',
-      lastMessage: 'How can I help you with SEO today?',
-      timestamp: new Date().toISOString(),
-      unread: 1
-    },
-    {
-      id: 134,
-      name: 'SEO Support Team',
-      lastMessage: 'Your latest backlink report is ready!',
-      timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      unread: 0
+  // Get real chat history from API
+  const { data: chatHistory, isLoading: isLoadingChatHistory } = useQuery({
+    queryKey: ['/api/chat/history'],
+    queryFn: getQueryFn<any[]>({ on401: 'returnNull' }),
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+  
+  // Format chat history data for the UI
+  const recentConversations = React.useMemo(() => {
+    if (!chatHistory || chatHistory.length === 0) {
+      // Default conversation if no history exists yet
+      return adminUsers && adminUsers.length > 0 ? [{
+        id: adminUsers[0].id,
+        name: adminUsers[0].companyName || adminUsers[0].username || 'SEO Expert',
+        lastMessage: 'Start a conversation with our SEO team!',
+        timestamp: new Date().toISOString(),
+        unread: 0
+      }] : [];
     }
-  ];
+    
+    return chatHistory.map(chat => ({
+      id: chat.userId,
+      name: chat.username,
+      lastMessage: chat.lastMessage,
+      timestamp: chat.timestamp,
+      unread: chat.unread
+    }));
+  }, [chatHistory, adminUsers]);
 
   // Default to the main admin ID
   const mainAdminId = adminUsers && adminUsers.length > 0 

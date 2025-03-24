@@ -204,7 +204,7 @@ export class DatabaseStorage implements IStorage {
           month: currentMonth,
           year: currentYear,
           ratings: JSON.stringify({}), // Empty ratings initially
-          averageRating: 0,
+          averageRating: "0.0",
           isCompleted: false,
           createdAt: new Date()
         });

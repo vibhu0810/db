@@ -2019,6 +2019,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Feedback routes
+  // Get feedback status for current user
+  app.get("/api/feedback/status", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const feedbackNeeded = await storage.checkFeedbackNeeded(req.user.id);
+      const currentFeedback = await storage.getCurrentMonthFeedback(req.user.id);
+      
+      res.json({
+        feedbackNeeded,
+        currentFeedback
+      });
+    } catch (error) {
+      console.error("Error getting feedback status:", error);
+      res.status(500).json({ error: "Failed to check feedback status" });
+    }
+  });
+  
+  // Get all feedback for current user
+  app.get("/api/feedback", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const feedbackList = await storage.getUserFeedback(req.user.id);
+      res.json(feedbackList);
+    } catch (error) {
+      console.error("Error getting user feedback:", error);
+      res.status(500).json({ error: "Failed to get user feedback" });
+    }
+  });
+  
+  // Get user's average rating
+  app.get("/api/feedback/rating", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const averageRating = await storage.getUserAverageRating(req.user.id);
+      res.json({ averageRating });
+    } catch (error) {
+      console.error("Error getting user rating:", error);
+      res.status(500).json({ error: "Failed to get user rating" });
+    }
+  });
+  
+  // Submit or update feedback
+  app.post("/api/feedback/:id?", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      const { ratings, comments } = req.body;
+      
+      // Calculate average rating from all question ratings
+      const ratingValues = Object.values(ratings) as number[];
+      const averageRating = ratingValues.length > 0 
+        ? Number((ratingValues.reduce((sum, val) => sum + val, 0) / ratingValues.length).toFixed(2))
+        : 0;
+      
+      if (req.params.id) {
+        // Update existing feedback
+        const feedbackId = parseInt(req.params.id);
+        const existingFeedback = await storage.getFeedback(feedbackId);
+        
+        if (!existingFeedback) {
+          return res.status(404).json({ error: "Feedback not found" });
+        }
+        
+        if (existingFeedback.userId !== req.user.id) {
+          return res.status(403).json({ error: "You can only update your own feedback" });
+        }
+        
+        const updatedFeedback = await storage.updateFeedback(feedbackId, {
+          ratings: JSON.stringify(ratings),
+          averageRating: averageRating.toString(),
+          comments,
+          isCompleted: true
+        });
+        
+        return res.json(updatedFeedback);
+      } else {
+        // Create new feedback for current month
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+        
+        const newFeedback = await storage.createFeedback({
+          userId: req.user.id,
+          month: currentMonth,
+          year: currentYear,
+          ratings: JSON.stringify(ratings),
+          averageRating: averageRating.toString(),
+          comments,
+          isCompleted: true,
+          createdAt: new Date()
+        });
+        
+        return res.status(201).json(newFeedback);
+      }
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      res.status(500).json({ error: "Failed to submit feedback" });
+    }
+  });
+  
+  // Admin only: Get all feedback
+  app.get("/api/feedback/all", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const allFeedback = await storage.getAllFeedback();
+      
+      // Get users to join with feedback
+      const users = await storage.getUsers();
+      
+      // Combine feedback with user data
+      const feedbackWithUsers = allFeedback.map(feedback => {
+        const user = users.find(u => u.id === feedback.userId);
+        return {
+          ...feedback,
+          user: user ? {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            companyName: user.companyName
+          } : undefined
+        };
+      });
+      
+      res.json(feedbackWithUsers);
+    } catch (error) {
+      console.error("Error getting all feedback:", error);
+      res.status(500).json({ error: "Failed to get all feedback" });
+    }
+  });
+  
+  // Admin only: Trigger monthly feedback generation
+  app.post("/api/feedback/generate", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const count = await storage.generateMonthlyFeedbackRequests();
+      res.json({ count, message: `Generated ${count} feedback requests` });
+    } catch (error) {
+      console.error("Error generating feedback requests:", error);
+      res.status(500).json({ error: "Failed to generate feedback requests" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

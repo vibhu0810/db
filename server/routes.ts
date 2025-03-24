@@ -1906,6 +1906,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configure UploadThing routes
   app.use("/api/uploadthing", uploadthingHandler);
   
+  // API endpoint to get chat history for a user
+  app.get("/api/chat/history", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      // Get all admin users
+      const admins = await storage.getUsers().then(users => users.filter(u => u.is_admin));
+      
+      // Get all messages for the current user with each admin
+      const chatHistory = await Promise.all(admins.map(async (admin) => {
+        // Get the latest message between user and this admin
+        const messages = await storage.getMessages(req.user!.id, admin.id);
+        
+        if (messages.length === 0) return null;
+        
+        // Count unread messages
+        const unreadCount = messages.filter(m => 
+          m.userId === admin.id && !m.read
+        ).length;
+        
+        // Get the latest message
+        const latestMessage = messages[messages.length - 1];
+        
+        return {
+          userId: admin.id,
+          username: admin.username || admin.companyName || "SEO Expert",
+          lastMessage: latestMessage.content,
+          timestamp: latestMessage.createdAt,
+          unread: unreadCount
+        };
+      }));
+      
+      // Filter out null values (for admins with no messages)
+      const filteredHistory = chatHistory.filter(chat => chat !== null);
+      
+      res.json(filteredHistory);
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+      res.status(500).json({ error: "Failed to fetch chat history" });
+    }
+  });
+  
   // Debug endpoint to check auth status
   app.get("/api/auth-status", (req, res) => {
     const status = {

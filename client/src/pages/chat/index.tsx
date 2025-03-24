@@ -803,7 +803,7 @@ export default function ChatPage() {
                                   {message.content}
                                 </p>
                               </div>
-                            ) : message.content && message.content.includes("Support Ticket #") ? (
+                            ) : (message.content && message.content.includes("Support Ticket #")) ? (
                               // Support ticket notification
                               <div className="bg-amber-100 dark:bg-amber-950 p-2 rounded-md border border-amber-300 dark:border-amber-800">
                                 <div className="flex gap-2 items-center mb-1 text-amber-800 dark:text-amber-400">
@@ -813,7 +813,7 @@ export default function ChatPage() {
                                 <div className="whitespace-pre-wrap break-words">
                                   {message.content && message.content.includes("Order #") ? (
                                     <>
-                                      {message.content && message.content.split("Order #").map((part: string, index: number) => {
+                                      {message.content.split("Order #").map((part: string, index: number) => {
                                         if (index === 0) return part;
                                         
                                         // Extract order ID from the text

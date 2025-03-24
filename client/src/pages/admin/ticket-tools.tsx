@@ -41,18 +41,23 @@ export default function AdminTicketTools() {
   }
 
   // Get all tickets
-  const { data: ticketsData = { tickets: [] }, isLoading: ticketsLoading, refetch: refetchTickets } = useQuery({
+  interface TicketsResponse { 
+    tickets: SupportTicket[] 
+  }
+  
+  const { data: ticketsData = { tickets: [] } as TicketsResponse, isLoading: ticketsLoading, refetch: refetchTickets } = useQuery({
     queryKey: ['/api/support-tickets'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: getQueryFn<TicketsResponse>({ on401: 'throw' }),
   });
-  const tickets = ticketsData.tickets as SupportTicket[];
+  
+  const tickets = ticketsData.tickets;
 
   // Get all users
-  const { data: usersData = [], isLoading: usersLoading } = useQuery({
+  const { data: usersData = [] as User[], isLoading: usersLoading } = useQuery({
     queryKey: ['/api/users'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: getQueryFn<User[]>({ on401: 'throw' }),
   });
-  const users = usersData as User[];
+  const users = usersData;
 
   const handleCloseAllTickets = async () => {
     if (isClosingAll) return;

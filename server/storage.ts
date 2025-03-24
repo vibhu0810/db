@@ -667,23 +667,27 @@ Please provide any additional details that might help us assist you better with 
       
       // Create initial message from user to admin for each admin
       // This starts the conversation automatically when a ticket is created
-      await this.createMessage({
-        senderId: ticket.userId,
-        receiverId: admin.id,
-        content: `Support Ticket #${newTicket.id}: ${ticket.title}\n\nI've created this support ticket for assistance. Order ID: ${ticket.orderId || 'N/A'}`,
-        read: false,
-      });
+      // Only create the message if we have a valid userId
+      if (ticket.userId) {
+        await this.createMessage({
+          senderId: ticket.userId,
+          receiverId: admin.id,
+          content: `Support Ticket #${newTicket.id}: ${ticket.title}\n\nI've created this support ticket for assistance. Order ID: ${ticket.orderId || 'N/A'}`,
+        });
+      }
     }
     
     // Also create a notification for the user who opened the ticket
-    await this.createNotification({
-      userId: ticket.userId,
-      type: "support_ticket",
-      message: "Your support ticket has been created. Our team will respond shortly.",
-      createdAt: new Date(),
-      read: false,
-      ticketId: newTicket.id, // Include the ticket ID in the notification
-    });
+    if (ticket.userId) {
+      await this.createNotification({
+        userId: ticket.userId,
+        type: "support_ticket",
+        message: "Your support ticket has been created. Our team will respond shortly.",
+        createdAt: new Date(),
+        read: false,
+        ticketId: newTicket.id, // Include the ticket ID in the notification
+      });
+    }
     
     return newTicket;
   }
@@ -716,14 +720,17 @@ Please provide any additional details that might help us assist you better with 
         isFromAdmin: true,
       });
       
-      await this.createNotification({
-        userId: updatedTicket.userId,
-        type: "support_ticket",
-        message: `Your support ticket status has been updated to ${updates.status || updatedTicket.status}`,
-        createdAt: new Date(),
-        read: false,
-        ticketId: updatedTicket.id,
-      });
+      // Only create notification if userId is valid
+      if (updatedTicket.userId) {
+        await this.createNotification({
+          userId: updatedTicket.userId,
+          type: "support_ticket",
+          message: `Your support ticket status has been updated to ${updates.status || updatedTicket.status}`,
+          createdAt: new Date(),
+          read: false,
+          ticketId: updatedTicket.id,
+        });
+      }
     }
     
     return ticket;
@@ -764,14 +771,17 @@ Please provide any additional details that might help us assist you better with 
         isFromAdmin: true,
       });
       
-      await this.createNotification({
-        userId: fullTicket.userId,
-        type: "support_ticket",
-        message: "Your support ticket has been closed. Thank you for your feedback!",
-        createdAt: new Date(),
-        read: false,
-        ticketId: fullTicket.id,
-      });
+      // Only create notification if userId is valid
+      if (fullTicket.userId) {
+        await this.createNotification({
+          userId: fullTicket.userId,
+          type: "support_ticket",
+          message: "Your support ticket has been closed. Thank you for your feedback!",
+          createdAt: new Date(),
+          read: false,
+          ticketId: fullTicket.id,
+        });
+      }
       
       // Also notify admin about the feedback
       if (rating !== undefined || feedback) {

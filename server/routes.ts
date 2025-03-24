@@ -66,10 +66,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/welcome", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     try {
       const welcomeMessage = await generateWelcomeMessage(
@@ -84,18 +84,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/me", (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    res.json(user);
+    res.json(req.user);
   });
 
   app.get("/api/users", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     try {
       const users = await storage.getUsers();
@@ -181,10 +180,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get all orders (admin gets all, users get their own)
   app.get("/api/orders", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     try {
       let orders;
@@ -447,10 +446,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get all notifications for the current user
   app.get("/api/notifications", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
 
     try {
       const notifications = await storage.getNotifications(user.id);
@@ -587,10 +586,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get user's chat history (recent conversations)
   app.get("/api/chat/history", async (req, res) => {
-    const { user } = req.session as any;
-    if (!user) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    const user = req.user;
     
     try {
       // For regular users, we get their conversations with admins

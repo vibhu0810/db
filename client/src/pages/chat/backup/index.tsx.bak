@@ -606,7 +606,7 @@ export default function ChatPage() {
     <>
       <div className="h-[calc(90vh-4rem)] flex gap-4">
         {/* Users list */}
-        <div className="w-64 border rounded-lg overflow-hidden flex flex-col">
+        <div className="w-64 border rounded-lg overflow-hidden">
           <div className="p-4 border-b bg-muted">
             <h2 className="font-semibold">
               {isAdmin ? "Customers" : "Support Team"}
@@ -715,77 +715,74 @@ export default function ChatPage() {
               </div>
             )}
           </div>
-          
-          {/* Support team members section */}
-          <div className="mt-3 pt-3 border-t px-4">
-            <h3 className="text-sm font-medium mb-2">Support Team Members</h3>
-            <div className="max-h-[300px] h-[300px] border rounded-md p-2 overflow-auto">
+          <div className="mt-3 pt-3 border-t">
+            <h3 className="text-sm font-medium mb-2 px-4">Support Team Members</h3>
+            <ScrollArea className="max-h-[300px] h-[300px] border rounded-md mx-4 mb-4">
               <div className="space-y-1 pr-2">
                 {users.length > 0 ? (
                   users.map((chatUser) => {
-                    // Count unread messages for this user
-                    const unreadMessages = messages?.filter(
-                      (m: any) => m.senderId === chatUser.id && !m.read &&
-                      // Only count messages from conversations other than the currently selected one
-                      (selectedUserId !== chatUser.id)
-                    );
-                    const unreadCount = unreadMessages?.length || 0;
-                    
-                    return (
-                      <button
-                        key={chatUser.id}
-                        onClick={() => setSelectedUserId(chatUser.id)}
-                        className={cn(
-                          "w-full p-4 text-left hover:bg-accent transition-colors flex items-center gap-3 relative",
-                          selectedUserId === chatUser.id && "bg-accent"
-                        )}
-                      >
-                        <div className="relative">
-                          <Avatar>
-                            {chatUser.profilePicture ? (
-                              <img src={chatUser.profilePicture} alt={chatUser.username} />
-                            ) : (
-                              <div className="bg-primary/10 w-full h-full flex items-center justify-center text-primary font-semibold">
-                                {chatUser.username[0].toUpperCase()}
-                              </div>
-                            )}
-                          </Avatar>
-                          {/* Online/Offline indicator */}
-                          <div className={cn(
-                            "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background",
-                            onlineStatus[chatUser.id] ? "bg-emerald-500" : "bg-destructive"
-                          )} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">
-                            {chatUser.companyName || chatUser.username}
-                            {chatUser.is_admin && (
-                              <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                Admin
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground truncate">
-                            {chatUser.is_admin ? "Support Agent" : chatUser.email}
-                          </div>
-                        </div>
-                        {unreadCount > 0 && (
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                            {unreadCount}
+                // Count unread messages for this user
+                const unreadMessages = messages?.filter(
+                  (m: any) => m.senderId === chatUser.id && !m.read &&
+                  // Only count messages from conversations other than the currently selected one
+                  (selectedUserId !== chatUser.id)
+                );
+                const unreadCount = unreadMessages?.length || 0;
+
+                return (
+                  <button
+                    key={chatUser.id}
+                    onClick={() => setSelectedUserId(chatUser.id)}
+                    className={cn(
+                      "w-full p-4 text-left hover:bg-accent transition-colors flex items-center gap-3 relative",
+                      selectedUserId === chatUser.id && "bg-accent"
+                    )}
+                  >
+                    <div className="relative">
+                      <Avatar>
+                        {chatUser.profilePicture ? (
+                          <img src={chatUser.profilePicture} alt={chatUser.username} />
+                        ) : (
+                          <div className="bg-primary/10 w-full h-full flex items-center justify-center text-primary font-semibold">
+                            {chatUser.username[0].toUpperCase()}
                           </div>
                         )}
-                      </button>
-                    );
-                  })
-                ) : (
-                  <div className="p-4 text-center text-muted-foreground">
-                    {isAdmin
-                      ? "No customers available"
-                      : "No support agents available at the moment"}
-                  </div>
-                )}
+                      </Avatar>
+                      {/* Online/Offline indicator */}
+                      <div className={cn(
+                        "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background",
+                        onlineStatus[chatUser.id] ? "bg-emerald-500" : "bg-destructive"
+                      )} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">
+                        {chatUser.companyName || chatUser.username}
+                        {chatUser.is_admin && (
+                          <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {chatUser.is_admin ? "Support Agent" : chatUser.email}
+                      </div>
+                    </div>
+                    {unreadCount > 0 && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        {unreadCount}
+                      </div>
+                    )}
+                  </button>
+                );
+              })
+            ) : (
+              <div className="p-4 text-center text-muted-foreground">
+                {isAdmin
+                  ? "No customers available"
+                  : "No support agents available at the moment"}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -1103,31 +1100,31 @@ export default function ChatPage() {
                               
                               recorder.onstop = () => {
                                 const blob = new Blob(chunks, { type: 'audio/mpeg' });
-                                const file = new File([blob], `voice-message-${new Date().getTime()}.mp3`, { type: 'audio/mpeg' });
+                                const file = new File([blob], 'voice-message.mp3', { type: 'audio/mpeg' });
                                 setAudioAttachment(file);
+                                setAudioChunks([]);
                                 
-                                // Stop all tracks in the stream to release the microphone
+                                // Stop all tracks in the stream
                                 stream.getTracks().forEach(track => track.stop());
                               };
                               
-                              // Start recording
                               recorder.start();
                               setMediaRecorder(recorder);
                               setIsRecording(true);
                               setAudioChunks([]);
                             })
                             .catch(err => {
-                              console.error('Error accessing microphone:', err);
+                              console.error("Error accessing microphone:", err);
                               toast({
-                                title: "Microphone access denied",
-                                description: "Please allow microphone access to record voice messages.",
+                                title: "Cannot access microphone",
+                                description: "Please allow microphone access and try again.",
                                 variant: "destructive",
                               });
                             });
                         } else {
                           toast({
-                            title: "Recording not supported",
-                            description: "Your browser does not support voice recording.",
+                            title: "Voice recording not supported",
+                            description: "Your browser doesn't support voice recording.",
                             variant: "destructive",
                           });
                         }
@@ -1140,111 +1137,111 @@ export default function ChatPage() {
                       <Mic className="h-5 w-5" />
                     )}
                   </Button>
-                  
+
                   {/* Message input */}
                   <Input
+                    name="messageInput"
+                   placeholder="Type your message..."
                     value={messageInput}
                     onChange={handleMessageInputChange}
-                    placeholder="Type a message..."
-                    className="flex-1"
-                    name="messageInput"
-                    onKeyDown={e => {
-                      if (e.key === "Enter" && !e.shiftKey) {
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         handleSendMessage();
                       }
                     }}
+                    disabled={isRecording || uploadingAttachment}
+                    className="flex-1"
                   />
                   
                   {/* Send button */}
                   <Button
-                    variant={messageInput.trim() || imageAttachment || audioAttachment ? "default" : "ghost"}
-                    size="icon"
-                    className="rounded-full"
-                    disabled={uploadingAttachment || (!messageInput.trim() && !imageAttachment && !audioAttachment)}
                     onClick={handleSendMessage}
+                    disabled={
+                      (!messageInput.trim() && !imageAttachment && !audioAttachment) || 
+                      sendMessageMutation.isPending || 
+                      uploadingAttachment
+                    }
                   >
-                    {uploadingAttachment ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                    {sendMessageMutation.isPending || uploadingAttachment ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Send className="h-5 w-5" />
+                      <Send className="h-4 w-4" />
                     )}
                   </Button>
+                </div>
+                
+                {/* Recording/attachment instructions */}
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Press and hold the microphone button to record a voice message. 
+                  Click the paperclip to attach an image.
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground flex-col p-8">
-              <FileText className="h-16 w-16 mb-4 text-muted-foreground/50" />
-              <h3 className="text-xl font-medium mb-2">Select a conversation</h3>
-              <p className="text-center max-w-md">
-                Select a user from the sidebar to start chatting, or create a support ticket for an order.
-              </p>
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              Select a {isAdmin ? "customer" : "support agent"} to start chatting
             </div>
           )}
         </div>
       </div>
       
-      {/* Ticket rating dialog */}
+      {/* Ticket Rating Dialog */}
       <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Close Support Ticket</DialogTitle>
+            <DialogTitle>Rate your support experience</DialogTitle>
             <DialogDescription>
-              Please rate your support experience before closing this ticket.
+              Please rate your support experience and provide any feedback you'd like to share.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          
+          <div className="flex flex-col space-y-4 py-4">
             <div className="flex justify-center space-x-1">
-              {[1, 2, 3, 4, 5].map((star) => (
+              {[1, 2, 3, 4, 5].map((rating) => (
                 <button
-                  key={star}
-                  type="button"
-                  className={cn(
-                    "p-1 text-lg",
-                    star <= ticketRating ? "text-yellow-500" : "text-muted-foreground"
-                  )}
-                  onClick={() => setTicketRating(star)}
+                  key={rating}
+                  onClick={() => setTicketRating(rating)}
+                  className={`p-1 rounded-full transition-colors ${
+                    ticketRating >= rating ? 'text-yellow-400' : 'text-gray-300'
+                  }`}
                 >
-                  <Star className={cn(
-                    "h-8 w-8",
-                    star <= ticketRating ? "fill-yellow-500" : "fill-none"
-                  )} />
+                  <Star className="h-8 w-8" fill={ticketRating >= rating ? "currentColor" : "none"} />
                 </button>
               ))}
             </div>
-            <div className="grid gap-2">
-              <label className="text-sm font-medium" htmlFor="feedback">
-                Additional Feedback (Optional)
-              </label>
-              <Textarea
-                id="feedback"
-                value={ticketFeedback}
-                onChange={(e) => setTicketFeedback(e.target.value)}
-                placeholder="Tell us more about your experience..."
-                className="resize-none"
-                rows={4}
-              />
-            </div>
+            
+            <Textarea
+              placeholder="Share your feedback (optional)"
+              value={ticketFeedback}
+              onChange={(e) => setTicketFeedback(e.target.value)}
+              className="min-h-[100px]"
+            />
           </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowRatingDialog(false)}
+          
+          <DialogFooter className="sm:justify-between">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRatingDialog(false);
+                setTicketRating(5);
+                setTicketFeedback("");
+              }}
             >
               Cancel
             </Button>
             <Button 
-              type="submit"
               onClick={submitTicketRating}
               disabled={closeTicketMutation.isPending}
             >
               {closeTicketMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Submitting...
                 </>
-              ) : "Submit & Close Ticket"}
+              ) : (
+                "Submit & Close Ticket"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

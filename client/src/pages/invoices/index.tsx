@@ -1342,59 +1342,7 @@ function UserInvoicesTab() {
             </p>
           </div>
           
-          {/* Billing Preferences & Payment Details Section */}
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-4">Billing & Payment Options</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* User Billing Preferences - hide payment details since we're showing them separately */}
-              <div>
-                <Collapsible className="w-full">
-                  <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
-                    <div className="flex items-center space-x-2 font-medium">
-                      <UserCircle className="h-5 w-5" />
-                      <span>Billing Preferences</span>
-                    </div>
-                    <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="border border-t-0 rounded-b-md p-4">
-                    <BillingPreferences user={user} hidePaymentDetails={true} />
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
-              
-              {/* Payment Methods Details */}
-              <div className="flex flex-col">
-                <Collapsible className="w-full">
-                  <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
-                    <div className="flex items-center space-x-2 font-medium">
-                      <CreditCard className="h-5 w-5" />
-                      <span>Payment Details</span>
-                    </div>
-                    <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="border border-t-0 rounded-b-md">
-                    <Card className="border-0 shadow-none">
-                      <CardContent className="space-y-6 pt-4">
-                        <div>
-                          <h3 className="font-medium mb-3">Wire Transfer / Wise (0% fee)</h3>
-                          <div className="rounded-md bg-muted p-4">
-                            <PaymentDetails paymentMethod="wire" />
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h3 className="font-medium mb-3">PayPal (5% fee)</h3>
-                          <div className="rounded-md bg-muted p-4">
-                            <PaymentDetails paymentMethod="paypal" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
-            </div>
-          </div>
+          {/* Empty state message only */}
         </div>
       ) : (
         <div className="rounded-md border">

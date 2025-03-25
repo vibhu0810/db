@@ -17,7 +17,6 @@ import InvoicesPage from "./pages/invoices";
 import FeedbackPage from "./pages/feedback";
 import VerifyEmailPage from "./pages/verify-email";
 import AuthDebugPage from "./pages/debug/auth";
-import MarketingPage from "./pages/marketing";
 import AdminTicketTools from "./pages/admin/ticket-tools";
 
 function App() {
@@ -120,18 +119,12 @@ function App() {
         <Route path="/verify-email">
           <VerifyEmailPage />
         </Route>
-        <Route path="/auth">
-          <AuthPage />
-        </Route>
-        <Route path="/dashboard">
+        <Route path="/">
           <ProtectedRoute>
             <DashboardShell>
               <Dashboard />
             </DashboardShell>
           </ProtectedRoute>
-        </Route>
-        <Route path="/">
-          <MarketingPage />
         </Route>
       </Switch>
       <Toaster />

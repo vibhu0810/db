@@ -59,28 +59,39 @@ export function Sidebar() {
         expanded ? "w-64" : "w-16 group"
       )}
     >
-      <div className="h-20 border-b flex items-center justify-center px-4">
+      <div className="h-28 border-b flex flex-col items-center justify-center px-2 py-3">
         {user?.profilePicture ? (
-          <div className="flex items-center w-full">
-            <img 
-              src={user.profilePicture} 
-              alt={user.firstName || "Profile"} 
-              className="h-14 w-14 object-cover rounded-full border-4 border-primary aspect-square" 
-            />
-            <span className={cn(
-              "ml-2 text-lg font-semibold truncate transition-opacity duration-300",
-              expanded ? "opacity-100 inline" : "hidden"
+          <>
+            <div className="flex justify-center w-full">
+              <div className="relative">
+                <img 
+                  src={user.profilePicture} 
+                  alt={user.firstName || "Profile"} 
+                  className="h-20 w-20 object-cover rounded-full border-[6px] border-primary shadow-lg ring-2 ring-background" 
+                />
+                {isAdmin && !expanded && (
+                  <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground border border-background">
+                    A
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className={cn(
+              "mt-1 text-center transition-opacity duration-300 w-full",
+              expanded ? "block" : "hidden"
             )}>
-              {user.firstName} {user.lastName}
-              {isAdmin && (
-                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
-                  Admin
-                </span>
-              )}
-            </span>
-          </div>
+              <div className="text-sm font-semibold truncate">
+                {user.firstName} {user.lastName}
+                {isAdmin && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
+                    Admin
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
         ) : (
-          <div className="flex items-center w-full">
+          <div className="flex items-center justify-center w-full">
             <Logo size="sm" showText={false} showProduct={false} />
             <span className={cn(
               "ml-2 text-lg font-semibold transition-opacity duration-300",

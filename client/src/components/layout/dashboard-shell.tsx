@@ -7,6 +7,7 @@ import { NotificationsDropdown } from "@/components/ui/notifications";
 import { SidebarProvider, useSidebar } from "@/hooks/use-sidebar";
 import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { UserRating } from "@/components/ui/user-rating";
 
 // Internal component to access the sidebar context
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -40,6 +41,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           {/* Right side of header with user info */}
           <div className="flex items-center gap-4 ml-auto">
             <NotificationsDropdown />
+            <UserRating />
             <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-2">
               <Link href="/profile">

@@ -32,7 +32,7 @@ const userNavigation = [
 ];
 
 const adminNavigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Reports", href: "/reports", icon: BarChart },

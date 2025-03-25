@@ -2557,7 +2557,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/reset-password", async (req, res) => {
     try {
       console.log("Password reset request received:", req.body);
+      
+      // First validate that we have the required fields
+      if (!req.body.token || !req.body.password) {
+        console.error("Missing required fields:", req.body);
+        return res.status(400).json({ error: "Missing required fields. Please provide token and password." });
+      }
+      
+      // Parse and validate the input using Zod schema
       const { token, password } = passwordResetSchema.parse(req.body);
+      
+      console.log("Token being verified:", token);
       
       // Find user with this reset token that hasn't expired
       const now = new Date();
@@ -2595,9 +2605,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error resetting password:", error);
       if (error?.name === 'ZodError') {
-        return res.status(400).json({ error: "Invalid input data" });
+        return res.status(400).json({ error: "Invalid input data: " + error.message });
       }
-      res.status(500).json({ error: "Failed to reset password" });
+      res.status(500).json({ error: "Failed to reset password: " + (error.message || "Unknown error") });
     }
   });
   

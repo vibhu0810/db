@@ -26,25 +26,44 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     // Extract token from URL
-    const params = new URLSearchParams(location.split('?')[1]);
-    const tokenFromUrl = params.get('token');
-    if (tokenFromUrl) {
-      setToken(tokenFromUrl);
+    try {
+      console.log("Current location:", location);
+      const urlParts = location.split('?');
+      if (urlParts.length > 1) {
+        const params = new URLSearchParams(urlParts[1]);
+        const tokenFromUrl = params.get('token');
+        console.log("Token extracted from URL:", tokenFromUrl);
+        if (tokenFromUrl) {
+          setToken(tokenFromUrl);
+        } else {
+          console.error("No token found in URL parameters");
+          setResetError("No reset token found in URL");
+        }
+      } else {
+        console.error("No query parameters in URL");
+        setResetError("Invalid reset URL format");
+      }
+    } catch (error) {
+      console.error("Error parsing URL for token:", error);
+      setResetError("Failed to parse reset token from URL");
     }
   }, [location]);
 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ password, token }: { password: string; token: string }) => {
+      console.log("Sending reset password request with token:", token);
       const response = await apiRequest("POST", "/api/auth/reset-password", {
         password, 
-        confirmPassword: password, 
         token
       });
       
       let data;
       try {
-        data = await response.json();
+        const text = await response.text();
+        console.log("Reset password response text:", text);
+        data = text.length ? JSON.parse(text) : {};
       } catch (error) {
+        console.error("JSON parse error:", error);
         throw new Error("Failed to parse server response");
       }
       

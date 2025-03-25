@@ -13,9 +13,11 @@ import {
   verifyEmailSchema,
   insertInvoiceSchema,
   insertTicketSchema,
-  updateTicketSchema
+  updateTicketSchema,
+  passwordResetRequestSchema,
+  passwordResetSchema
 } from "@shared/schema";
-import crypto from "crypto";
+import { randomBytes } from "crypto";
 import { hashPassword, comparePasswords } from "./auth";
 import {
   sendOrderNotificationEmail,
@@ -23,7 +25,8 @@ import {
   sendStatusUpdateEmail,
   sendChatNotificationEmail,
   sendTicketResponseEmail,
-  sendVerificationEmail
+  sendVerificationEmail,
+  sendPasswordResetEmail
 } from "./email";
 import { uploadthingHandler } from "./uploadthingHandler";
 
@@ -2497,6 +2500,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting user rating:", error);
       res.status(500).json({ error: "Failed to get user rating" });
+    }
+  });
+
+  // Password reset request route
+  app.post("/api/auth/password-reset-request", async (req, res) => {
+    try {
+      const { email } = passwordResetRequestSchema.parse(req.body);
+      
+      // Find the user with the given email
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        // For security reasons, don't reveal that the email doesn't exist
+        return res.json({ 
+          success: true,
+          message: "If your email is registered, you will receive a password reset link."
+        });
+      }
+      
+      // Generate a reset token
+      const resetToken = randomBytes(32).toString("hex");
+      const resetExpires = new Date();
+      resetExpires.setHours(resetExpires.getHours() + 1); // Token expires in 1 hour
+      
+      // Update the user record with the reset token and expiry
+      await storage.updateUser(user.id, {
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetExpires
+      });
+      
+      // Create the reset link
+      const resetLink = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`;
+      
+      // Send the reset email
+      await sendPasswordResetEmail(
+        user.email,
+        resetLink,
+        user.firstName || user.username
+      );
+      
+      res.json({ 
+        success: true, 
+        message: "Password reset link sent to your email address.",
+        // The following fields are for development only and should be removed in production
+        token: resetToken,
+        link: resetLink
+      });
+    } catch (error) {
+      console.error("Error requesting password reset:", error);
+      res.status(500).json({ error: "Failed to process password reset request" });
+    }
+  });
+  
+  // Password reset with token route
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password } = passwordResetSchema.parse(req.body);
+      
+      // Find user with this reset token that hasn't expired
+      const now = new Date();
+      const users = await storage.getUsers();
+      const user = users.find(
+        u => u.passwordResetToken === token && 
+             u.passwordResetExpires && 
+             new Date(u.passwordResetExpires) > now
+      );
+      
+      if (!user) {
+        return res.status(400).json({ 
+          error: "Password reset token is invalid or has expired."
+        });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(password);
+      
+      // Update the user with the new password and clear the reset token
+      await storage.updateUser(user.id, {
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null
+      });
+      
+      res.json({ 
+        success: true, 
+        message: "Password has been reset successfully. You can now log in with your new password."
+      });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+  
+  // Update user's email with verification
+  app.post("/api/user/update-email", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const { email } = verifyEmailSchema.parse(req.body);
+      
+      // Check if email is already in use by another user
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser && existingUser.id !== req.user.id) {
+        return res.status(400).json({ error: "Email is already in use by another account" });
+      }
+      
+      // Generate a verification token
+      const verificationToken = randomBytes(32).toString("hex");
+      
+      // Update the user with the new email (unverified) and token
+      await storage.updateUser(req.user.id, {
+        email: email,
+        emailVerified: false,
+        verificationToken: verificationToken
+      });
+      
+      // Create the verification link
+      const verificationLink = `${req.protocol}://${req.get('host')}/verify-email?token=${verificationToken}`;
+      
+      // Send the verification email
+      await sendVerificationEmail(
+        email,
+        verificationLink,
+        req.user.firstName || req.user.username
+      );
+      
+      res.json({ 
+        success: true, 
+        message: "Email updated. Please check your inbox to verify this email address.",
+        verified: false,
+        // The following fields are for development only and should be removed in production
+        token: verificationToken,
+        link: verificationLink
+      });
+    } catch (error) {
+      console.error("Error updating email:", error);
+      res.status(500).json({ error: "Failed to update email" });
+    }
+  });
+  
+  // Verify email with token route
+  app.post("/api/auth/verify-email", async (req, res) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ error: "Verification token is required" });
+      }
+      
+      // Find user with this verification token
+      const users = await storage.getUsers();
+      const user = users.find(u => u.verificationToken === token);
+      
+      if (!user) {
+        return res.status(400).json({ error: "Invalid verification token" });
+      }
+      
+      // Update the user to mark email as verified and clear token
+      await storage.updateUser(user.id, {
+        emailVerified: true,
+        verificationToken: null
+      });
+      
+      res.json({ 
+        success: true, 
+        message: "Email verified successfully."
+      });
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      res.status(500).json({ error: "Failed to verify email" });
     }
   });
 

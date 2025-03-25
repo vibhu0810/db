@@ -2322,7 +2322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user with verification token
       await storage.updateUser(req.user.id, { 
         verificationToken: verificationToken,
-        password_reset_expires: passwordResetExpires
+        passwordResetExpires: passwordResetExpires
       });
 
       // TODO: Send verification email
@@ -2356,7 +2356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if token is expired
-      if (user.password_reset_expires && new Date(user.password_reset_expires) < new Date()) {
+      if (user.passwordResetExpires && new Date(user.passwordResetExpires) < new Date()) {
         return res.status(400).json({ error: "Verification token expired" });
       }
 
@@ -2364,7 +2364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(req.user.id, { 
         emailVerified: true,
         verificationToken: null,
-        password_reset_expires: null
+        passwordResetExpires: null
       });
 
       res.json({ 
@@ -2395,7 +2395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if token is expired
-      if (user.password_reset_expires && new Date(user.password_reset_expires) < new Date()) {
+      if (user.passwordResetExpires && new Date(user.passwordResetExpires) < new Date()) {
         return res.status(400).json({ error: "Verification token expired" });
       }
 
@@ -2403,7 +2403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(user.id, { 
         emailVerified: true,
         verificationToken: null,
-        password_reset_expires: null
+        passwordResetExpires: null
       });
 
       res.json({ 
@@ -2436,7 +2436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user with verification token
       await storage.updateUser(req.user.id, { 
         verificationToken: verificationToken,
-        password_reset_expires: passwordResetExpires
+        passwordResetExpires: passwordResetExpires
       });
 
       // Generate verification link - this would be clicked by the user in their email

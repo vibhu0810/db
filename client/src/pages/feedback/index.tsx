@@ -12,16 +12,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { HeartIcon, Heart } from "lucide-react";
+import { HeartIcon, Heart, Plus, PlusCircle } from "lucide-react";
 
-// Define the list of feedback questions
-const FEEDBACK_QUESTIONS = [
-  "How satisfied are you with the quality of our link building services?",
-  "How would you rate the communication during the order process?",
-  "How satisfied are you with the turnaround time for your orders?", 
-  "How likely are you to recommend our services to others?",
-  "How would you rate the value for money of our services?"
-];
+// Interface for feedback questions
+interface FeedbackQuestion {
+  id: number;
+  question: string;
+  isActive: boolean;
+  createdAt: string;
+  createdBy: number | null;
+  sortOrder: number;
+}
 
 interface Feedback {
   id: number;
@@ -153,6 +154,12 @@ function HeartRatingDisplay({ rating }: { rating: number }) {
 }
 
 function FeedbackDisplay({ feedback, showHistory = false }: { feedback: Feedback, showHistory?: boolean }) {
+  // Fetch feedback questions from API
+  const { data: feedbackQuestions = [], isLoading: isQuestionsLoading } = useQuery({
+    queryKey: ['/api/feedback/questions'],
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+  
   // Parse the ratings JSON with error handling
   let ratings: number[] = [];
   try {
@@ -201,22 +208,33 @@ function FeedbackDisplay({ feedback, showHistory = false }: { feedback: Feedback
         </CardHeader>
         
         <CardContent className="relative z-10 space-y-6">
-          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
-            {FEEDBACK_QUESTIONS.map((question, index) => (
-              <motion.div 
-                key={index}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.3 }}
-                className="p-4 rounded-lg bg-muted/50 border border-muted-foreground/10"
-              >
-                <div className="font-medium mb-2 text-sm">{question}</div>
-                <div className="flex items-center">
-                  <StarRating rating={ratings[index] || 0} />
+          {isQuestionsLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="p-4 rounded-lg bg-muted/50 border border-muted-foreground/10 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-6 w-28" />
                 </div>
-              </motion.div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+              {feedbackQuestions.map((question: FeedbackQuestion, index: number) => (
+                <motion.div 
+                  key={question.id}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.3 }}
+                  className="p-4 rounded-lg bg-muted/50 border border-muted-foreground/10"
+                >
+                  <div className="font-medium mb-2 text-sm">{question.question}</div>
+                  <div className="flex items-center">
+                    <StarRating rating={ratings[index] || 0} />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
           
           {feedback.comments && (
             <motion.div
@@ -242,13 +260,30 @@ function FeedbackDisplay({ feedback, showHistory = false }: { feedback: Feedback
 
 function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete: () => void }) {
   const { toast } = useToast();
-  const [ratings, setRatings] = useState<number[]>(Array(FEEDBACK_QUESTIONS.length).fill(0));
   const [comments, setComments] = useState("");
   const [activeSection, setActiveSection] = useState(0);
   
+  // Fetch feedback questions from API
+  const { data: feedbackQuestions = [], isLoading: isQuestionsLoading } = useQuery({
+    queryKey: ['/api/feedback/questions'],
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+  
+  // Initialize ratings state when questions are loaded
+  const [ratings, setRatings] = useState<number[]>([]);
+  
+  // Update ratings array when questions are loaded
+  useEffect(() => {
+    if (feedbackQuestions.length > 0) {
+      setRatings(Array(feedbackQuestions.length).fill(0));
+    }
+  }, [feedbackQuestions]);
+  
   // Calculate current progress
   const completedRatings = ratings.filter(r => r > 0).length;
-  const progress = Math.round((completedRatings / FEEDBACK_QUESTIONS.length) * 100);
+  const progress = feedbackQuestions.length > 0 
+    ? Math.round((completedRatings / feedbackQuestions.length) * 100)
+    : 0;
   
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -293,7 +328,7 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
     setRatings(newRatings);
     
     // Auto advance to next question if possible
-    if (questionIndex < FEEDBACK_QUESTIONS.length - 1) {
+    if (questionIndex < feedbackQuestions.length - 1) {
       setTimeout(() => {
         setActiveSection(questionIndex + 1);
       }, 400);
@@ -320,6 +355,25 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
     if (validRatings.length === 0) return 0;
     return validRatings.reduce((sum, rating) => sum + rating, 0) / validRatings.length;
   };
+  
+  if (isQuestionsLoading) {
+    return (
+      <Card className="w-full overflow-hidden">
+        <CardHeader>
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="p-4 rounded-lg bg-muted/50 border border-muted-foreground/10 space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-6 w-36" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <motion.div
@@ -359,9 +413,9 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
         
         <CardContent className="relative z-10 space-y-8">
           <div className="space-y-6">
-            {FEEDBACK_QUESTIONS.map((question, index) => (
+            {feedbackQuestions.map((question: FeedbackQuestion, index: number) => (
               <motion.div 
-                key={index}
+                key={question.id}
                 initial={{ opacity: 0.7, y: 5 }}
                 animate={{ 
                   opacity: 1, 
@@ -385,7 +439,7 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
                     }`}>
                       {index + 1}
                     </div>
-                    <span>{question}</span>
+                    <span>{question.question}</span>
                   </div>
                   {ratings[index] > 0 && (
                     <motion.div
@@ -409,7 +463,7 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
           <div className="p-5 rounded-lg border border-muted bg-muted/10">
             <div className="flex items-center gap-2 mb-3">
               <span className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold bg-muted text-muted-foreground">
-                {FEEDBACK_QUESTIONS.length + 1}
+                {feedbackQuestions.length + 1}
               </span>
               <label className="font-medium">Additional Comments (Optional)</label>
             </div>
@@ -443,12 +497,12 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
           <div className="flex w-full items-center justify-between">
             <div className="text-sm text-muted-foreground">
               {ratings.some(r => r === 0) 
-                ? `Please rate all ${FEEDBACK_QUESTIONS.length} questions` 
+                ? `Please rate all ${feedbackQuestions.length} questions` 
                 : 'All questions answered! Ready to submit.'}
             </div>
             <Button 
               onClick={handleSubmit} 
-              disabled={submitMutation.isPending || ratings.some(rating => rating === 0)}
+              disabled={submitMutation.isPending || ratings.some(rating => rating === 0) || feedbackQuestions.length === 0}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {submitMutation.isPending ? (

@@ -100,16 +100,16 @@ export default function DomainsPage() {
   
   // Column width states - optimized for better screen fit
   const [columnWidths, setColumnWidths] = useState({
-    website: 160,
-    dr: 60,
-    traffic: 80,
-    type: 100,
-    guestPostPrice: 90,
-    nicheEditPrice: 90,
-    guestPostTat: 100,
-    nicheEditTat: 100,
-    guidelines: 150,
-    action: 70,
+    website: 200,
+    dr: 80,
+    traffic: 100,
+    type: 120,
+    guestPostPrice: 110,
+    nicheEditPrice: 110,
+    guestPostTat: 120,
+    nicheEditTat: 120,
+    guidelines: 180,
+    action: 100,
   });
 
   const { data: domains = [], isLoading } = useQuery({
@@ -397,7 +397,7 @@ export default function DomainsPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border overflow-x-auto max-w-[1000px] mx-auto">
+      <div className="rounded-lg border overflow-x-auto max-w-[1400px] mx-auto">
         <Table className="w-full">
           <TableHeader>
             <TableRow>

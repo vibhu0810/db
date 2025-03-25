@@ -8,10 +8,15 @@ import {
   insertMessageSchema, 
   insertDomainSchema, 
   updateProfileSchema,
+  updateUsernameSchema,
+  updatePasswordSchema,
+  verifyEmailSchema,
   insertInvoiceSchema,
   insertTicketSchema,
   updateTicketSchema
 } from "@shared/schema";
+import crypto from "crypto";
+import { hashPassword, comparePasswords } from "./auth";
 import {
   sendOrderNotificationEmail,
   sendCommentNotificationEmail,
@@ -2214,6 +2219,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating feedback requests:", error);
       res.status(500).json({ error: "Failed to generate feedback requests" });
+    }
+  });
+
+  // Update username endpoint
+  app.patch("/api/user/username", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { username } = updateUsernameSchema.parse(req.body);
+      
+      // Check if username is already taken
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser && existingUser.id !== req.user.id) {
+        return res.status(400).json({ error: "Username already taken" });
+      }
+
+      const updatedUser = await storage.updateUser(req.user.id, { username });
+
+      // Return only the necessary user data
+      const sanitizedUser = {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        companyName: updatedUser.companyName,
+        country: updatedUser.country,
+        bio: updatedUser.bio,
+        profilePicture: updatedUser.profilePicture,
+        companyLogo: updatedUser.companyLogo,
+        phoneNumber: updatedUser.phoneNumber,
+        is_admin: updatedUser.is_admin,
+        emailVerified: updatedUser.emailVerified
+      };
+
+      res.json(sanitizedUser);
+    } catch (error) {
+      console.error("Error updating username:", error);
+      res.status(500).json({ error: "Failed to update username" });
+    }
+  });
+
+  // Update password endpoint
+  app.patch("/api/user/password", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { currentPassword, newPassword } = updatePasswordSchema.parse(req.body);
+      
+      // Get the user with the password
+      const user = await storage.getUser(req.user.id);
+      if (!user || !user.password) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Verify current password
+      const isPasswordValid = await comparePasswords(currentPassword, user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({ error: "Current password is incorrect" });
+      }
+
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+      
+      // Update the user's password
+      await storage.updateUser(req.user.id, { password: hashedPassword });
+
+      res.json({ success: true, message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Error updating password:", error);
+      res.status(500).json({ error: "Failed to update password" });
+    }
+  });
+
+  // Verify email endpoint
+  app.post("/api/user/verify-email", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { email } = verifyEmailSchema.parse(req.body);
+      
+      // Check if the email matches the user's current email
+      if (email !== req.user.email) {
+        return res.status(400).json({ error: "Email does not match your account" });
+      }
+
+      // Generate verification token and expiry
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const passwordResetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
+      // Update user with verification token
+      await storage.updateUser(req.user.id, { 
+        verificationToken: verificationToken,
+        passwordResetExpires: passwordResetExpires
+      });
+
+      // TODO: Send verification email
+      // This would normally send an email with a link containing the token
+      // For now, just return the token in the response for testing
+
+      res.json({ 
+        success: true, 
+        message: "Verification email sent",
+        token: verificationToken // In production, don't return this
+      });
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      res.status(500).json({ error: "Failed to send verification email" });
+    }
+  });
+
+  // Confirm email verification endpoint
+  app.post("/api/user/confirm-verification", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { token } = req.body;
+      
+      // Check if token is valid
+      const user = await storage.getUser(req.user.id);
+      if (!user || user.verificationToken !== token) {
+        return res.status(400).json({ error: "Invalid verification token" });
+      }
+
+      // Check if token is expired
+      if (user.passwordResetExpires && new Date(user.passwordResetExpires) < new Date()) {
+        return res.status(400).json({ error: "Verification token expired" });
+      }
+
+      // Mark email as verified and clear token
+      await storage.updateUser(req.user.id, { 
+        emailVerified: true,
+        verificationToken: null,
+        passwordResetExpires: null
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Email verified successfully"
+      });
+    } catch (error) {
+      console.error("Error confirming email verification:", error);
+      res.status(500).json({ error: "Failed to confirm email verification" });
+    }
+  });
+
+  // Check if user has pending feedback
+  app.get("/api/user/pending-feedback", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const hasPendingFeedback = await storage.checkFeedbackNeeded(req.user.id);
+
+      res.json({ hasPendingFeedback });
+    } catch (error) {
+      console.error("Error checking pending feedback:", error);
+      res.status(500).json({ error: "Failed to check pending feedback" });
+    }
+  });
+
+  // Get user's average rating
+  app.get("/api/user/rating", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const averageRating = await storage.getUserAverageRating(req.user.id);
+
+      res.json({ averageRating });
+    } catch (error) {
+      console.error("Error getting user rating:", error);
+      res.status(500).json({ error: "Failed to get user rating" });
     }
   });
 

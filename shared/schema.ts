@@ -82,7 +82,7 @@ export const updatePasswordSchema = z.object({
 
 // Schema for email verification
 export const verifyEmailSchema = z.object({
-  token: z.string().min(1, "Verification token is required"),
+  email: z.string().email("Please enter a valid email address"),
 });
 
 // Schema for password reset request

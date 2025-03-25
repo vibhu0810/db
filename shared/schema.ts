@@ -9,6 +9,10 @@ export const users = pgTable("users", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  verificationToken: text("verification_token"),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"),
   companyName: text("company_name").notNull(),
   country: text("country").notNull(),
   billingAddress: text("billing_address").notNull(),
@@ -42,9 +46,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const updateProfileSchema = createInsertSchema(users)
   .omit({ 
     id: true, 
-    username: true, 
     password: true,
-    billingAddress: true // Remove billing address field from profile updates
+    billingAddress: true, // Remove billing address field from profile updates
+    emailVerified: true,
+    verificationToken: true,
+    passwordResetToken: true,
+    passwordResetExpires: true
   })
   .extend({
     bio: z.string().min(20, "Bio must be at least 20 characters long").max(2000, "Bio must not exceed 2000 characters"),
@@ -58,6 +65,41 @@ export const updateProfileSchema = createInsertSchema(users)
     instagramProfile: z.string().optional(),
   });
   
+// Schema for updating username
+export const updateUsernameSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters").max(30, "Username must not exceed 30 characters"),
+});
+
+// Schema for updating password
+export const updatePasswordSchema = z.object({
+  currentPassword: z.string().min(8, "Current password is required"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(8, "Confirm password is required"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+// Schema for email verification
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, "Verification token is required"),
+});
+
+// Schema for password reset request
+export const passwordResetRequestSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
+// Schema for password reset
+export const passwordResetSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(8, "Confirm password is required"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
 // Schema for updating billing details
 export const updateBillingSchema = z.object({
   billingAddress: z.string().min(5, "Billing address is required").max(500, "Billing address is too long"),

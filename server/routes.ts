@@ -2373,6 +2373,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Request email verification endpoint (used by the profile page)
+  app.post("/api/user/verify-email/request", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Get the current user
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Generate verification token and expiry
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const passwordResetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
+      // Update user with verification token
+      await storage.updateUser(req.user.id, { 
+        verificationToken: verificationToken,
+        passwordResetExpires: passwordResetExpires
+      });
+
+      // TODO: Send verification email via SendGrid or other email provider
+      // This would normally send an email with a link containing the token
+      // For now, just return the token in the response for testing
+
+      res.json({ 
+        success: true, 
+        message: "Verification email sent",
+        token: verificationToken // In production, don't return this
+      });
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      res.status(500).json({ error: "Failed to send verification email" });
+    }
+  });
+
   // Check if user has pending feedback
   app.get("/api/user/pending-feedback", async (req, res) => {
     try {

@@ -35,6 +35,7 @@ export interface IStorage {
   getDomain(id: number): Promise<Domain | undefined>;
   createDomain(domain: InsertDomain): Promise<Domain>;
   updateDomain(id: number, domain: Partial<Domain>): Promise<Domain>;
+  deleteDomain(id: number): Promise<void>;
 
   // Order operations
   getOrder(id: number): Promise<Order | undefined>;
@@ -310,6 +311,33 @@ export class DatabaseStorage implements IStorage {
       .where(eq(domains.id, id))
       .returning();
     return domain;
+  }
+  
+  async deleteDomain(id: number): Promise<void> {
+    try {
+      // First verify the domain exists
+      const domain = await this.getDomain(id);
+      if (!domain) {
+        throw new Error(`Domain ${id} not found`);
+      }
+
+      console.log(`Starting deletion process for domain ${id}`);
+
+      // Delete the domain
+      const result = await db
+        .delete(domains)
+        .where(eq(domains.id, id))
+        .returning();
+
+      if (!result.length) {
+        throw new Error(`Domain ${id} could not be deleted`);
+      }
+
+      console.log(`Successfully deleted domain ${id}`);
+    } catch (error) {
+      console.error('Error in deleteDomain:', error);
+      throw error;
+    }
   }
 
   // Order operations

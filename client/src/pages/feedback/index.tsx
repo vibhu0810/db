@@ -110,7 +110,13 @@ function formatMonth(month: number): string {
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
-  return months[month - 1];
+  
+  // Ensure month value is valid (between 1-12) or handle edge cases
+  const safeMonth = isNaN(month) || month < 1 || month > 12 
+    ? new Date().getMonth() + 1  // Default to current month if invalid
+    : month;
+    
+  return months[safeMonth - 1];
 }
 
 // Heart display component for average ratings
@@ -444,9 +450,93 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
   );
 }
 
+// Confetti animation to celebrate feedback submission
+function ConfettiCelebration() {
+  const [showConfetti, setShowConfetti] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowConfetti(false);
+    }, 3500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  if (!showConfetti) return null;
+  
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50">
+      <div className="absolute inset-0 flex items-center justify-center">
+        {[...Array(50)].map((_, i) => {
+          const randomColor = ['bg-red-500', 'bg-pink-500', 'bg-purple-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500'][Math.floor(Math.random() * 6)];
+          const randomLeft = `${Math.random() * 100}%`;
+          const randomDelay = `${Math.random() * 0.5}s`;
+          const randomDuration = `${0.5 + Math.random() * 2}s`;
+          const size = `${5 + Math.random() * 10}px`;
+          
+          return (
+            <motion.div
+              key={i}
+              className={`absolute ${randomColor} rounded-full`}
+              initial={{ 
+                top: "-10%",
+                left: randomLeft,
+                width: size,
+                height: size,
+                opacity: 1
+              }}
+              animate={{ 
+                top: "110%",
+                rotate: Math.random() * 360,
+                opacity: 0
+              }}
+              transition={{ 
+                duration: parseFloat(randomDuration),
+                delay: parseFloat(randomDelay),
+                ease: "easeOut"
+              }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Streak tracking for gamification
+function FeedbackStreak({ streak }: { streak: number }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950 dark:to-yellow-900 rounded-lg border border-amber-200 dark:border-amber-900">
+      <div className="flex items-center gap-1">
+        {[...Array(Math.min(streak, 3))].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: i * 0.1, type: "spring" }}
+          >
+            <svg className="w-4 h-4 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+          </motion.div>
+        ))}
+        {streak > 3 && (
+          <span className="text-xs font-bold text-amber-700 dark:text-amber-300">+{streak - 3}</span>
+        )}
+      </div>
+      <div className="text-xs font-medium text-amber-800 dark:text-amber-200">
+        {streak === 0 ? 'No streak yet' : 
+         streak === 1 ? 'First feedback!' : 
+         `${streak} month streak`}
+      </div>
+    </div>
+  );
+}
+
 function UserFeedbackTab() {
   const { user } = useAuth();
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
   
   const { data: feedbackData = [], isLoading } = useQuery<Feedback[]>({
     queryKey: ['/api/feedback'],
@@ -456,6 +546,76 @@ function UserFeedbackTab() {
   // Check if there's any pending feedback to complete
   const pendingFeedback = feedbackData?.find((f: Feedback) => !f.isCompleted);
   const completedFeedback = feedbackData?.filter((f: Feedback) => f.isCompleted) || [];
+  
+  // Calculate feedback streak (consecutive months with feedback)
+  const calculateStreak = () => {
+    if (!completedFeedback.length) return 0;
+    
+    // Sort feedback by date (newest first)
+    const sortedFeedback = [...completedFeedback].sort((a, b) => {
+      const dateA = new Date(a.year, a.month - 1);
+      const dateB = new Date(b.year, b.month - 1);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
+    let streak = 1;
+    const currentDate = new Date();
+    const mostRecentFeedbackDate = new Date(sortedFeedback[0].year, sortedFeedback[0].month - 1);
+    
+    // Check if most recent feedback is for current or last month
+    const isCurrentOrLastMonth = () => {
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      
+      const isCurrent = mostRecentFeedbackDate.getMonth() === currentMonth && 
+                        mostRecentFeedbackDate.getFullYear() === currentYear;
+      
+      const lastMonth = new Date(currentYear, currentMonth - 1);
+      const isLast = mostRecentFeedbackDate.getMonth() === lastMonth.getMonth() && 
+                    mostRecentFeedbackDate.getFullYear() === lastMonth.getFullYear();
+                    
+      return isCurrent || isLast;
+    };
+    
+    // If most recent feedback is not for current or previous month, no active streak
+    if (!isCurrentOrLastMonth()) return 0;
+    
+    // Count consecutive months
+    for (let i = 0; i < sortedFeedback.length - 1; i++) {
+      const current = new Date(sortedFeedback[i].year, sortedFeedback[i].month - 1);
+      const next = new Date(sortedFeedback[i + 1].year, sortedFeedback[i + 1].month - 1);
+      
+      // Check if dates are consecutive months
+      const expectedPrevMonth = new Date(current.getFullYear(), current.getMonth() - 1);
+      if (expectedPrevMonth.getMonth() === next.getMonth() && 
+          expectedPrevMonth.getFullYear() === next.getFullYear()) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+  
+  const feedbackStreak = calculateStreak();
+  
+  // Show empty state component if there's no selected feedback
+  const EmptyFeedbackState = () => (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="bg-muted rounded-lg p-8 text-center"
+    >
+      <div className="mb-6 mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-muted-foreground/10">
+        <Heart className="w-10 h-10 text-muted-foreground/50" />
+      </div>
+      <h3 className="text-xl font-medium mb-2">No Feedback Selected</h3>
+      <p className="text-muted-foreground">
+        Select a feedback period from the sidebar or complete your pending feedback request.
+      </p>
+    </motion.div>
+  );
   
   useEffect(() => {
     if (pendingFeedback) {
@@ -493,53 +653,96 @@ function UserFeedbackTab() {
   
   return (
     <div className="space-y-6">
-      {pendingFeedback && (
-        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-          <p className="font-medium text-yellow-800 dark:text-yellow-300">
-            You have pending feedback for {formatMonth(pendingFeedback.month)} {pendingFeedback.year}
-          </p>
-          <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
-            Please take a moment to complete your feedback and help us improve our services.
-          </p>
+      <div className="flex justify-between items-center">
+        <div>
+          {pendingFeedback && (
+            <motion.div 
+              initial={{ x: -10, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800 max-w-xl"
+            >
+              <p className="font-medium text-yellow-800 dark:text-yellow-300">
+                You have pending feedback for {formatMonth(pendingFeedback.month)} {pendingFeedback.year}
+              </p>
+              <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                Please take a moment to complete your feedback and help us improve our services.
+              </p>
+            </motion.div>
+          )}
         </div>
-      )}
+        
+        {/* Show feedback streak if completed feedback exists */}
+        {feedbackStreak > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+          >
+            <FeedbackStreak streak={feedbackStreak} />
+          </motion.div>
+        )}
+      </div>
       
       <div className="grid md:grid-cols-3 gap-4">
         <div className="md:col-span-1">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Feedback History</CardTitle>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-base">Feedback History</CardTitle>
+                <span className="text-xs text-muted-foreground">
+                  {completedFeedback.length} completed
+                </span>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="h-[300px]">
                 <div className="p-4 space-y-2">
                   {pendingFeedback && (
-                    <Button
-                      variant={selectedFeedback?.id === pendingFeedback.id ? "default" : "outline"}
-                      className="w-full justify-start text-left font-normal h-auto py-2"
-                      onClick={() => setSelectedFeedback(pendingFeedback)}
+                    <motion.div
+                      initial={{ y: -5, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     >
-                      <div>
-                        <div className="font-medium">{formatMonth(pendingFeedback.month)} {pendingFeedback.year}</div>
-                        <span className="text-xs px-2 py-0.5 ml-2 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
-                          Pending
-                        </span>
-                      </div>
-                    </Button>
+                      <Button
+                        variant={selectedFeedback?.id === pendingFeedback.id ? "default" : "outline"}
+                        className="w-full justify-start text-left font-normal h-auto py-2 border-yellow-200 dark:border-yellow-800"
+                        onClick={() => setSelectedFeedback(pendingFeedback)}
+                      >
+                        <div>
+                          <div className="font-medium">{formatMonth(pendingFeedback.month)} {pendingFeedback.year}</div>
+                          <span className="text-xs px-2 py-0.5 ml-2 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+                            Pending
+                          </span>
+                        </div>
+                      </Button>
+                    </motion.div>
                   )}
                   
-                  {completedFeedback.map((feedback: Feedback) => (
+                  {completedFeedback.map((feedback: Feedback, index) => (
                     <motion.div
                       key={feedback.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.2 }}
                       whileHover={{ scale: 1.02 }}
-                      transition={{ duration: 0.2 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       <Button
                         variant={selectedFeedback?.id === feedback.id ? "default" : "outline"}
-                        className="w-full justify-start text-left font-normal h-auto py-3 mb-2"
-                        onClick={() => setSelectedFeedback(feedback)}
+                        className={`w-full justify-start text-left font-normal h-auto py-3 mb-2 ${
+                          selectedFeedback?.id === feedback.id 
+                            ? "border-red-200 dark:border-red-800" 
+                            : ""
+                        }`}
+                        onClick={() => {
+                          // Animation when switching feedback
+                          if (selectedFeedback?.id !== feedback.id) {
+                            setSelectedFeedback(null);
+                            setTimeout(() => setSelectedFeedback(feedback), 200);
+                          }
+                        }}
                       >
                         <div className="w-full">
                           <div className="flex justify-between items-center mb-1">
@@ -563,14 +766,32 @@ function UserFeedbackTab() {
         </div>
         
         <div className="md:col-span-2">
-          {selectedFeedback && (
-            <>
+          {showConfetti && <ConfettiCelebration />}
+          
+          {selectedFeedback ? (
+            <motion.div
+              key={selectedFeedback.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
               {selectedFeedback.isCompleted ? (
                 <FeedbackDisplay feedback={selectedFeedback} />
               ) : (
-                <FeedbackForm feedback={selectedFeedback} onComplete={handleFeedbackComplete} />
+                <FeedbackForm 
+                  feedback={selectedFeedback} 
+                  onComplete={() => {
+                    handleFeedbackComplete();
+                    setShowConfetti(true);
+                    // Reset the confetti after 4 seconds
+                    setTimeout(() => setShowConfetti(false), 4000);
+                  }} 
+                />
               )}
-            </>
+            </motion.div>
+          ) : (
+            <EmptyFeedbackState />
           )}
         </div>
       </div>

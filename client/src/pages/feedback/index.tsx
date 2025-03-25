@@ -104,11 +104,11 @@ function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>
-          Feedback for {formatMonth(feedback.month)} {feedback.year}
-          <span className="ml-2 text-yellow-500">
+        <CardTitle className="flex items-center">
+          <span>Feedback for {formatMonth(feedback.month)} {feedback.year}</span>
+          <span className="ml-2 text-yellow-500 text-xl flex">
             {[1, 2, 3, 4, 5].map((star) => (
-              <span key={star} className="inline-block">
+              <span key={star} className="inline-block px-0.5">
                 {star <= Math.round(averageRating) ? "★" : "☆"}
               </span>
             ))}
@@ -338,11 +338,11 @@ function UserFeedbackTab() {
                     >
                       <div>
                         <div className="font-medium">{formatMonth(feedback.month)} {feedback.year}</div>
-                        <div className="text-xs text-yellow-500 mt-1">
-                          {parseFloat(feedback.averageRating).toFixed(1)}/5.0
-                          <span className="ml-1">
+                        <div className="text-xs flex items-center text-yellow-500 mt-1">
+                          <span>{parseFloat(feedback.averageRating).toFixed(1)}/5.0</span>
+                          <span className="ml-1 flex">
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <span key={star} className="inline-block">
+                              <span key={star} className="inline-block px-0.5">
                                 {star <= Math.round(parseFloat(feedback.averageRating)) ? "★" : "☆"}
                               </span>
                             ))}
@@ -475,11 +475,11 @@ function AdminFeedbackTab() {
                     {completedFeedback.length > 0 && (
                       <div className="text-right">
                         <div className="text-sm text-muted-foreground">Average Rating</div>
-                        <div className="text-xl font-bold text-yellow-500">
-                          {overallAverage.toFixed(1)}
-                          <span className="text-lg ml-1">
+                        <div className="flex items-center justify-end text-xl font-bold text-yellow-500">
+                          <span>{overallAverage.toFixed(1)}</span>
+                          <span className="text-lg ml-2 flex">
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <span key={star} className="inline-block">
+                              <span key={star} className="inline-block px-0.5">
                                 {star <= Math.round(overallAverage) ? "★" : "☆"}
                               </span>
                             ))}

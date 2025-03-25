@@ -470,3 +470,57 @@ export async function sendVerificationEmail(
     // Don't throw the error to prevent the application from crashing
   }
 }
+
+/**
+ * Send a password reset email with a reset link
+ */
+export async function sendPasswordResetEmail(
+  recipientEmail: string,
+  resetLink: string,
+  userName: string
+) {
+  if (!isEmailConfigured()) {
+    console.warn('SendGrid API key not configured, skipping password reset email');
+    return;
+  }
+  
+  try {
+    const emailContent = `
+      <p>Hello ${userName},</p>
+      <p>You've requested to reset your password for your ${APP_NAME} account. Please click the button below to set a new password:</p>
+      <p>This link will expire in 1 hour.</p>
+      <p>If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>
+    `;
+    
+    const html = generateEmailTemplate(
+      'Reset Your Password',
+      emailContent,
+      'Reset Password',
+      resetLink,
+      null
+    );
+    
+    const msg = {
+      to: recipientEmail,
+      from: {
+        email: FROM_EMAIL,
+        name: APP_NAME + ' Support'
+      },
+      subject: 'Password Reset Request',
+      html: html,
+      trackingSettings: {
+        clickTracking: {
+          enable: true
+        }
+      }
+    };
+    
+    await mailService.send(msg);
+    console.log(`Password reset email sent to ${recipientEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    // Don't throw the error to prevent the application from crashing
+    return false;
+  }
+}

@@ -818,8 +818,8 @@ export default function Orders() {
   };
 
   // Filter and sort orders
-  const filteredOrders = ordersData
-    .filter((order: Order) => {
+  const filteredOrders = (ordersData && Array.isArray(ordersData)) 
+    ? ordersData.filter((order: Order) => {
       // Filter by type (niche edit or guest post)
       if (selectedType !== "all") {
         const orderType = getOrderType(order);
@@ -890,7 +890,8 @@ export default function Orders() {
       } else {
         return valB.localeCompare(valA);
       }
-    });
+    })
+    : [];
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;

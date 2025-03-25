@@ -690,6 +690,9 @@ export default function DomainsPage() {
 
   // Domain form component
   const DomainForm = ({ domain }: { domain: Domain | null }) => {
+    const [isDetectingInfo, setIsDetectingInfo] = useState(false);
+    const { toast } = useToast();
+    
     const form = useForm<DomainFormValues>({
       resolver: zodResolver(domainFormSchema),
       defaultValues: domain ? {
@@ -717,6 +720,42 @@ export default function DomainsPage() {
       }
     });
     
+    // Watch websiteUrl to enable auto-detection of website name and niche
+    const websiteUrl = form.watch("websiteUrl");
+    
+    // Auto-detect domain info when URL changes and isn't empty
+    const detectDomainInfo = async () => {
+      if (!websiteUrl || websiteUrl.trim() === "") {
+        return;
+      }
+      
+      setIsDetectingInfo(true);
+      try {
+        const res = await fetch(`/api/domains/info?url=${encodeURIComponent(websiteUrl)}`);
+        if (!res.ok) {
+          throw new Error('Failed to fetch domain information');
+        }
+        
+        const data = await res.json();
+        // Update form with detected info
+        form.setValue("niche", data.niche);
+        
+        toast({
+          title: "Domain Info Detected",
+          description: `Found niche: ${data.niche}`,
+        });
+      } catch (error) {
+        console.error("Error detecting domain info:", error);
+        toast({
+          title: "Detection Failed",
+          description: "Could not automatically detect domain information",
+          variant: "destructive"
+        });
+      } finally {
+        setIsDetectingInfo(false);
+      }
+    };
+    
     // Get the current form type value to show/hide relevant price fields
     const formType = form.watch("type");
     
@@ -740,11 +779,27 @@ export default function DomainsPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Website URL</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. example.com" {...field} />
-                </FormControl>
+                <div className="flex items-center gap-2">
+                  <FormControl>
+                    <Input placeholder="e.g. example.com" {...field} />
+                  </FormControl>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={detectDomainInfo}
+                    disabled={isDetectingInfo || !websiteUrl}
+                  >
+                    {isDetectingInfo ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="h-4 w-4" />
+                    )}
+                    <span className="ml-1">Detect</span>
+                  </Button>
+                </div>
                 <FormDescription>
-                  The domain name without http/https
+                  The domain name without http/https. Click "Detect" to auto-fill niche.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

@@ -1408,6 +1408,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoint to determine domain info from OpenAI
+  app.get("/api/domains/info", async (req, res) => {
+    try {
+      const { url } = req.query;
+      
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: "URL is required" });
+      }
+      
+      // Use OpenAI to determine domain info
+      const domainInfo = await determineDomainInfo(url);
+      
+      res.json(domainInfo);
+    } catch (error) {
+      console.error("Error determining domain info:", error);
+      res.status(500).json({ 
+        error: "Failed to determine domain information",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
   // Add domain creation route (admin only)
   app.post("/api/domains", async (req, res) => {
     try {

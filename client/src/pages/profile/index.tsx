@@ -725,45 +725,6 @@ export default function ProfilePage() {
             </Card>
           </div>
         </TabsContent>
-
-        <TabsContent value="email" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Verification</CardTitle>
-              <CardDescription>Manage your email verification status</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {user?.emailVerified ? (
-                <Alert className="bg-green-50 border-green-200">
-                  <Check className="h-4 w-4 text-green-600" />
-                  <AlertTitle className="text-green-800">Email Verified</AlertTitle>
-                  <AlertDescription className="text-green-700">
-                    Your email address ({user.email}) has been verified.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <>
-                  <Alert className="bg-amber-50 border-amber-200">
-                    <AlertTitle className="text-amber-800">Email Not Verified</AlertTitle>
-                    <AlertDescription className="text-amber-700">
-                      Please verify your email address ({user?.email}) to ensure the security of your account.
-                    </AlertDescription>
-                  </Alert>
-                  <Button
-                    onClick={handleVerificationRequest}
-                    disabled={requestVerificationMutation.isPending}
-                    className="w-full md:w-auto bg-primary text-black hover:bg-primary/90 font-semibold"
-                  >
-                    {requestVerificationMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Send Verification Email
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

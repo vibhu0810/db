@@ -149,7 +149,48 @@ export const domains = pgTable("domains", {
 });
 
 // Create insert schema for domains
-export const insertDomainSchema = createInsertSchema(domains).omit({ id: true });
+// Create base domain insert schema
+const baseDomainSchema = createInsertSchema(domains).omit({ id: true });
+
+// Create domain insert schema with validation based on domain type
+export const insertDomainSchema = baseDomainSchema.refine((data) => {
+  // Validation for Guest Post domains
+  if (data.type === "guest_post") {
+    // Must have guest post price
+    if (!data.guestPostPrice || data.guestPostPrice === "") {
+      return false;
+    }
+    // Must not have niche edit price
+    if (data.nicheEditPrice && data.nicheEditPrice !== "") {
+      return false;
+    }
+  }
+  
+  // Validation for Niche Edit domains
+  if (data.type === "niche_edit") {
+    // Must have niche edit price
+    if (!data.nicheEditPrice || data.nicheEditPrice === "") {
+      return false;
+    }
+    // Must not have guest post price
+    if (data.guestPostPrice && data.guestPostPrice !== "") {
+      return false;
+    }
+  }
+  
+  // Validation for Both type domains
+  if (data.type === "both") {
+    // Must have both prices
+    if (!data.guestPostPrice || data.guestPostPrice === "" || 
+        !data.nicheEditPrice || data.nicheEditPrice === "") {
+      return false;
+    }
+  }
+  
+  return true;
+}, {
+  message: "Domain prices must match the selected type. Guest Post domains should only have GP Price, Niche Edit domains should only have NE Price, and Both type domains need both prices."
+});
 
 // Types
 export type InsertDomain = z.infer<typeof insertDomainSchema>;

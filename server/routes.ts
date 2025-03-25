@@ -1467,16 +1467,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
-          // Create the domain
+          // Create domain data object with validation
+          const type = domainData.type || 'both';
+          const guestPostPrice = domainData.guestPostPrice || null;
+          const nicheEditPrice = domainData.nicheEditPrice || null;
+          
+          // Validate domain data based on type before creating
+          // Guest Post domains must have GP price and not NE price
+          if (type === 'guest_post' && (!guestPostPrice || nicheEditPrice)) {
+            throw new Error('Guest Post domains must have GP price and no NE price');
+          }
+          
+          // Niche Edit domains must have NE price and not GP price
+          if (type === 'niche_edit' && (!nicheEditPrice || guestPostPrice)) {
+            throw new Error('Niche Edit domains must have NE price and no GP price');
+          }
+          
+          // Both types must have both prices
+          if (type === 'both' && (!guestPostPrice || !nicheEditPrice)) {
+            throw new Error('Domains with both types must have both GP and NE prices');
+          }
+          
+          // Create the domain with validated data
           await storage.createDomain({
             websiteName: domainData.websiteName || domainData.websiteUrl,
             websiteUrl: domainData.websiteUrl,
             domainRating: domainData.domainRating || '',
             websiteTraffic: domainData.websiteTraffic || 0, 
             niche: domainData.niche || '',
-            type: domainData.type || 'both',
-            guestPostPrice: domainData.guestPostPrice || null,
-            nicheEditPrice: domainData.nicheEditPrice || null,
+            type,
+            guestPostPrice,
+            nicheEditPrice,
             guidelines: domainData.guidelines || null
           });
           
@@ -1512,11 +1533,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid domain ID" });
       }
       
-      const domain = await storage.updateDomain(domainId, req.body);
+      // Validate the update data based on domain type
+      const updateData = req.body;
+      
+      if (updateData.type) {
+        const type = updateData.type;
+        const guestPostPrice = updateData.guestPostPrice;
+        const nicheEditPrice = updateData.nicheEditPrice;
+        
+        // Guest Post domains must have GP price and not NE price
+        if (type === 'guest_post') {
+          if (!guestPostPrice) {
+            return res.status(400).json({ 
+              error: "Validation Error: Guest Post domains must have GP price" 
+            });
+          }
+          if (nicheEditPrice) {
+            return res.status(400).json({ 
+              error: "Validation Error: Guest Post domains should not have NE price" 
+            });
+          }
+        }
+        
+        // Niche Edit domains must have NE price and not GP price
+        if (type === 'niche_edit') {
+          if (!nicheEditPrice) {
+            return res.status(400).json({ 
+              error: "Validation Error: Niche Edit domains must have NE price" 
+            });
+          }
+          if (guestPostPrice) {
+            return res.status(400).json({ 
+              error: "Validation Error: Niche Edit domains should not have GP price" 
+            });
+          }
+        }
+        
+        // Both type domains must have both prices
+        if (type === 'both') {
+          if (!guestPostPrice || !nicheEditPrice) {
+            return res.status(400).json({ 
+              error: "Validation Error: Domains with both types must have both GP and NE prices" 
+            });
+          }
+        }
+      }
+      
+      // If validation passes, update the domain
+      const domain = await storage.updateDomain(domainId, updateData);
       res.json(domain);
     } catch (error) {
       console.error("Error updating domain:", error);
-      res.status(500).json({ error: "Failed to update domain" });
+      res.status(500).json({ 
+        error: "Failed to update domain", 
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
   

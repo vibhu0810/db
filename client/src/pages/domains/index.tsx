@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -27,6 +28,8 @@ import {
   Edit, 
   Download, 
   Trash2,
+  Trash,
+  Upload,
   X
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -114,13 +117,16 @@ const ExtendedPaginationNext = ({ disabled, ...props }: ExtendedPaginationLinkPr
 
 interface Domain {
   id: number;
+  websiteName: string;
   websiteUrl: string;
   domainRating: string;
   websiteTraffic: number;
+  niche: string;
   type: "guest_post" | "niche_edit" | "both";
-  guidelines: string;
-  guestPostPrice?: string;
-  nicheEditPrice?: string;
+  guidelines: string | null;
+  guestPostPrice?: string | null;
+  nicheEditPrice?: string | null;
+  lastMetricsUpdate?: Date | null;
 }
 
 function getGuestPostTAT(domain: Domain): string {

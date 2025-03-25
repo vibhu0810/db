@@ -21,16 +21,13 @@ export default function ForgotPasswordPage() {
 
   const resetRequestMutation = useMutation({
     mutationFn: async (email: string) => {
-      try {
-        const result = await apiRequest({
-          url: "/api/auth/password-reset-request",
-          method: "POST",
-          body: { email },
-        });
-        return result;
-      } catch (error) {
-        throw error;
+      const response = await apiRequest("POST", "/api/auth/password-reset-request", { email });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to send password reset email");
       }
+      const data = await response.json();
+      return data as PasswordResetRequestResponse;
     },
     onSuccess: () => {
       setRequestSent(true);

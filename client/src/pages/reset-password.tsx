@@ -35,16 +35,14 @@ export default function ResetPasswordPage() {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ password, token }: { password: string; token: string }) => {
-      try {
-        const result = await apiRequest({
-          url: "/api/auth/reset-password",
-          method: "POST",
-          body: { password, token },
-        });
-        return result;
-      } catch (error) {
-        throw error;
-      }
+      const response = await apiRequest("/api/auth/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password, token }),
+      });
+      return response as PasswordResetResponse;
     },
     onSuccess: () => {
       setResetSuccess(true);

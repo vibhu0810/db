@@ -1611,7 +1611,8 @@ export default function Orders() {
                             <DropdownMenuItem asChild>
                               <Link href={`/orders/${order.id}`}>View Details</Link>
                             </DropdownMenuItem>
-                            {order.status === "In Progress" && (
+                            {/* Allow editing if status is In Progress and either user is admin or user owns the order */}
+                            {order.status === "In Progress" && (isAdmin || order.userId === user?.id) && (
                               <DropdownMenuItem
                                 onClick={() => {
                                   setOrderToEdit(order);
@@ -1620,14 +1621,18 @@ export default function Orders() {
                                 Edit Order
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem
-                              onClick={() => window.location.href = `/orders/${order.id}#support`}
-                            >
-                              <LifeBuoyIcon className="h-4 w-4 mr-2" />
-                              Support
-                            </DropdownMenuItem>
+                            {/* Hide Support button for admin users */}
+                            {!isAdmin && (
+                              <DropdownMenuItem
+                                onClick={() => window.location.href = `/orders/${order.id}#support`}
+                              >
+                                <LifeBuoyIcon className="h-4 w-4 mr-2" />
+                                Support
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
-                            {order.status === "In Progress" && (
+                            {/* Allow canceling if status is In Progress and either user is admin or user owns the order */}
+                            {order.status === "In Progress" && (isAdmin || order.userId === user?.id) && (
                               <DropdownMenuItem
                                 onClick={() => setOrderToCancel(order.id)}
                                 className="text-orange-600"

@@ -74,7 +74,9 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, GUEST_POST_STATUSES, NICHE_EDIT_STATUSES } from "@shared/schema";
 import { Plus, LifeBuoy as LifeBuoyIcon } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -921,13 +923,14 @@ export default function Orders() {
                   Create Custom Order
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-[400px] sm:w-[540px]">
-                <SheetHeader>
+              <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto max-h-screen">
+                <SheetHeader className="sticky top-0 z-10 bg-background pt-6 pb-4">
                   <SheetTitle>Create Custom Order</SheetTitle>
                   <SheetDescription>
                     Create a custom order for a specific user.
                   </SheetDescription>
                 </SheetHeader>
+                <ScrollArea className="h-[calc(100vh-140px)] pr-4">
                 <Form {...customOrderForm}>
                   <form onSubmit={customOrderForm.handleSubmit(onSubmit)} className="space-y-4 mt-4">
                     <FormField
@@ -1040,6 +1043,53 @@ export default function Orders() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={customOrderForm.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Order Type</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select order type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="niche_edit">Niche Edit</SelectItem>
+                              <SelectItem value="guest_post">Guest Post</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Niche edits add links to existing content. Guest posts create new content with your link.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={customOrderForm.control}
+                      name="sendNotification"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Notify User</FormLabel>
+                            <FormDescription>
+                              Send a notification to the user about this new order.
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
                     <Button
                       type="submit"
                       className="w-full"
@@ -1052,6 +1102,7 @@ export default function Orders() {
                     </Button>
                   </form>
                 </Form>
+                </ScrollArea>
               </SheetContent>
             </Sheet>
           )}

@@ -158,7 +158,7 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.reduce((sum, user) => sum + user.orders.total, 0)}
+              {Array.isArray(users) ? users.reduce((sum, user) => sum + user.orders.total, 0) : 0}
             </div>
           </CardContent>
         </Card>
@@ -169,7 +169,7 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${users.reduce((sum, user) => sum + user.orders.totalSpent, 0).toFixed(2)}
+              ${Array.isArray(users) ? users.reduce((sum, user) => sum + user.orders.totalSpent, 0).toFixed(2) : "0.00"}
             </div>
           </CardContent>
         </Card>
@@ -207,7 +207,7 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user: UserWithStats) => (
+                  {Array.isArray(filteredUsers) && filteredUsers.map((user: UserWithStats) => (
                     <React.Fragment key={user.id}>
                       <TableRow className="hover:bg-muted/50 cursor-pointer">
                         <TableCell className="w-[50px]">

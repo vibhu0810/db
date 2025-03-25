@@ -67,7 +67,7 @@ export function Sidebar() {
                 <img 
                   src={user.profilePicture} 
                   alt={user.firstName || "Profile"} 
-                  className="h-20 w-20 object-cover rounded-full border-[6px] border-primary shadow-lg ring-2 ring-background" 
+                  className="h-20 w-20 object-cover rounded-full shadow-lg" 
                 />
                 {isAdmin && !expanded && (
                   <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-primary-foreground border border-background">

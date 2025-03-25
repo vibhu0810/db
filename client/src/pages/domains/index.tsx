@@ -103,7 +103,7 @@ export default function DomainsPage() {
     website: 200,
     dr: 80,
     traffic: 100,
-    type: 90,
+    type: 85,
     guestPostPrice: 110,
     nicheEditPrice: 110,
     guestPostTat: 120,
@@ -397,8 +397,9 @@ export default function DomainsPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border overflow-x-auto max-w-[1400px] mx-auto">
-        <Table className="w-full">
+      <div className="rounded-lg border overflow-x-auto max-w-[1400px] mx-auto" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div className="min-w-[1200px]">
+          <Table className="w-full">
           <TableHeader>
             <TableRow>
               <TableHead style={{ width: columnWidths.website }}>
@@ -630,6 +631,7 @@ export default function DomainsPage() {
             ))}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-center mt-4">

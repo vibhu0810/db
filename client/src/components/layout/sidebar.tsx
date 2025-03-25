@@ -56,7 +56,7 @@ export function Sidebar() {
     <div 
       className={cn(
         "sidebar-container border-r bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out",
-        expanded ? "w-64" : "w-16 group"
+        expanded ? "w-64" : "w-20 group"
       )}
     >
       <div className="h-28 border-b flex flex-col items-center justify-center px-2 py-3">
@@ -115,14 +115,15 @@ export function Sidebar() {
               key={item.name} 
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors relative",
+                "flex items-center rounded-md text-sm font-medium transition-colors relative",
+                expanded ? "gap-3 px-3 py-2 justify-start" : "justify-center py-3",
                 location === item.href
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
                   : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               <div className="relative">
-                <Icon className="h-5 w-5 min-w-[20px]" />
+                <Icon className={cn("min-w-[20px]", expanded ? "h-5 w-5" : "h-6 w-6")} />
                 {item.name === "Feedback" && hasPendingFeedback && (
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
                 )}
@@ -140,7 +141,7 @@ export function Sidebar() {
               {/* Tooltip for when sidebar is collapsed */}
               <span className={cn(
                 "absolute left-full ml-2 px-2 py-1 bg-black/80 text-white text-xs rounded pointer-events-none transition-all duration-200 whitespace-nowrap",
-                expanded ? "opacity-0 scale-0" : "opacity-0 scale-100 origin-left hover:opacity-100"
+                expanded ? "opacity-0 scale-0" : "opacity-0 scale-100 origin-left hover:opacity-100 group-hover:opacity-100"
               )}>
                 {item.name}
               </span>

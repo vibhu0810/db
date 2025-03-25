@@ -125,7 +125,25 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAllFeedback(): Promise<Feedback[]> {
-    return await db.select().from(feedback).orderBy(desc(feedback.createdAt));
+    // Get all feedback
+    const allFeedback = await db.select().from(feedback).orderBy(desc(feedback.createdAt));
+    
+    // Get all users to join with feedback data
+    const allUsers = await this.getUsers();
+    
+    // Join users with feedback
+    return allFeedback.map(feedbackItem => {
+      const user = allUsers.find(u => u.id === feedbackItem.userId);
+      return {
+        ...feedbackItem,
+        user: user ? {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          companyName: user.companyName
+        } : undefined
+      };
+    });
   }
   
   async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {

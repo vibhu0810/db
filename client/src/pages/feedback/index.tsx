@@ -810,6 +810,8 @@ function AdminFeedbackTab() {
     queryKey: ['/api/feedback/all'],
   });
   
+  console.log("Admin Feedback Tab - received feedback data:", feedbackData);
+  
   const generateMutation = useMutation<{ count: number }>({
     mutationFn: async () => {
       const response = await apiRequest("/api/feedback/generate", {
@@ -846,14 +848,22 @@ function AdminFeedbackTab() {
   const feedbackByUser: Record<string, Feedback[]> = {};
   
   // Group feedback by user
-  if (feedbackData) {
+  if (feedbackData && feedbackData.length > 0) {
+    console.log("Admin Feedback Tab - grouping feedback by user");
     feedbackData.forEach((feedback: Feedback) => {
+      console.log("Processing feedback:", feedback);
+      if (!feedback.user) {
+        console.log("Warning: Feedback is missing user data:", feedback);
+      }
       const userKey = feedback.user?.id.toString() || 'unknown';
       if (!feedbackByUser[userKey]) {
         feedbackByUser[userKey] = [];
       }
       feedbackByUser[userKey].push(feedback);
     });
+    console.log("Feedback grouped by user:", feedbackByUser);
+  } else {
+    console.log("Admin Feedback Tab - no feedback data to group");
   }
   
   return (
@@ -1008,7 +1018,7 @@ export default function FeedbackPage() {
             <>
               <TabsList className="mb-6">
                 <TabsTrigger value="admin">All Customer Feedback</TabsTrigger>
-                <TabsTrigger value="user">My Personal Feedback</TabsTrigger>
+                <TabsTrigger value="user">My Admin Feedback</TabsTrigger>
               </TabsList>
               
               <TabsContent value="admin">

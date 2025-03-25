@@ -26,17 +26,14 @@ export default function VerifyEmailPage() {
       }
 
       try {
-        // If user is not logged in, we can't verify
+        // We can verify regardless of login status with the public endpoint
+        // But store the token in case we need it later
         if (!user) {
-          // Store the token in localStorage so we can use it after login
           localStorage.setItem("pendingVerificationToken", token);
-          setStatus("error");
-          setMessage("Please log in to verify your email address.");
-          return;
         }
 
-        // Submit the token to verify email
-        const res = await apiRequest("POST", "/api/user/verify-email", { token });
+        // Submit the token to verify email - use the public endpoint since we might not be logged in
+        const res = await apiRequest("POST", "/api/public/verify-email", { token });
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.error || "Verification failed");

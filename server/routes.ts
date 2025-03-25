@@ -2337,7 +2337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Confirm email verification endpoint
+  // Confirm email verification endpoint (for logged-in users)
   app.post("/api/user/confirm-verification", async (req, res) => {
     try {
       if (!req.user) {
@@ -2359,6 +2359,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Mark email as verified and clear token
       await storage.updateUser(req.user.id, { 
+        emailVerified: true,
+        verificationToken: null,
+        passwordResetExpires: null
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Email verified successfully"
+      });
+    } catch (error) {
+      console.error("Error confirming email verification:", error);
+      res.status(500).json({ error: "Failed to confirm email verification" });
+    }
+  });
+  
+  // Public endpoint to verify email with just a token (used by email verification link)
+  app.post("/api/public/verify-email", async (req, res) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ error: "No verification token provided" });
+      }
+      
+      // Find user by verification token
+      const users = await storage.getUsers();
+      const user = users.find(user => user.verificationToken === token);
+      
+      if (!user) {
+        return res.status(400).json({ error: "Invalid verification token" });
+      }
+
+      // Check if token is expired
+      if (user.passwordResetExpires && new Date(user.passwordResetExpires) < new Date()) {
+        return res.status(400).json({ error: "Verification token expired" });
+      }
+
+      // Mark email as verified and clear token
+      await storage.updateUser(user.id, { 
         emailVerified: true,
         verificationToken: null,
         passwordResetExpires: null

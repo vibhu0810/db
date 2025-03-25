@@ -15,6 +15,7 @@ import ReportsPage from "./pages/reports";
 import KanbanPage from "./pages/kanban";
 import InvoicesPage from "./pages/invoices";
 import FeedbackPage from "./pages/feedback";
+import VerifyEmailPage from "./pages/verify-email";
 import AuthDebugPage from "./pages/debug/auth";
 import AdminTicketTools from "./pages/admin/ticket-tools";
 
@@ -114,6 +115,9 @@ function App() {
         </Route>
         <Route path="/debug/auth">
           <AuthDebugPage />
+        </Route>
+        <Route path="/verify-email">
+          <VerifyEmailPage />
         </Route>
         <Route path="/">
           <ProtectedRoute>

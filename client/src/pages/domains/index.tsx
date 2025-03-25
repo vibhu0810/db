@@ -88,7 +88,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -199,13 +198,13 @@ export default function DomainsPage() {
 
   const { data: domains = [], isLoading } = useQuery({
     queryKey: ['/api/domains'],
-    queryFn: () => apiRequest("GET", "/api/domains").then(res => res.json()),
+    enabled: true,
   });
 
-  const { isAdmin } = useAuth();
-  
-  // Create a new domain (admin only)
-  const addDomainMutation = useMutation({
+  const { user, isAdmin } = useAuth();
+
+  // Handle domain creation/update
+  const createDomainMutation = useMutation({
     mutationFn: async (data: DomainFormValues) => {
       setIsActionInProgress(true);
       const res = await apiRequest("POST", "/api/domains", data);
@@ -221,25 +220,24 @@ export default function DomainsPage() {
       setIsActionInProgress(false);
       toast({
         title: "Domain added",
-        description: "The domain has been added successfully."
+        description: "Domain has been added to the inventory"
       });
     },
     onError: (error: Error) => {
       setIsActionInProgress(false);
       toast({
-        title: "Error",
+        title: "Failed to add domain",
         description: error.message,
         variant: "destructive"
       });
     }
   });
-  
-  // Update an existing domain (admin only)
+
+  // Handle domain update
   const updateDomainMutation = useMutation({
-    mutationFn: async (data: DomainFormValues & { id: number }) => {
+    mutationFn: async (data: { id: number, domain: Partial<Domain> }) => {
       setIsActionInProgress(true);
-      const { id, ...updateData } = data;
-      const res = await apiRequest("PUT", `/api/domains/${id}`, updateData);
+      const res = await apiRequest("PUT", `/api/domains/${data.id}`, data.domain);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to update domain");
@@ -249,23 +247,24 @@ export default function DomainsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/domains'] });
       setDomainToEdit(null);
+      setShowAddDomainSheet(false);
       setIsActionInProgress(false);
       toast({
         title: "Domain updated",
-        description: "The domain has been updated successfully."
+        description: "Domain has been updated in the inventory"
       });
     },
     onError: (error: Error) => {
       setIsActionInProgress(false);
       toast({
-        title: "Error",
+        title: "Failed to update domain",
         description: error.message,
         variant: "destructive"
       });
     }
   });
-  
-  // Delete a domain (admin only)
+
+  // Handle domain deletion
   const deleteDomainMutation = useMutation({
     mutationFn: async (id: number) => {
       setIsActionInProgress(true);
@@ -274,14 +273,7 @@ export default function DomainsPage() {
         const error = await res.json();
         throw new Error(error.error || "Failed to delete domain");
       }
-      
-      // Try to parse JSON response, but don't fail if it's not valid JSON
-      try {
-        return res.json();
-      } catch (e) {
-        // If the response is not valid JSON (like "OK"), just return a success object
-        return { success: true };
-      }
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/domains'] });
@@ -289,21 +281,51 @@ export default function DomainsPage() {
       setIsActionInProgress(false);
       toast({
         title: "Domain deleted",
-        description: "The domain has been deleted successfully."
+        description: "Domain has been removed from the inventory"
       });
     },
     onError: (error: Error) => {
       setIsActionInProgress(false);
-      setDomainToDelete(null);
       toast({
-        title: "Error",
+        title: "Failed to delete domain",
         description: error.message,
         variant: "destructive"
       });
     }
   });
-  
+
   // Function to export domains as CSV
+  const exportDomainsAsCSV = () => {
+    const headers = ['Website Name', 'Website URL', 'Domain Rating', 'Website Traffic', 'Niche', 'Type', 'Guest Post Price', 'Niche Edit Price', 'Guidelines'];
+    const csvData = domains.map((domain: Domain) => [
+      domain.websiteName || '',
+      domain.websiteUrl || '',
+      domain.domainRating || '',
+      domain.websiteTraffic || '',
+      domain.niche || '',
+      domain.type || '',
+      domain.guestPostPrice || '',
+      domain.nicheEditPrice || '',
+      domain.guidelines || ''
+    ]);
+    
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'domains.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Import domains mutation
   const importDomainsMutation = useMutation({
     mutationFn: async (domains: any[]) => {
@@ -336,400 +358,293 @@ export default function DomainsPage() {
     }
   });
 
-  // Process CSV file for import
-  const handleImportPreview = async () => {
+  // Handle file import (preview)
+  const handleImportPreview = () => {
     if (!importFile) return;
-    setImportInProgress(true);
+    
     setImportError("");
-
-    try {
-      const text = await importFile.text();
-      const lines = text.split('\n').filter(line => line.trim() !== '');
-      
-      if (lines.length === 0) {
-        setImportError("CSV file is empty");
-        setImportInProgress(false);
-        return;
-      }
-
-      // Parse headers (first line)
-      const headers = lines[0].split(',').map(header => header.trim());
-      
-      // Required fields check
-      const requiredFields = ['Website URL', 'Type'];
-      const missingFields = requiredFields.filter(field => 
-        !headers.some(header => header.toLowerCase() === field.toLowerCase())
-      );
-      
-      if (missingFields.length > 0) {
-        setImportError(`Missing required fields: ${missingFields.join(', ')}`);
-        setImportInProgress(false);
-        return;
-      }
-
-      // Parse data rows
-      const domains = [];
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(value => value.trim());
-        if (values.length !== headers.length) continue;
+    setImportInProgress(true);
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        if (!e.target?.result) {
+          throw new Error("Failed to read file");
+        }
         
-        const domain: any = {};
-        headers.forEach((header, index) => {
-          const value = values[index];
+        const text = e.target.result as string;
+        const lines = text.split('\n');
+        
+        if (lines.length < 2) {
+          throw new Error("File appears to be empty or invalid");
+        }
+        
+        // Get headers and their indices
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        
+        const websiteNameIndex = headers.findIndex(h => 
+          h === 'website name' || h === 'websitename' || h === 'name'
+        );
+        const websiteUrlIndex = headers.findIndex(h => 
+          h === 'website url' || h === 'websiteurl' || h === 'url' || h === 'website'
+        );
+        const domainRatingIndex = headers.findIndex(h => 
+          h === 'domain rating' || h === 'domainrating' || h === 'dr'
+        );
+        const websiteTrafficIndex = headers.findIndex(h => 
+          h === 'website traffic' || h === 'websitetraffic' || h === 'traffic'
+        );
+        const nicheIndex = headers.findIndex(h => 
+          h === 'niche' || h === 'category'
+        );
+        const typeIndex = headers.findIndex(h => 
+          h === 'type'
+        );
+        const guestPostPriceIndex = headers.findIndex(h => 
+          h === 'guest post price' || h === 'guestpostprice' || h === 'gp price'
+        );
+        const nicheEditPriceIndex = headers.findIndex(h => 
+          h === 'niche edit price' || h === 'nicheeditprice' || h === 'ne price'
+        );
+        const guidelinesIndex = headers.findIndex(h => 
+          h === 'guidelines' || h === 'requirements'
+        );
+        
+        // Verify the required columns are present
+        if (websiteUrlIndex === -1) {
+          throw new Error("Required column 'Website URL' is missing");
+        }
+        
+        // Parse the data
+        const domainData = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
           
-          switch (header.toLowerCase()) {
-            case 'website name':
-              domain.websiteName = value;
-              break;
-            case 'website url':
-              domain.websiteUrl = value;
-              break;
-            case 'domain rating':
-            case 'dr':
-              domain.domainRating = value;
-              break;
-            case 'traffic':
-            case 'website traffic':
-              domain.websiteTraffic = parseInt(value) || 0;
-              break;
-            case 'niche':
-              domain.niche = value;
-              break;
-            case 'type':
-              domain.type = value.toLowerCase() === 'guest post' ? 'guest_post' : 
-                           value.toLowerCase() === 'niche edit' ? 'niche_edit' : 
-                           value.toLowerCase() === 'both' ? 'both' : 'both';
-              break;
-            case 'guest post price':
-              domain.guestPostPrice = value;
-              break;
-            case 'niche edit price':
-              domain.nicheEditPrice = value;
-              break;
-            case 'guidelines':
-              domain.guidelines = value;
-              break;
+          // Handle quoted CSV cells properly
+          const cells: string[] = [];
+          let currentCell = '';
+          let inQuotes = false;
+          
+          for (let j = 0; j < lines[i].length; j++) {
+            const char = lines[i][j];
+            
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              cells.push(currentCell.trim());
+              currentCell = '';
+            } else {
+              currentCell += char;
+            }
           }
-        });
+          
+          cells.push(currentCell.trim());
+          
+          const websiteUrl = websiteUrlIndex >= 0 && cells[websiteUrlIndex] ? cells[websiteUrlIndex].replace(/"/g, '') : '';
+          
+          if (!websiteUrl) continue;
+          
+          const domain = {
+            websiteName: websiteNameIndex >= 0 && cells[websiteNameIndex] ? cells[websiteNameIndex].replace(/"/g, '') : websiteUrl,
+            websiteUrl,
+            domainRating: domainRatingIndex >= 0 && cells[domainRatingIndex] ? cells[domainRatingIndex].replace(/"/g, '') : '',
+            websiteTraffic: websiteTrafficIndex >= 0 && cells[websiteTrafficIndex] ? parseInt(cells[websiteTrafficIndex].replace(/"/g, '')) || 0 : 0,
+            niche: nicheIndex >= 0 && cells[nicheIndex] ? cells[nicheIndex].replace(/"/g, '') : '',
+            type: typeIndex >= 0 && cells[typeIndex] ? 
+              cells[typeIndex].replace(/"/g, '').toLowerCase().includes('guest') && cells[typeIndex].replace(/"/g, '').toLowerCase().includes('niche') ? 'both' :
+              cells[typeIndex].replace(/"/g, '').toLowerCase().includes('guest') ? 'guest_post' :
+              cells[typeIndex].replace(/"/g, '').toLowerCase().includes('niche') ? 'niche_edit' : 'both'
+            : 'both',
+            guestPostPrice: guestPostPriceIndex >= 0 && cells[guestPostPriceIndex] ? cells[guestPostPriceIndex].replace(/"/g, '') : null,
+            nicheEditPrice: nicheEditPriceIndex >= 0 && cells[nicheEditPriceIndex] ? cells[nicheEditPriceIndex].replace(/"/g, '') : null,
+            guidelines: guidelinesIndex >= 0 && cells[guidelinesIndex] ? cells[guidelinesIndex].replace(/"/g, '') : null
+          };
+          
+          domainData.push(domain);
+        }
         
-        // Validate the domain
-        if (!domain.websiteUrl) continue;
+        if (domainData.length === 0) {
+          throw new Error("No valid domains found in the file");
+        }
         
-        // Fix any missing fields with defaults
-        if (!domain.websiteName) domain.websiteName = domain.websiteUrl;
-        if (!domain.type) domain.type = 'both';
-        
-        domains.push(domain);
-      }
-      
-      if (domains.length === 0) {
-        setImportError("No valid domains found in CSV");
+        setImportPreview(domainData);
         setImportInProgress(false);
-        return;
-      }
-
-      // If preview is empty, set the preview
-      if (importPreview.length === 0) {
-        setImportPreview(domains);
+        
+      } catch (error) {
+        setImportPreview([]);
+        setImportError(error instanceof Error ? error.message : "Failed to parse CSV file");
         setImportInProgress(false);
-      } else {
-        // If preview exists, proceed with actual import
-        importDomainsMutation.mutate(domains);
       }
-    } catch (error) {
-      console.error("Error parsing CSV:", error);
-      setImportError("Error parsing CSV file");
-      setImportInProgress(false);
-    }
-  };
-
-  // Import domains from selected file
-  const handleImportDomains = () => {
-    if (importPreview.length > 0) {
-      importDomainsMutation.mutate(importPreview);
-    }
-  };
-
-  // Export domains to CSV
-  const exportDomainsAsCSV = () => {
-    // Create CSV content
-    const headers = ['Website Name', 'Website URL', 'Domain Rating', 'Traffic', 'Niche', 'Type', 'Guest Post Price', 'Niche Edit Price', 'Guidelines'];
-    const csvContent = filteredDomains.map((domain: any) => {
-      return [
-        domain.websiteName || '',
-        domain.websiteUrl || '',
-        domain.domainRating || '',
-        domain.websiteTraffic || '',
-        domain.niche || '',
-        domain.type || '',
-        domain.guestPostPrice || '',
-        domain.nicheEditPrice || '',
-        domain.guidelines ? `"${domain.guidelines.replace(/"/g, '""')}"` : ''
-      ].join(',');
-    });
-    
-    // Combine headers and rows
-    const csv = [headers.join(','), ...csvContent].join('\n');
-    
-    // Create and download the file
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `domain-inventory-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast({
-      title: "Export successful",
-      description: "Domains exported to CSV file."
-    });
-  };
-
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied to clipboard",
-      description: "Text has been copied to your clipboard.",
-    });
-  };
-
-  // Resizable column handler
-  const onResize = (column: keyof typeof columnWidths) => (_e: React.SyntheticEvent, { size }: { size: { width: number } }) => {
-    // Set a maximum column width to prevent excessive stretching
-    const maxWidth = 500;
-    const minWidth = 50; // Add a minimum width to prevent columns from disappearing
-    const newWidth = Math.min(Math.max(size.width, minWidth), maxWidth);
-    
-    console.log(`Resizing column ${column} to ${newWidth}px`);
-    
-    setColumnWidths(prev => ({
-      ...prev,
-      [column]: newWidth
-    }));
-  };
-  
-  // Apply CSS for resizable columns
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.innerHTML = `
-      table {
-        width: 100%;
-        table-layout: fixed;
-        font-size: 0.95rem;
-      }
-      
-      th {
-        position: relative;
-        overflow: visible;
-        padding: 0.5rem 0.75rem !important;
-      }
-      
-      td {
-        padding: 0.5rem 0.75rem !important;
-      }
-      
-      .react-resizable {
-        position: relative;
-      }
-      
-      .react-resizable-handle {
-        position: absolute;
-        right: -1px;
-        bottom: 0;
-        top: 0;
-        width: 8px;
-        height: 100%;
-        cursor: col-resize;
-        z-index: 1;
-        background-color: transparent;
-      }
-      
-      .react-resizable-handle:after {
-        content: "";
-        position: absolute;
-        right: 3px;
-        top: 0;
-        height: 100%;
-        width: 2px;
-        background-color: #e2e8f0;
-      }
-      
-      .react-resizable-handle:hover:after,
-      .react-resizable-handle:active:after {
-        background-color: #3b82f6;
-      }
-      
-      .truncate-cell {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      
-      /* Optimize cell display */
-      table td, table th {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    return () => {
-      document.head.removeChild(style);
     };
-  }, []);
+    
+    reader.onerror = () => {
+      setImportPreview([]);
+      setImportError("Error reading file");
+      setImportInProgress(false);
+    };
+    
+    reader.readAsText(importFile);
+  };
 
-  const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
-    <Button
-      variant="ghost"
-      onClick={() => handleSort(field)}
-      className="h-8 flex items-center gap-1 hover:bg-transparent"
-    >
-      {children}
-      {sortField === field && (
-        <ChevronDown className={cn(
-          "h-4 w-4 transition-transform",
-          sortDirection === "asc" && "rotate-180"
-        )} />
-      )}
-    </Button>
-  );
+  // Handle domain import (actual import)
+  const handleImportDomains = () => {
+    if (importPreview.length === 0) return;
+    importDomainsMutation.mutate(importPreview);
+  };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const filteredDomains = domains
-    .filter((domain: Domain) => {
-      const matchesType = typeFilter === "all" || domain.type === typeFilter;
-      const matchesSearch = !searchQuery ||
-        domain.websiteUrl.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const domainRating = Number(domain.domainRating) || 0;
-      const matchesDR = drRange === "all" ||
-        (drRange === "0-30" && domainRating <= 30) ||
-        (drRange === "31-50" && domainRating > 30 && domainRating <= 50) ||
-        (drRange === "51-70" && domainRating > 50 && domainRating <= 70) ||
-        (drRange === "71+" && domainRating > 70);
-
-      const traffic = Number(domain.websiteTraffic) || 0;
-      const matchesTraffic = trafficRange === "all" ||
-        (trafficRange === "0-5k" && traffic <= 5000) ||
-        (trafficRange === "5k-20k" && traffic > 5000 && traffic <= 20000) ||
-        (trafficRange === "20k-50k" && traffic > 20000 && traffic <= 50000) ||
-        (trafficRange === "50k+" && traffic > 50000);
-
-      return matchesType && matchesSearch && matchesDR && matchesTraffic;
-    })
-    .sort((a: Domain, b: Domain) => {
-      let aValue = (a as any)[sortField];
-      let bValue = (b as any)[sortField];
-      
-      // Handle sorting for price fields
-      if (sortField === 'guestPostPrice' || sortField === 'nicheEditPrice') {
-        // For Guest Post Price, exclude domains that don't offer that service
-        if (sortField === 'guestPostPrice' && a.type === 'niche_edit') aValue = sortDirection === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
-        if (sortField === 'guestPostPrice' && b.type === 'niche_edit') bValue = sortDirection === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
-        
-        // For Niche Edit Price, exclude domains that don't offer that service
-        if (sortField === 'nicheEditPrice' && a.type === 'guest_post') aValue = sortDirection === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
-        if (sortField === 'nicheEditPrice' && b.type === 'guest_post') bValue = sortDirection === 'asc' ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER;
-        
-        // Convert to numbers for comparison
-        const aNum = aValue ? Number(aValue) : 0;
-        const bNum = bValue ? Number(bValue) : 0;
-        
-        return sortDirection === "asc" ? aNum - bNum : bNum - aNum;
-      }
-      
-      // Handle sorting for string values with null checks
-      if (typeof aValue === "string" || typeof bValue === "string") {
-        // Convert null/undefined to empty strings for comparison
-        const aStr = aValue ? String(aValue) : '';
-        const bStr = bValue ? String(bValue) : '';
-        
-        return sortDirection === "asc"
-          ? aStr.localeCompare(bStr)
-          : bStr.localeCompare(aStr);
-      }
-      
-      // Handle numeric values with null checks
-      const aNum = aValue !== null && aValue !== undefined ? Number(aValue) : 0;
-      const bNum = bValue !== null && bValue !== undefined ? Number(bValue) : 0;
-      
-      return sortDirection === "asc"
-        ? aNum - bNum
-        : bNum - aNum;
+  // Apply filters and sorting
+  let filteredDomains = [...domains];
+  
+  // Apply search filter
+  if (searchQuery) {
+    filteredDomains = filteredDomains.filter((domain: Domain) => {
+      const domainString = `${domain.websiteName?.toLowerCase() || ''} ${domain.websiteUrl.toLowerCase()} ${domain.niche?.toLowerCase() || ''}`;
+      return domainString.includes(searchQuery.toLowerCase());
     });
-
+  }
+  
+  // Apply type filter
+  if (typeFilter !== "all") {
+    filteredDomains = filteredDomains.filter((domain: Domain) => {
+      if (typeFilter === "both") return domain.type === "both";
+      if (typeFilter === "guest_post") return domain.type === "guest_post" || domain.type === "both";
+      if (typeFilter === "niche_edit") return domain.type === "niche_edit" || domain.type === "both";
+      return true;
+    });
+  }
+  
+  // Apply DR filter
+  if (drRange !== "all") {
+    filteredDomains = filteredDomains.filter((domain: Domain) => {
+      const dr = parseInt(domain.domainRating) || 0;
+      if (drRange === "0-30") return dr >= 0 && dr <= 30;
+      if (drRange === "31-50") return dr >= 31 && dr <= 50;
+      if (drRange === "51-70") return dr >= 51 && dr <= 70;
+      if (drRange === "71+") return dr >= 71;
+      return true;
+    });
+  }
+  
+  // Apply traffic filter
+  if (trafficRange !== "all") {
+    filteredDomains = filteredDomains.filter((domain: Domain) => {
+      const traffic = domain.websiteTraffic || 0;
+      if (trafficRange === "0-1000") return traffic >= 0 && traffic <= 1000;
+      if (trafficRange === "1001-10000") return traffic >= 1001 && traffic <= 10000;
+      if (trafficRange === "10001-50000") return traffic >= 10001 && traffic <= 50000;
+      if (trafficRange === "50001+") return traffic >= 50001;
+      return true;
+    });
+  }
+  
+  // Apply sorting
+  filteredDomains.sort((a: Domain, b: Domain) => {
+    const getValue = (domain: Domain, field: string) => {
+      if (field === "websiteName") return domain.websiteName || "";
+      if (field === "websiteUrl") return domain.websiteUrl;
+      if (field === "domainRating") return parseInt(domain.domainRating) || 0;
+      if (field === "websiteTraffic") return domain.websiteTraffic || 0;
+      if (field === "niche") return domain.niche || "";
+      if (field === "type") return domain.type;
+      if (field === "guestPostPrice") return domain.guestPostPrice ? parseInt(domain.guestPostPrice.replace(/[^0-9]/g, '')) || 0 : 0;
+      if (field === "nicheEditPrice") return domain.nicheEditPrice ? parseInt(domain.nicheEditPrice.replace(/[^0-9]/g, '')) || 0 : 0;
+      return "";
+    };
+    
+    const valueA = getValue(a, sortField);
+    const valueB = getValue(b, sortField);
+    
+    if (typeof valueA === "number" && typeof valueB === "number") {
+      return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
+    } else {
+      return sortDirection === "asc" 
+        ? String(valueA).localeCompare(String(valueB)) 
+        : String(valueB).localeCompare(String(valueA));
+    }
+  });
+  
   // Calculate pagination
   const totalItems = filteredDomains.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  
+  if (currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
+  
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedDomains = filteredDomains.slice(startIndex, startIndex + itemsPerPage);
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const paginatedDomains = filteredDomains.slice(startIndex, endIndex);
+  
+  // Handle handleResize for resizable columns
+  const handleResize = (column: string) => (e: React.SyntheticEvent, { size }: { size: { width: number } }) => {
+    setColumnWidths({
+      ...columnWidths,
+      [column]: Math.max(50, size.width) // Set a minimum width of 50px
+    });
+  };
 
   // Domain form component
-  const DomainForm = ({ domain, onSubmit }: { 
-    domain?: Domain | null, 
-    onSubmit: (data: DomainFormValues & { id?: number }) => void 
-  }) => {
-    const defaultValues: DomainFormValues = domain ? {
-      websiteName: domain.websiteName || "",
-      websiteUrl: domain.websiteUrl || "",
-      domainRating: domain.domainRating || "",
-      websiteTraffic: domain.websiteTraffic || 0,
-      niche: domain.niche || "",
-      type: domain.type as "guest_post" | "niche_edit" | "both",
-      guestPostPrice: domain.guestPostPrice || "",
-      nicheEditPrice: domain.nicheEditPrice || "",
-      guidelines: domain.guidelines || "",
-    } : {
-      websiteName: "",
-      websiteUrl: "",
-      domainRating: "",
-      websiteTraffic: 0,
-      niche: "",
-      type: "both",
-      guestPostPrice: "",
-      nicheEditPrice: "",
-      guidelines: "",
-    };
-
+  const DomainForm = ({ domain }: { domain: Domain | null }) => {
     const form = useForm<DomainFormValues>({
       resolver: zodResolver(domainFormSchema),
-      defaultValues
+      defaultValues: domain ? {
+        websiteName: domain.websiteName,
+        websiteUrl: domain.websiteUrl,
+        domainRating: domain.domainRating || "",
+        websiteTraffic: domain.websiteTraffic || 0,
+        niche: domain.niche || "",
+        type: domain.type,
+        guestPostPrice: domain.guestPostPrice || "",
+        nicheEditPrice: domain.nicheEditPrice || "",
+        guidelines: domain.guidelines || "",
+      } : {
+        websiteName: "",
+        websiteUrl: "",
+        domainRating: "",
+        websiteTraffic: 0,
+        niche: "",
+        type: "both",
+        guestPostPrice: "",
+        nicheEditPrice: "",
+        guidelines: "",
+      }
     });
-
-    const handleSubmit = (data: DomainFormValues) => {
+    
+    // Get the current form type value to show/hide relevant price fields
+    const formType = form.watch("type");
+    
+    const onSubmit = (values: DomainFormValues) => {
       if (domain) {
-        onSubmit({ ...data, id: domain.id });
+        updateDomainMutation.mutate({
+          id: domain.id,
+          domain: values
+        });
       } else {
-        onSubmit(data);
+        createDomainMutation.mutate(values);
       }
     };
-
-    const domainType = form.watch("type");
-
+    
     return (
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-          {/* Website name field is now optional and not shown in the form */}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="websiteName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Website Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Example Blog" {...field} />
+                </FormControl>
+                <FormDescription>
+                  The display name of the website
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           <FormField
             control={form.control}
             name="websiteUrl"
@@ -739,89 +654,110 @@ export default function DomainsPage() {
                 <FormControl>
                   <Input placeholder="e.g. example.com" {...field} />
                 </FormControl>
+                <FormDescription>
+                  The domain name without http/https
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <div className="flex flex-col sm:flex-row gap-4">
+          
+          <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="domainRating"
               render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Domain Rating (DR)</FormLabel>
+                <FormItem>
+                  <FormLabel>Domain Rating</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. 55" {...field} />
+                    <Input type="text" placeholder="e.g. 75" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="websiteTraffic"
               render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Website Traffic</FormLabel>
+                <FormItem>
+                  <FormLabel>Monthly Traffic</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g. 25000" {...field} />
+                    <Input type="number" placeholder="e.g. 50000" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-          {/* Niche field is now optional and not shown in the form */}
+          
+          <FormField
+            control={form.control}
+            name="niche"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Niche/Category</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Technology, Marketing" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           <FormField
             control={form.control}
             name="type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Placement Type</FormLabel>
+                <FormLabel>Link Type</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
                   defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select placement type" />
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="guest_post">Guest Post</SelectItem>
-                    <SelectItem value="niche_edit">Niche Edit</SelectItem>
-                    <SelectItem value="both">Both</SelectItem>
+                    <SelectItem value="guest_post">Guest Post Only</SelectItem>
+                    <SelectItem value="niche_edit">Niche Edit Only</SelectItem>
+                    <SelectItem value="both">Both Types</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <div className="flex flex-col sm:flex-row gap-4">
-            {(domainType === "guest_post" || domainType === "both") && (
+          
+          <div className="grid grid-cols-2 gap-4">
+            {(formType === "guest_post" || formType === "both") && (
               <FormField
                 control={form.control}
                 name="guestPostPrice"
                 render={({ field }) => (
-                  <FormItem className="flex-1">
+                  <FormItem>
                     <FormLabel>Guest Post Price</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. 250" {...field} />
+                      <Input placeholder="e.g. 350" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             )}
-            {(domainType === "niche_edit" || domainType === "both") && (
+            
+            {(formType === "niche_edit" || formType === "both") && (
               <FormField
                 control={form.control}
                 name="nicheEditPrice"
                 render={({ field }) => (
-                  <FormItem className="flex-1">
+                  <FormItem>
                     <FormLabel>Niche Edit Price</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. 180" {...field} />
+                      <Input placeholder="e.g. 200" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -829,6 +765,7 @@ export default function DomainsPage() {
               />
             )}
           </div>
+          
           <FormField
             control={form.control}
             name="guidelines"
@@ -837,16 +774,21 @@ export default function DomainsPage() {
                 <FormLabel>Guidelines</FormLabel>
                 <FormControl>
                   <Textarea 
-                    placeholder="Enter placement guidelines or restrictions"
+                    placeholder="Enter any special guidelines for this domain"
                     className="min-h-[100px]"
-                    {...field} 
+                    {...field}
+                    value={field.value || ''}
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <div className="pt-4 flex justify-end space-x-2">
+          
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => setShowAddDomainSheet(false)}>
+              Cancel
+            </Button>
             <Button type="submit" disabled={isActionInProgress}>
               {isActionInProgress ? (
                 <>
@@ -885,505 +827,640 @@ export default function DomainsPage() {
                   Add Domain
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto max-h-screen">
-                <SheetHeader className="sticky top-0 z-10 bg-background pt-6 pb-4">
-                  <SheetTitle>Add New Domain</SheetTitle>
+              <SheetContent side="right" className="overflow-y-auto max-w-xl w-full">
+                <SheetHeader>
+                  <SheetTitle>{domainToEdit ? "Edit Domain" : "Add New Domain"}</SheetTitle>
                   <SheetDescription>
-                    Add a new domain to the inventory
+                    {domainToEdit
+                      ? "Update domain information in your inventory."
+                      : "Add a new domain to your inventory."}
                   </SheetDescription>
                 </SheetHeader>
-                <ScrollArea className="h-[calc(100vh-140px)] pr-4">
-                  <DomainForm 
-                    onSubmit={(data) => {
-                      addDomainMutation.mutate(data);
-                    }}
-                  />
-                </ScrollArea>
+                <div className="py-4">
+                  <DomainForm domain={domainToEdit} />
+                </div>
               </SheetContent>
             </Sheet>
           </div>
         )}
       </div>
-
-      <div className="space-y-4">
-        <div className="flex flex-wrap gap-4">
-          <Input
-            placeholder="Search domains..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm"
-          />
-          <Select 
-            value={typeFilter} 
-            onValueChange={(value: any) => setTypeFilter(value as "all" | "guest_post" | "niche_edit" | "both")}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="guest_post">Guest Post</SelectItem>
-              <SelectItem value="niche_edit">Niche Edit</SelectItem>
-              <SelectItem value="both">Both</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={drRange} onValueChange={setDrRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Domain Rating" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All DR</SelectItem>
-              <SelectItem value="0-30">DR 0-30</SelectItem>
-              <SelectItem value="31-50">DR 31-50</SelectItem>
-              <SelectItem value="51-70">DR 51-70</SelectItem>
-              <SelectItem value="71+">DR 71+</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={trafficRange} onValueChange={setTrafficRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Traffic" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Traffic</SelectItem>
-              <SelectItem value="0-5k">0-5K</SelectItem>
-              <SelectItem value="5k-20k">5K-20K</SelectItem>
-              <SelectItem value="20k-50k">20K-50K</SelectItem>
-              <SelectItem value="50k+">50K+</SelectItem>
-            </SelectContent>
-          </Select>
+      
+      <div className="bg-card rounded-md shadow">
+        <div className="p-4 border-b">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+            <div className="col-span-2">
+              <Label htmlFor="search" className="mb-2 block text-sm">Search</Label>
+              <Input
+                id="search"
+                placeholder="Search by name, URL, or niche..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="type-filter" className="mb-2 block text-sm">Link Type</Label>
+              <Select 
+                onValueChange={(value: any) => setTypeFilter(value)} 
+                defaultValue="all"
+              >
+                <SelectTrigger id="type-filter">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="guest_post">Guest Post</SelectItem>
+                  <SelectItem value="niche_edit">Niche Edit</SelectItem>
+                  <SelectItem value="both">Both Types</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="dr-filter" className="mb-2 block text-sm">DR Range</Label>
+              <Select 
+                onValueChange={(value) => setDrRange(value)} 
+                defaultValue="all"
+              >
+                <SelectTrigger id="dr-filter">
+                  <SelectValue placeholder="All DR" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All DR</SelectItem>
+                  <SelectItem value="0-30">0-30</SelectItem>
+                  <SelectItem value="31-50">31-50</SelectItem>
+                  <SelectItem value="51-70">51-70</SelectItem>
+                  <SelectItem value="71+">71+</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="traffic-filter" className="mb-2 block text-sm">Traffic</Label>
+              <Select 
+                onValueChange={(value) => setTrafficRange(value)} 
+                defaultValue="all"
+              >
+                <SelectTrigger id="traffic-filter">
+                  <SelectValue placeholder="All Traffic" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Traffic</SelectItem>
+                  <SelectItem value="0-1000">0-1,000</SelectItem>
+                  <SelectItem value="1001-10000">1,001-10,000</SelectItem>
+                  <SelectItem value="10001-50000">10,001-50,000</SelectItem>
+                  <SelectItem value="50001+">50,001+</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-muted-foreground">
+              Showing {startIndex + 1}-{endIndex} of {totalItems} domains
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="items-per-page" className="text-sm">Show</Label>
+              <Select 
+                onValueChange={(value) => {
+                  setItemsPerPage(parseInt(value));
+                  setCurrentPage(1);
+                }} 
+                defaultValue="10"
+              >
+                <SelectTrigger id="items-per-page" className="w-[80px]">
+                  <SelectValue placeholder="10" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Show</span>
-          <Select
-            value={String(itemsPerPage)}
-            onValueChange={(value) => {
-              setItemsPerPage(Number(value));
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="w-[100px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">per page</span>
-        </div>
-
-        <div className="text-sm text-muted-foreground">
-          Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems} entries
-        </div>
-      </div>
-
-      {/* Table container with horizontal scrolling */}
-      <div className="rounded-lg border max-w-[1400px] mx-auto">
-        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin' }}>
-          <div className="min-w-[1200px]">
-            <Table className="w-full">
+        
+        <div className="overflow-x-auto" style={{ maxWidth: '1400px', minWidth: '1200px' }}>
+          <div className="p-2">
+            <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead style={{ width: columnWidths.website }}>
+                  <TableHead 
+                    className="cursor-pointer" 
+                    style={{ width: `${columnWidths.website}px` }}
+                    onClick={() => {
+                      if (sortField === "websiteUrl") {
+                        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortField("websiteUrl");
+                        setSortDirection("asc");
+                      }
+                    }}
+                  >
                     <Resizable
                       width={columnWidths.website}
-                      height={38}
-                      onResize={onResize('website')}
-                      resizeHandles={['e']}
+                      height={30}
                       handle={
-                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize" />
                       }
+                      onResize={handleResize('website')}
                     >
-                      <div className="h-full flex items-center pr-4">
-                        <SortableHeader field="websiteUrl">Website</SortableHeader>
+                      <div className="flex items-center space-x-1">
+                        <span>Website</span>
+                        {sortField === "websiteUrl" && (
+                          <ChevronDown className={cn("h-4 w-4", {
+                            "transform rotate-180": sortDirection === "asc"
+                          })} />
+                        )}
                       </div>
                     </Resizable>
                   </TableHead>
-                  <TableHead style={{ width: columnWidths.dr }}>
+                  
+                  <TableHead 
+                    className="cursor-pointer"
+                    style={{ width: `${columnWidths.dr}px` }}
+                    onClick={() => {
+                      if (sortField === "domainRating") {
+                        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortField("domainRating");
+                        setSortDirection("desc");
+                      }
+                    }}
+                  >
                     <Resizable
                       width={columnWidths.dr}
-                      height={38}
-                      onResize={onResize('dr')}
-                      resizeHandles={['e']}
+                      height={30}
                       handle={
-                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize" />
                       }
+                      onResize={handleResize('dr')}
                     >
-                      <div className="h-full flex items-center justify-center pr-4">
-                        <SortableHeader field="domainRating">DR</SortableHeader>
+                      <div className="flex items-center space-x-1">
+                        <span>DR</span>
+                        {sortField === "domainRating" && (
+                          <ChevronDown className={cn("h-4 w-4", {
+                            "transform rotate-180": sortDirection === "asc"
+                          })} />
+                        )}
                       </div>
                     </Resizable>
                   </TableHead>
-                  <TableHead style={{ width: columnWidths.traffic }}>
+                  
+                  <TableHead 
+                    className="cursor-pointer"
+                    style={{ width: `${columnWidths.traffic}px` }}
+                    onClick={() => {
+                      if (sortField === "websiteTraffic") {
+                        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortField("websiteTraffic");
+                        setSortDirection("desc");
+                      }
+                    }}
+                  >
                     <Resizable
                       width={columnWidths.traffic}
-                      height={38}
-                      onResize={onResize('traffic')}
-                      resizeHandles={['e']}
+                      height={30}
                       handle={
-                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize" />
                       }
+                      onResize={handleResize('traffic')}
                     >
-                      <div className="h-full flex items-center justify-center pr-4">
-                        <SortableHeader field="websiteTraffic">Traffic</SortableHeader>
+                      <div className="flex items-center space-x-1">
+                        <span>Traffic</span>
+                        {sortField === "websiteTraffic" && (
+                          <ChevronDown className={cn("h-4 w-4", {
+                            "transform rotate-180": sortDirection === "asc"
+                          })} />
+                        )}
                       </div>
                     </Resizable>
                   </TableHead>
-                  <TableHead style={{ width: columnWidths.type }}>
+                  
+                  <TableHead 
+                    className="cursor-pointer"
+                    style={{ width: `${columnWidths.type}px` }}
+                    onClick={() => {
+                      if (sortField === "type") {
+                        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortField("type");
+                        setSortDirection("asc");
+                      }
+                    }}
+                  >
                     <Resizable
                       width={columnWidths.type}
-                      height={38}
-                      onResize={onResize('type')}
-                      resizeHandles={['e']}
+                      height={30}
                       handle={
-                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize" />
                       }
+                      onResize={handleResize('type')}
                     >
-                      <div className="h-full flex items-center pr-4">
-                        <SortableHeader field="type">Type</SortableHeader>
+                      <div className="flex items-center space-x-1">
+                        <span>Type</span>
+                        {sortField === "type" && (
+                          <ChevronDown className={cn("h-4 w-4", {
+                            "transform rotate-180": sortDirection === "asc"
+                          })} />
+                        )}
                       </div>
                     </Resizable>
                   </TableHead>
-                  <TableHead style={{ width: columnWidths.guestPostPrice }}>
+                  
+                  <TableHead 
+                    className="cursor-pointer"
+                    style={{ width: `${columnWidths.guestPostPrice}px` }}
+                    onClick={() => {
+                      if (sortField === "guestPostPrice") {
+                        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortField("guestPostPrice");
+                        setSortDirection("desc");
+                      }
+                    }}
+                  >
                     <Resizable
                       width={columnWidths.guestPostPrice}
-                      height={38}
-                      onResize={onResize('guestPostPrice')}
-                      resizeHandles={['e']}
+                      height={30}
                       handle={
-                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize" />
                       }
+                      onResize={handleResize('guestPostPrice')}
                     >
-                      <div className="h-full flex items-center justify-center pr-4">
-                        <SortableHeader field="guestPostPrice">GP Price</SortableHeader>
+                      <div className="flex items-center space-x-1">
+                        <span>GP Price</span>
+                        {sortField === "guestPostPrice" && (
+                          <ChevronDown className={cn("h-4 w-4", {
+                            "transform rotate-180": sortDirection === "asc"
+                          })} />
+                        )}
                       </div>
                     </Resizable>
                   </TableHead>
-                  <TableHead style={{ width: columnWidths.nicheEditPrice }}>
+                  
+                  <TableHead 
+                    className="cursor-pointer"
+                    style={{ width: `${columnWidths.nicheEditPrice}px` }}
+                    onClick={() => {
+                      if (sortField === "nicheEditPrice") {
+                        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortField("nicheEditPrice");
+                        setSortDirection("desc");
+                      }
+                    }}
+                  >
                     <Resizable
                       width={columnWidths.nicheEditPrice}
-                      height={38}
-                      onResize={onResize('nicheEditPrice')}
-                      resizeHandles={['e']}
+                      height={30}
                       handle={
-                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize" />
                       }
+                      onResize={handleResize('nicheEditPrice')}
                     >
-                      <div className="h-full flex items-center justify-center pr-4">
-                        <SortableHeader field="nicheEditPrice">NE Price</SortableHeader>
+                      <div className="flex items-center space-x-1">
+                        <span>NE Price</span>
+                        {sortField === "nicheEditPrice" && (
+                          <ChevronDown className={cn("h-4 w-4", {
+                            "transform rotate-180": sortDirection === "asc"
+                          })} />
+                        )}
                       </div>
                     </Resizable>
                   </TableHead>
-                  <TableHead style={{ width: columnWidths.guestPostTat }}>
+                  
+                  <TableHead 
+                    style={{ width: `${columnWidths.guestPostTat}px` }}
+                  >
                     <Resizable
                       width={columnWidths.guestPostTat}
-                      height={38}
-                      onResize={onResize('guestPostTat')}
-                      resizeHandles={['e']}
+                      height={30}
                       handle={
-                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize" />
                       }
+                      onResize={handleResize('guestPostTat')}
                     >
-                      <div className="h-full flex items-center justify-center pr-4">
-                        GP TAT (in days)
-                      </div>
+                      <span>GP TAT</span>
                     </Resizable>
                   </TableHead>
-                  <TableHead style={{ width: columnWidths.nicheEditTat }}>
+                  
+                  <TableHead 
+                    style={{ width: `${columnWidths.nicheEditTat}px` }}
+                  >
                     <Resizable
                       width={columnWidths.nicheEditTat}
-                      height={38}
-                      onResize={onResize('nicheEditTat')}
-                      resizeHandles={['e']}
+                      height={30}
                       handle={
-                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize" />
                       }
+                      onResize={handleResize('nicheEditTat')}
                     >
-                      <div className="h-full flex items-center justify-center pr-4">
-                        NE TAT (in days)
-                      </div>
+                      <span>NE TAT</span>
                     </Resizable>
                   </TableHead>
-                  <TableHead style={{ width: columnWidths.guidelines }}>
+                  
+                  <TableHead 
+                    style={{ width: `${columnWidths.guidelines}px` }}
+                  >
                     <Resizable
                       width={columnWidths.guidelines}
-                      height={38}
-                      onResize={onResize('guidelines')}
-                      resizeHandles={['e']}
+                      height={30}
                       handle={
-                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize" />
                       }
+                      onResize={handleResize('guidelines')}
                     >
-                      <div className="h-full flex items-center pr-4">
-                        Guidelines
-                      </div>
+                      <span>Guidelines</span>
                     </Resizable>
                   </TableHead>
-                  {!isAdmin && (
-                    <TableHead style={{ width: columnWidths.action }}>
+                  
+                  {isAdmin && (
+                    <TableHead 
+                      style={{ width: `${columnWidths.action}px` }}
+                    >
                       <Resizable
                         width={columnWidths.action}
-                        height={38}
-                        onResize={onResize('action')}
-                        resizeHandles={['e']}
+                        height={30}
                         handle={
-                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize" />
                         }
+                        onResize={handleResize('action')}
                       >
-                        <div className="h-full flex items-center pr-4">
-                          Action
-                        </div>
+                        <span>Action</span>
                       </Resizable>
                     </TableHead>
                   )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedDomains.map((domain: Domain) => (
-                  <TableRow key={domain.id}>
-                    <TableCell className="max-w-[200px]">
-                      <div className="flex items-center space-x-2">
-                        <a
-                          href={`https://${domain.websiteUrl}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-primary hover:underline truncate"
-                        >
-                          {domain.websiteUrl}
-                          <ExternalLink className="h-4 w-4 shrink-0" />
-                        </a>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyToClipboard(domain.websiteUrl)}
-                          className="h-8 w-8 shrink-0"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 11 : 10} className="text-center h-24">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      <p className="mt-2">Loading domains...</p>
                     </TableCell>
-                    <TableCell className="text-center">{domain.domainRating}</TableCell>
-                    <TableCell className="text-center">{Number(domain.websiteTraffic).toLocaleString()}</TableCell>
-                    <TableCell>
-                      {domain.type === "both"
-                        ? "Both"
-                        : domain.type === "guest_post"
-                          ? "Guest Post"
-                          : "Niche Edit"}
+                  </TableRow>
+                ) : paginatedDomains.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 11 : 10} className="text-center h-24">
+                      <p>No domains found. Try adjusting your filters.</p>
                     </TableCell>
-                    <TableCell className="text-center">
-                      {domain.type !== "niche_edit" && domain.guestPostPrice ? `$${domain.guestPostPrice}` : "N/A"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {domain.type !== "guest_post" && domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : "N/A"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {domain.type !== "niche_edit" ? getGuestPostTAT(domain) : "N/A"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {domain.type !== "guest_post" ? getNicheEditTAT(domain) : "N/A"}
-                    </TableCell>
-                    <TableCell className="max-w-[200px]">
-                      {domain.guidelines ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="truncate block cursor-help">{domain.guidelines}</span>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <p>{domain.guidelines}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <span className="text-muted-foreground italic">No guidelines</span>
-                      )}
-                    </TableCell>
-                    {!isAdmin ? (
-                      <TableCell>
-                        <Button
-                          onClick={() => setLocation(`/orders/new?domain=${domain.websiteUrl}`)}
-                          size="sm"
-                        >
-                          Place Order
-                        </Button>
-                      </TableCell>
-                    ) : (
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Sheet open={domainToEdit?.id === domain.id} onOpenChange={(open) => !open && setDomainToEdit(null)}>
-                            <SheetTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => setDomainToEdit(domain)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </SheetTrigger>
-                            <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto max-h-screen">
-                              <SheetHeader className="sticky top-0 z-10 bg-background pt-6 pb-4">
-                                <SheetTitle>Edit Domain</SheetTitle>
-                                <SheetDescription>
-                                  Update domain information
-                                </SheetDescription>
-                              </SheetHeader>
-                              <ScrollArea className="h-[calc(100vh-140px)] pr-4">
-                                <DomainForm 
-                                  domain={domainToEdit}
-                                  onSubmit={(data) => {
-                                    updateDomainMutation.mutate(data as DomainFormValues & { id: number });
-                                  }}
-                                />
-                              </ScrollArea>
-                            </SheetContent>
-                          </Sheet>
-
-                          <AlertDialog open={domainToDelete?.id === domain.id} onOpenChange={(open) => !open && setDomainToDelete(null)}>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => setDomainToDelete(domain)}
-                              >
-                                <Trash className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Domain</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this domain? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => {
-                                    if (domainToDelete) {
-                                      deleteDomainMutation.mutate(domainToDelete.id);
-                                    }
-                                  }}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  disabled={isActionInProgress}
-                                >
-                                  {isActionInProgress ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                      Deleting...
-                                    </>
-                                  ) : (
-                                    "Delete"
-                                  )}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                  </TableRow>
+                ) : (
+                  paginatedDomains.map((domain: Domain) => (
+                    <TableRow key={domain.id}>
+                      <TableCell className="font-medium">
+                        <div>
+                          <div className="font-medium">{domain.websiteName || domain.websiteUrl}</div>
+                          <div className="text-sm text-muted-foreground flex items-center">
+                            <a 
+                              href={`https://${domain.websiteUrl}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center hover:underline text-primary"
+                            >
+                              {domain.websiteUrl}
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                          </div>
+                          {domain.niche && (
+                            <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                              {domain.niche}
+                            </span>
+                          )}
                         </div>
                       </TableCell>
-                    )}
-                  </TableRow>
-                ))}
+                      <TableCell>
+                        <div className="text-center font-semibold">{domain.domainRating || "-"}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-right">{domain.websiteTraffic ? domain.websiteTraffic.toLocaleString() : "-"}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-center">
+                          {domain.type === "guest_post" && (
+                            <span className="inline-block bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 text-xs px-2 py-0.5 rounded-full">
+                              Guest Post
+                            </span>
+                          )}
+                          {domain.type === "niche_edit" && (
+                            <span className="inline-block bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100 text-xs px-2 py-0.5 rounded-full">
+                              Niche Edit
+                            </span>
+                          )}
+                          {domain.type === "both" && (
+                            <span className="inline-block bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 text-xs px-2 py-0.5 rounded-full">
+                              Both
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-right font-medium">
+                          {domain.guestPostPrice ? `$${domain.guestPostPrice}` : 
+                            (domain.type === "guest_post" || domain.type === "both") ? "-" : "N/A"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-right font-medium">
+                          {domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : 
+                            (domain.type === "niche_edit" || domain.type === "both") ? "-" : "N/A"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-center text-sm">
+                          {(domain.type === "guest_post" || domain.type === "both") ? 
+                            getGuestPostTAT(domain) : "N/A"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-center text-sm">
+                          {(domain.type === "niche_edit" || domain.type === "both") ? 
+                            getNicheEditTAT(domain) : "N/A"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {domain.guidelines ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="max-w-[160px] truncate text-sm hover:cursor-help">
+                                  {domain.guidelines}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-sm">
+                                <p>{domain.guidelines}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">None</span>
+                        )}
+                      </TableCell>
+                      
+                      {isAdmin && (
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setDomainToEdit(domain);
+                                setShowAddDomainSheet(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Domain</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete {domain.websiteName || domain.websiteUrl}? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => deleteDomainMutation.mutate(domain.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    {isActionInProgress ? (
+                                      <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Deleting...
+                                      </>
+                                    ) : (
+                                      "Delete"
+                                    )}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
         </div>
       </div>
       
-      {/* File import dialog for admins */}
+      {/* File import dialog and template links for admins */}
       {isAdmin && (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="mt-4">
-              <Upload className="h-4 w-4 mr-2" />
-              Import Domains
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Import Domains</DialogTitle>
-              <DialogDescription>
-                Upload a CSV file with domain data to import. The file should have headers matching the domain fields.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="csvFile">CSV File</Label>
-                <Input 
-                  id="csvFile" 
-                  type="file" 
-                  accept=".csv" 
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      setImportFile(e.target.files[0]);
-                    }
-                  }}
-                />
-              </div>
-              {importError && (
-                <div className="text-destructive text-sm">{importError}</div>
-              )}
-              {importPreview.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="font-medium mb-2">Preview ({importPreview.length} domains)</h3>
-                  <div className="border rounded-md max-h-[200px] overflow-y-auto p-2">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-1">Website URL</th>
-                          <th className="text-left p-1">DR</th>
-                          <th className="text-left p-1">Type</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {importPreview.map((domain, index) => (
-                          <tr key={index} className="border-b border-muted">
-                            <td className="p-1">{domain.websiteUrl}</td>
-                            <td className="p-1">{domain.domainRating}</td>
-                            <td className="p-1">{domain.type}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+        <div className="flex items-center gap-4 mt-4">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Upload className="h-4 w-4 mr-2" />
+                Import Domains
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Import Domains</DialogTitle>
+                <DialogDescription>
+                  Upload a CSV file with domain data to import. The file should have headers matching the domain fields.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="csvFile">CSV File</Label>
+                  <Input 
+                    id="csvFile" 
+                    type="file" 
+                    accept=".csv" 
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setImportFile(e.target.files[0]);
+                      }
+                    }}
+                  />
                 </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setImportFile(null);
-                  setImportPreview([]);
-                  setImportError("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="button" 
-                onClick={importPreview.length === 0 ? handleImportPreview : handleImportDomains} 
-                disabled={!importFile || importInProgress}
-              >
-                {importInProgress ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {importPreview.length === 0 ? "Processing..." : "Importing..."}
-                  </>
-                ) : (
-                  importPreview.length === 0 ? "Preview" : "Import"
+                <div className="text-sm text-muted-foreground">
+                  Download templates: 
+                  <a href="/templates/domains-template.csv" download className="text-primary ml-1 hover:underline">
+                    CSV Template
+                  </a>
+                </div>
+                {importError && (
+                  <div className="text-destructive text-sm">{importError}</div>
                 )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                {importPreview.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="font-medium mb-2">Preview ({importPreview.length} domains)</h3>
+                    <div className="border rounded-md max-h-[200px] overflow-y-auto p-2">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-1">Website URL</th>
+                            <th className="text-left p-1">DR</th>
+                            <th className="text-left p-1">Type</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {importPreview.map((domain, index) => (
+                            <tr key={index} className="border-b border-muted">
+                              <td className="p-1">{domain.websiteUrl}</td>
+                              <td className="p-1">{domain.domainRating}</td>
+                              <td className="p-1">{domain.type}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setImportFile(null);
+                    setImportPreview([]);
+                    setImportError("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="button" 
+                  onClick={importPreview.length === 0 ? handleImportPreview : handleImportDomains} 
+                  disabled={!importFile || importInProgress}
+                >
+                  {importInProgress ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {importPreview.length === 0 ? "Processing..." : "Importing..."}
+                    </>
+                  ) : (
+                    importPreview.length === 0 ? "Preview" : "Import"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       )}
 
       <div className="flex items-center justify-center mt-4">

@@ -418,3 +418,55 @@ export async function sendChatNotificationEmail(
     // Don't throw error to prevent app disruption
   }
 }
+
+/**
+ * Send an email verification link to the user
+ */
+export async function sendVerificationEmail(
+  recipientEmail: string,
+  verificationLink: string,
+  userName: string
+) {
+  if (!isEmailConfigured()) {
+    console.warn('SendGrid API key not configured, skipping verification email');
+    return;
+  }
+  
+  try {
+    const emailContent = `
+      <p>Hello ${userName},</p>
+      <p>Thank you for using ${APP_NAME}. Please verify your email address by clicking the button below:</p>
+      <p>This link will expire in 24 hours.</p>
+      <p>If you did not request this verification, please ignore this email.</p>
+    `;
+    
+    const html = generateEmailTemplate(
+      'Verify Your Email Address',
+      emailContent,
+      'Verify Email Address',
+      verificationLink,
+      null
+    );
+    
+    const msg = {
+      to: recipientEmail,
+      from: {
+        email: FROM_EMAIL,
+        name: APP_NAME + ' Support'
+      },
+      subject: 'Verify Your Email Address',
+      html: html,
+      trackingSettings: {
+        clickTracking: {
+          enable: true
+        }
+      }
+    };
+    
+    await mailService.send(msg);
+    console.log(`Verification email sent to ${recipientEmail}`);
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    // Don't throw the error to prevent the application from crashing
+  }
+}

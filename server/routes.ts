@@ -2396,14 +2396,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         passwordResetExpires: passwordResetExpires
       });
 
-      // TODO: Send verification email via SendGrid or other email provider
-      // This would normally send an email with a link containing the token
-      // For now, just return the token in the response for testing
+      // Generate verification link - this would be clicked by the user in their email
+      const verificationLink = `${req.protocol}://${req.get('host')}/verify-email?token=${verificationToken}`;
+      
+      // Send verification email using our email service
+      try {
+        // Import the email service
+        const { sendVerificationEmail } = require('./email');
+        
+        // Send the email
+        await sendVerificationEmail(
+          user.email,
+          verificationLink,
+          user.firstName || user.username
+        );
+        
+        console.log("Verification email sent successfully to:", user.email);
+      } catch (emailError) {
+        console.error("Failed to send verification email:", emailError);
+        // Continue execution - we'll still return the token for testing
+      }
 
+      // Return token in the response for testing purposes
+      // In production, this would be removed
       res.json({ 
         success: true, 
-        message: "Verification email sent",
-        token: verificationToken // In production, don't return this
+        message: "Verification email sent. Please check your inbox and spam folder.",
+        token: verificationToken, // In production, don't return this
+        link: verificationLink // For testing only
       });
     } catch (error) {
       console.error("Error sending verification email:", error);

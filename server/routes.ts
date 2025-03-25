@@ -1439,6 +1439,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch domain" });
     }
   });
+  
+  // Add domain import route (admin only)
+  app.post("/api/domains/import", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const { domains } = req.body;
+      
+      if (!Array.isArray(domains)) {
+        return res.status(400).json({ error: "Invalid domains data. Expected an array." });
+      }
+      
+      console.log(`Starting import of ${domains.length} domains`);
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      // Process domains in sequence to avoid database issues
+      for (const domainData of domains) {
+        try {
+          // Ensure we have at least required fields
+          if (!domainData.websiteUrl) {
+            errorCount++;
+            continue;
+          }
+          
+          // Create the domain
+          await storage.createDomain({
+            websiteName: domainData.websiteName || domainData.websiteUrl,
+            websiteUrl: domainData.websiteUrl,
+            domainRating: domainData.domainRating || '',
+            websiteTraffic: domainData.websiteTraffic || 0, 
+            niche: domainData.niche || '',
+            type: domainData.type || 'both',
+            guestPostPrice: domainData.guestPostPrice || null,
+            nicheEditPrice: domainData.nicheEditPrice || null,
+            guidelines: domainData.guidelines || null
+          });
+          
+          successCount++;
+        } catch (domainError) {
+          console.error('Error importing domain:', domainError);
+          errorCount++;
+        }
+      }
+      
+      console.log(`Import complete. Success: ${successCount}, Errors: ${errorCount}`);
+      
+      res.status(200).json({ 
+        success: true, 
+        imported: successCount,
+        failed: errorCount 
+      });
+    } catch (error) {
+      console.error("Error importing domains:", error);
+      res.status(500).json({ error: "Failed to import domains" });
+    }
+  });
+  
+  // Add domain update route (admin only)
+  app.put("/api/domains/:id", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const domainId = parseInt(req.params.id);
+      if (isNaN(domainId)) {
+        return res.status(400).json({ error: "Invalid domain ID" });
+      }
+      
+      const domain = await storage.updateDomain(domainId, req.body);
+      res.json(domain);
+    } catch (error) {
+      console.error("Error updating domain:", error);
+      res.status(500).json({ error: "Failed to update domain" });
+    }
+  });
+  
+  // Add domain delete route (admin only)
+  app.delete("/api/domains/:id", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const domainId = parseInt(req.params.id);
+      if (isNaN(domainId)) {
+        return res.status(400).json({ error: "Invalid domain ID" });
+      }
+      
+      await storage.deleteDomain(domainId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting domain:", error);
+      res.status(500).json({ error: "Failed to delete domain" });
+    }
+  });
 
   // Add this with the other routes before the httpServer creation
   app.patch("/api/user/profile", async (req, res) => {

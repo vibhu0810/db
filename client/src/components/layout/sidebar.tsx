@@ -41,7 +41,7 @@ const adminNavigation = [
   { name: "Users", href: "/users", icon: Users },
   { name: "Feedback", href: "/feedback", icon: Star },
   { name: "Chat Support", href: "/chat", icon: MessageSquare },
-  { name: "Ticket Tools", href: "/admin/ticket-tools", icon: Wrench },
+  { name: "Profile", href: "/profile", icon: User },
 ];
 
 export function Sidebar() {

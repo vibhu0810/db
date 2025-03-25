@@ -50,6 +50,10 @@ export default function ResetPasswordPage() {
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ password, confirmPassword, token }: { password: string; confirmPassword: string; token: string }) => {
       console.log("Sending reset password request with token:", token);
+      if (!token) {
+        throw new Error("Reset token is missing");
+      }
+      
       const response = await apiRequest("POST", "/api/auth/reset-password", {
         password, 
         confirmPassword,
@@ -176,6 +180,14 @@ export default function ResetPasswordPage() {
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>{resetError}</AlertDescription>
                 </Alert>
+              )}
+              
+              {/* Token debugging - only show in development */}
+              {import.meta.env.DEV && token && (
+                <div className="p-2 mt-1 text-xs border border-dashed border-muted rounded">
+                  <p><strong>Debug:</strong> Token detected ({token.length} chars):</p>
+                  <code className="block p-1 mt-1 bg-muted overflow-auto text-[10px]">{token}</code>
+                </div>
               )}
               
               <div className="space-y-2">

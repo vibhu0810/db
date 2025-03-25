@@ -39,27 +39,27 @@ interface Feedback {
   };
 }
 
-// StarRating component
+// HeartRating component
 function StarRating({ rating, onRatingChange }: { rating: number, onRatingChange?: (rating: number) => void }) {
   const [hoverRating, setHoverRating] = useState(0);
   
   return (
     <div className="flex items-center">
-      {[1, 2, 3, 4, 5].map((star) => (
+      {[1, 2, 3, 4, 5].map((heart) => (
         <button
-          key={star}
+          key={heart}
           type="button"
-          className={`text-xl focus:outline-none ${
-            (hoverRating || rating) >= star
-              ? "text-yellow-500"
+          className={`text-xl focus:outline-none transition-all duration-300 transform ${
+            (hoverRating || rating) >= heart
+              ? "text-red-500 scale-110"
               : "text-gray-300 dark:text-gray-600"
           }`}
-          onClick={() => onRatingChange?.(star)}
-          onMouseEnter={() => setHoverRating(star)}
+          onClick={() => onRatingChange?.(heart)}
+          onMouseEnter={() => setHoverRating(heart)}
           onMouseLeave={() => setHoverRating(0)}
           disabled={!onRatingChange}
         >
-          ★
+          ❤️
         </button>
       ))}
       {rating > 0 && (
@@ -106,10 +106,10 @@ function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
       <CardHeader>
         <CardTitle className="flex items-center">
           <span>Feedback for {formatMonth(feedback.month)} {feedback.year}</span>
-          <span className="ml-2 text-yellow-500 text-xl flex">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <span key={star} className="inline-block px-0.5">
-                {star <= Math.round(averageRating) ? "★" : "☆"}
+          <span className="ml-2 text-red-500 text-xl flex">
+            {[1, 2, 3, 4, 5].map((heart) => (
+              <span key={heart} className="inline-block px-0.5">
+                {heart <= Math.round(averageRating) ? "❤️" : "🤍"}
               </span>
             ))}
           </span>
@@ -338,12 +338,12 @@ function UserFeedbackTab() {
                     >
                       <div>
                         <div className="font-medium">{formatMonth(feedback.month)} {feedback.year}</div>
-                        <div className="text-xs flex items-center text-yellow-500 mt-1">
+                        <div className="text-xs flex items-center text-red-500 mt-1">
                           <span>{parseFloat(feedback.averageRating).toFixed(1)}/5.0</span>
                           <span className="ml-1 flex">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <span key={star} className="inline-block px-0.5">
-                                {star <= Math.round(parseFloat(feedback.averageRating)) ? "★" : "☆"}
+                            {[1, 2, 3, 4, 5].map((heart) => (
+                              <span key={heart} className="inline-block px-0.5">
+                                {heart <= Math.round(parseFloat(feedback.averageRating)) ? "❤️" : "🤍"}
                               </span>
                             ))}
                           </span>
@@ -475,12 +475,12 @@ function AdminFeedbackTab() {
                     {completedFeedback.length > 0 && (
                       <div className="text-right">
                         <div className="text-sm text-muted-foreground">Average Rating</div>
-                        <div className="flex items-center justify-end text-xl font-bold text-yellow-500">
+                        <div className="flex items-center justify-end text-xl font-bold text-red-500">
                           <span>{overallAverage.toFixed(1)}</span>
                           <span className="text-lg ml-2 flex">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <span key={star} className="inline-block px-0.5">
-                                {star <= Math.round(overallAverage) ? "★" : "☆"}
+                            {[1, 2, 3, 4, 5].map((heart) => (
+                              <span key={heart} className="inline-block px-0.5">
+                                {heart <= Math.round(overallAverage) ? "❤️" : "🤍"}
                               </span>
                             ))}
                           </span>

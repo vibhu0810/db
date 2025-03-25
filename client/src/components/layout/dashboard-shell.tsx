@@ -47,7 +47,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               <div className="text-sm font-medium">
                 {isAdmin 
                   ? `${user?.companyName || user?.username}`
-                  : `${user?.companyName ? 'Digital Gratified 🤝 ' + user.companyName : user?.username}`}
+                  : `${user?.companyName ? `Digital Gratified 🤝 ${user.companyName}` : user?.username}`}
               </div>
               <Button
                 variant="ghost"

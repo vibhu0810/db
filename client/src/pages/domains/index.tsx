@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import {
   Table,
@@ -18,7 +18,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Loader2, ChevronDown, Copy } from "lucide-react";
+import { 
+  ExternalLink, 
+  Loader2, 
+  ChevronDown, 
+  Copy, 
+  Plus, 
+  Edit, 
+  Download, 
+  Trash2,
+  X
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -42,6 +52,51 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // Extend the PaginationLink component to accept the disabled property
 interface ExtendedPaginationLinkProps extends React.ComponentPropsWithoutRef<typeof PaginationLink> {
@@ -86,6 +141,21 @@ function getNicheEditTAT(domain: Domain): string {
   return "5-7 business days";
 }
 
+// Define schema for domain form
+const domainFormSchema = z.object({
+  websiteName: z.string().min(2, "Website name is required"),
+  websiteUrl: z.string().min(3, "Website URL is required"),
+  domainRating: z.string().optional(),
+  websiteTraffic: z.coerce.number().min(0, "Traffic must be a positive number").optional(),
+  niche: z.string().min(2, "Niche is required"),
+  type: z.enum(["guest_post", "niche_edit", "both"]),
+  guestPostPrice: z.string().optional(),
+  nicheEditPrice: z.string().optional(),
+  guidelines: z.string().optional(),
+});
+
+type DomainFormValues = z.infer<typeof domainFormSchema>;
+
 export default function DomainsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "guest_post" | "niche_edit" | "both">("all");
@@ -97,6 +167,11 @@ export default function DomainsPage() {
   const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showAddDomainSheet, setShowAddDomainSheet] = useState(false);
+  const [domainToEdit, setDomainToEdit] = useState<Domain | null>(null);
+  const [domainToDelete, setDomainToDelete] = useState<Domain | null>(null);
+  const [isActionInProgress, setIsActionInProgress] = useState(false);
+  const queryClient = useQueryClient();
   
   // Column width states - optimized for better screen fit
   const [columnWidths, setColumnWidths] = useState({
@@ -118,6 +193,143 @@ export default function DomainsPage() {
   });
 
   const { isAdmin } = useAuth();
+  
+  // Create a new domain (admin only)
+  const addDomainMutation = useMutation({
+    mutationFn: async (data: DomainFormValues) => {
+      setIsActionInProgress(true);
+      const res = await apiRequest("POST", "/api/domains", data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create domain");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/domains'] });
+      setShowAddDomainSheet(false);
+      setIsActionInProgress(false);
+      toast({
+        title: "Domain added",
+        description: "The domain has been added successfully."
+      });
+    },
+    onError: (error: Error) => {
+      setIsActionInProgress(false);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Update an existing domain (admin only)
+  const updateDomainMutation = useMutation({
+    mutationFn: async (data: DomainFormValues & { id: number }) => {
+      setIsActionInProgress(true);
+      const { id, ...updateData } = data;
+      const res = await apiRequest("PUT", `/api/domains/${id}`, updateData);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update domain");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/domains'] });
+      setDomainToEdit(null);
+      setIsActionInProgress(false);
+      toast({
+        title: "Domain updated",
+        description: "The domain has been updated successfully."
+      });
+    },
+    onError: (error: Error) => {
+      setIsActionInProgress(false);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Delete a domain (admin only)
+  const deleteDomainMutation = useMutation({
+    mutationFn: async (id: number) => {
+      setIsActionInProgress(true);
+      const res = await apiRequest("DELETE", `/api/domains/${id}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete domain");
+      }
+      
+      // Try to parse JSON response, but don't fail if it's not valid JSON
+      try {
+        return res.json();
+      } catch (e) {
+        // If the response is not valid JSON (like "OK"), just return a success object
+        return { success: true };
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/domains'] });
+      setDomainToDelete(null);
+      setIsActionInProgress(false);
+      toast({
+        title: "Domain deleted",
+        description: "The domain has been deleted successfully."
+      });
+    },
+    onError: (error: Error) => {
+      setIsActionInProgress(false);
+      setDomainToDelete(null);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Function to export domains as CSV
+  const exportDomainsAsCSV = () => {
+    // Create CSV content
+    const headers = ['Website Name', 'Website URL', 'Domain Rating', 'Traffic', 'Niche', 'Type', 'Guest Post Price', 'Niche Edit Price', 'Guidelines'];
+    const csvContent = filteredDomains.map((domain: any) => {
+      return [
+        domain.websiteName || '',
+        domain.websiteUrl || '',
+        domain.domainRating || '',
+        domain.websiteTraffic || '',
+        domain.niche || '',
+        domain.type || '',
+        domain.guestPostPrice || '',
+        domain.nicheEditPrice || '',
+        domain.guidelines ? `"${domain.guidelines.replace(/"/g, '""')}"` : ''
+      ].join(',');
+    });
+    
+    // Combine headers and rows
+    const csv = [headers.join(','), ...csvContent].join('\n');
+    
+    // Create and download the file
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `domain-inventory-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Export successful",
+      description: "Domains exported to CSV file."
+    });
+  };
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -315,9 +527,250 @@ export default function DomainsPage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedDomains = filteredDomains.slice(startIndex, startIndex + itemsPerPage);
 
+  // Domain form component
+  const DomainForm = ({ domain, onSubmit }: { 
+    domain?: Domain | null, 
+    onSubmit: (data: DomainFormValues & { id?: number }) => void 
+  }) => {
+    const defaultValues: DomainFormValues = domain ? {
+      websiteName: domain.websiteName || "",
+      websiteUrl: domain.websiteUrl || "",
+      domainRating: domain.domainRating || "",
+      websiteTraffic: domain.websiteTraffic || 0,
+      niche: domain.niche || "",
+      type: domain.type as "guest_post" | "niche_edit" | "both",
+      guestPostPrice: domain.guestPostPrice || "",
+      nicheEditPrice: domain.nicheEditPrice || "",
+      guidelines: domain.guidelines || "",
+    } : {
+      websiteName: "",
+      websiteUrl: "",
+      domainRating: "",
+      websiteTraffic: 0,
+      niche: "",
+      type: "both",
+      guestPostPrice: "",
+      nicheEditPrice: "",
+      guidelines: "",
+    };
+
+    const form = useForm<DomainFormValues>({
+      resolver: zodResolver(domainFormSchema),
+      defaultValues
+    });
+
+    const handleSubmit = (data: DomainFormValues) => {
+      if (domain) {
+        onSubmit({ ...data, id: domain.id });
+      } else {
+        onSubmit(data);
+      }
+    };
+
+    const domainType = form.watch("type");
+
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="websiteName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Website Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Example Blog" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="websiteUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Website URL</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <FormField
+              control={form.control}
+              name="domainRating"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Domain Rating (DR)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 55" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="websiteTraffic"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Website Traffic</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="e.g. 25000" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={form.control}
+            name="niche"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Niche</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Technology" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Placement Type</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select placement type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="guest_post">Guest Post</SelectItem>
+                    <SelectItem value="niche_edit">Niche Edit</SelectItem>
+                    <SelectItem value="both">Both</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="flex flex-col sm:flex-row gap-4">
+            {(domainType === "guest_post" || domainType === "both") && (
+              <FormField
+                control={form.control}
+                name="guestPostPrice"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Guest Post Price</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. 250" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            {(domainType === "niche_edit" || domainType === "both") && (
+              <FormField
+                control={form.control}
+                name="nicheEditPrice"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Niche Edit Price</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. 180" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+          <FormField
+            control={form.control}
+            name="guidelines"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Guidelines</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Enter placement guidelines or restrictions"
+                    className="min-h-[100px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="pt-4 flex justify-end space-x-2">
+            <Button type="submit" disabled={isActionInProgress}>
+              {isActionInProgress ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {domain ? "Updating..." : "Adding..."}
+                </>
+              ) : (
+                <>{domain ? "Update Domain" : "Add Domain"}</>
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    );
+  };
+  
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">Domain Inventory</h2>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h2 className="text-3xl font-bold tracking-tight">Domain Inventory</h2>
+        
+        {isAdmin && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button 
+              variant="outline"
+              onClick={exportDomainsAsCSV}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+            
+            <Sheet open={showAddDomainSheet} onOpenChange={setShowAddDomainSheet}>
+              <SheetTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Domain
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto max-h-screen">
+                <SheetHeader className="sticky top-0 z-10 bg-background pt-6 pb-4">
+                  <SheetTitle>Add New Domain</SheetTitle>
+                  <SheetDescription>
+                    Add a new domain to the inventory
+                  </SheetDescription>
+                </SheetHeader>
+                <ScrollArea className="h-[calc(100vh-140px)] pr-4">
+                  <DomainForm 
+                    onSubmit={(data) => {
+                      addDomainMutation.mutate(data);
+                    }}
+                  />
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+          </div>
+        )}
+      </div>
 
       <div className="space-y-4">
         <div className="flex flex-wrap gap-4">
@@ -619,7 +1072,7 @@ export default function DomainsPage() {
                         <span className="text-muted-foreground italic">No guidelines</span>
                       )}
                     </TableCell>
-                    {!isAdmin && (
+                    {!isAdmin ? (
                       <TableCell>
                         <Button
                           onClick={() => setLocation(`/orders/new?domain=${domain.websiteUrl}`)}
@@ -627,6 +1080,79 @@ export default function DomainsPage() {
                         >
                           Place Order
                         </Button>
+                      </TableCell>
+                    ) : (
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Sheet open={domainToEdit?.id === domain.id} onOpenChange={(open) => !open && setDomainToEdit(null)}>
+                            <SheetTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => setDomainToEdit(domain)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </SheetTrigger>
+                            <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto max-h-screen">
+                              <SheetHeader className="sticky top-0 z-10 bg-background pt-6 pb-4">
+                                <SheetTitle>Edit Domain</SheetTitle>
+                                <SheetDescription>
+                                  Update domain information
+                                </SheetDescription>
+                              </SheetHeader>
+                              <ScrollArea className="h-[calc(100vh-140px)] pr-4">
+                                <DomainForm 
+                                  domain={domainToEdit}
+                                  onSubmit={(data) => {
+                                    updateDomainMutation.mutate(data as DomainFormValues & { id: number });
+                                  }}
+                                />
+                              </ScrollArea>
+                            </SheetContent>
+                          </Sheet>
+
+                          <AlertDialog open={domainToDelete?.id === domain.id} onOpenChange={(open) => !open && setDomainToDelete(null)}>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => setDomainToDelete(domain)}
+                              >
+                                <Trash className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Domain</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this domain? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => {
+                                    if (domainToDelete) {
+                                      deleteDomainMutation.mutate(domainToDelete.id);
+                                    }
+                                  }}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  disabled={isActionInProgress}
+                                >
+                                  {isActionInProgress ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Deleting...
+                                    </>
+                                  ) : (
+                                    "Delete"
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -636,6 +1162,38 @@ export default function DomainsPage() {
           </div>
         </div>
       </div>
+      
+      {/* File import dialog for admins */}
+      {isAdmin && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="mt-4">
+              <Upload className="h-4 w-4 mr-2" />
+              Import Domains
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Import Domains</DialogTitle>
+              <DialogDescription>
+                Upload a CSV file with domain data to import. The file should have headers matching the domain fields.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="file">CSV File</Label>
+                <Input id="file" type="file" accept=".csv" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled>Import</Button>
+            </DialogFooter>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p>Note: This feature is currently under development. Please use the "Add Domain" button to add domains manually.</p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <div className="flex items-center justify-center mt-4">
         <Pagination>

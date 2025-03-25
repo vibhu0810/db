@@ -3,11 +3,9 @@ from openpyxl.styles import Font
 
 # Define the template data
 data = {
-    "Website Name": ["Example Site", "Example Blog", "Multi Example"],
     "Website URL": ["example.com", "blog-example.com", "multi-example.com"],
     "Domain Rating": [75, 68, 72],
     "Website Traffic": [25000, 18000, 32000],
-    "Niche": ["SEO", "Marketing", "Technology"],
     "Type": ["guest_post", "niche_edit", "both"],
     "Guest Post Price": [350, None, 400],
     "Niche Edit Price": [None, 280, 320],

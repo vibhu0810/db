@@ -382,9 +382,6 @@ export default function DomainsPage() {
         // Get headers and their indices
         const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
         
-        const websiteNameIndex = headers.findIndex(h => 
-          h === 'website name' || h === 'websitename' || h === 'name'
-        );
         const websiteUrlIndex = headers.findIndex(h => 
           h === 'website url' || h === 'websiteurl' || h === 'url' || h === 'website'
         );
@@ -393,9 +390,6 @@ export default function DomainsPage() {
         );
         const websiteTrafficIndex = headers.findIndex(h => 
           h === 'website traffic' || h === 'websitetraffic' || h === 'traffic'
-        );
-        const nicheIndex = headers.findIndex(h => 
-          h === 'niche' || h === 'category'
         );
         const typeIndex = headers.findIndex(h => 
           h === 'type'
@@ -406,6 +400,12 @@ export default function DomainsPage() {
         const nicheEditPriceIndex = headers.findIndex(h => 
           h === 'niche edit price' || h === 'nicheeditprice' || h === 'ne price'
         );
+        const gpTatIndex = headers.findIndex(h => 
+          h === 'gp tat (in days)' || h === 'gp tat' || h === 'guest post tat'
+        );
+        const neTatIndex = headers.findIndex(h => 
+          h === 'ne tat (in days)' || h === 'ne tat' || h === 'niche edit tat'
+        );
         const guidelinesIndex = headers.findIndex(h => 
           h === 'guidelines' || h === 'requirements'
         );
@@ -415,8 +415,13 @@ export default function DomainsPage() {
           throw new Error("Required column 'Website URL' is missing");
         }
         
+        if (typeIndex === -1) {
+          throw new Error("Required column 'Type' is missing");
+        }
+        
         // Parse the data
         const domainData = [];
+        const validationErrors = [];
         
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
@@ -445,23 +450,75 @@ export default function DomainsPage() {
           
           if (!websiteUrl) continue;
           
+          const domainType = typeIndex >= 0 && cells[typeIndex] ? 
+            cells[typeIndex].replace(/"/g, '').toLowerCase() : '';
+            
+          // Normalize type value
+          let normalizedType: 'guest_post' | 'niche_edit' | 'both';
+          
+          if (domainType.includes('guest') && domainType.includes('niche')) {
+            normalizedType = 'both';
+          } else if (domainType.includes('guest')) {
+            normalizedType = 'guest_post';
+          } else if (domainType.includes('niche')) {
+            normalizedType = 'niche_edit';
+          } else {
+            // Default to both if type can't be determined
+            normalizedType = 'both';
+          }
+          
+          // Get price and TAT values
+          const guestPostPrice = guestPostPriceIndex >= 0 && cells[guestPostPriceIndex] ? 
+                                 cells[guestPostPriceIndex].replace(/"/g, '') : null;
+          const nicheEditPrice = nicheEditPriceIndex >= 0 && cells[nicheEditPriceIndex] ? 
+                                 cells[nicheEditPriceIndex].replace(/"/g, '') : null;
+          const gpTat = gpTatIndex >= 0 && cells[gpTatIndex] ? 
+                       cells[gpTatIndex].replace(/"/g, '') : null;
+          const neTat = neTatIndex >= 0 && cells[neTatIndex] ? 
+                       cells[neTatIndex].replace(/"/g, '') : null;
+          
+          // Validate based on type
+          let validationError = '';
+          
+          if (normalizedType === 'guest_post') {
+            if (!guestPostPrice || !gpTat) {
+              validationError = `Row ${i}: Guest Post domain must have both GP Price and GP TAT values`;
+            }
+            if (nicheEditPrice || neTat) {
+              validationError = `Row ${i}: Guest Post domain should not have NE Price or NE TAT values`;
+            }
+          } else if (normalizedType === 'niche_edit') {
+            if (!nicheEditPrice || !neTat) {
+              validationError = `Row ${i}: Niche Edit domain must have both NE Price and NE TAT values`;
+            }
+            if (guestPostPrice || gpTat) {
+              validationError = `Row ${i}: Niche Edit domain should not have GP Price or GP TAT values`;
+            }
+          } else if (normalizedType === 'both') {
+            if (!guestPostPrice || !gpTat || !nicheEditPrice || !neTat) {
+              validationError = `Row ${i}: Domain with Both types must have values for GP Price, GP TAT, NE Price, and NE TAT`;
+            }
+          }
+          
+          if (validationError) {
+            validationErrors.push(validationError);
+          }
+          
           const domain = {
-            websiteName: websiteNameIndex >= 0 && cells[websiteNameIndex] ? cells[websiteNameIndex].replace(/"/g, '') : websiteUrl,
             websiteUrl,
             domainRating: domainRatingIndex >= 0 && cells[domainRatingIndex] ? cells[domainRatingIndex].replace(/"/g, '') : '',
             websiteTraffic: websiteTrafficIndex >= 0 && cells[websiteTrafficIndex] ? parseInt(cells[websiteTrafficIndex].replace(/"/g, '')) || 0 : 0,
-            niche: nicheIndex >= 0 && cells[nicheIndex] ? cells[nicheIndex].replace(/"/g, '') : '',
-            type: typeIndex >= 0 && cells[typeIndex] ? 
-              cells[typeIndex].replace(/"/g, '').toLowerCase().includes('guest') && cells[typeIndex].replace(/"/g, '').toLowerCase().includes('niche') ? 'both' :
-              cells[typeIndex].replace(/"/g, '').toLowerCase().includes('guest') ? 'guest_post' :
-              cells[typeIndex].replace(/"/g, '').toLowerCase().includes('niche') ? 'niche_edit' : 'both'
-            : 'both',
-            guestPostPrice: guestPostPriceIndex >= 0 && cells[guestPostPriceIndex] ? cells[guestPostPriceIndex].replace(/"/g, '') : null,
-            nicheEditPrice: nicheEditPriceIndex >= 0 && cells[nicheEditPriceIndex] ? cells[nicheEditPriceIndex].replace(/"/g, '') : null,
+            type: normalizedType,
+            guestPostPrice,
+            nicheEditPrice,
             guidelines: guidelinesIndex >= 0 && cells[guidelinesIndex] ? cells[guidelinesIndex].replace(/"/g, '') : null
           };
           
           domainData.push(domain);
+        }
+        
+        if (validationErrors.length > 0) {
+          throw new Error(`Validation errors found:\n${validationErrors.join('\n')}`);
         }
         
         if (domainData.length === 0) {

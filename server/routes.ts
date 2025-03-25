@@ -2290,12 +2290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Submit or update feedback
-  app.all("/api/feedback/:id?", async (req, res) => {
-    // Handle both POST and PUT requests
-    if (req.method !== 'POST' && req.method !== 'PUT') {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
-    
+  app.post("/api/feedback", async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       
@@ -2333,45 +2328,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : 0;
       }
       
-      if (req.params.id) {
-        // Update existing feedback
-        const feedbackId = parseInt(req.params.id);
-        const existingFeedback = await storage.getFeedback(feedbackId);
-        
-        if (!existingFeedback) {
-          return res.status(404).json({ error: "Feedback not found" });
-        }
-        
-        if (existingFeedback.userId !== req.user.id) {
-          return res.status(403).json({ error: "You can only update your own feedback" });
-        }
-        
-        const updatedFeedback = await storage.updateFeedback(feedbackId, {
-          ratings: processedRatings,
-          averageRating: averageRating.toString(),
-          comments,
-          isCompleted: true
-        });
-        
-        return res.json(updatedFeedback);
-      } else {
-        // Create new feedback for current month
-        const currentMonth = new Date().getMonth() + 1;
-        const currentYear = new Date().getFullYear();
-        
-        const newFeedback = await storage.createFeedback({
-          userId: req.user.id,
-          month: currentMonth,
-          year: currentYear,
-          ratings: processedRatings,
-          averageRating: averageRating.toString(),
-          comments,
-          isCompleted: true,
-          createdAt: new Date()
-        });
-        
-        return res.status(201).json(newFeedback);
-      }
+      // Create new feedback for current month
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      
+      const newFeedback = await storage.createFeedback({
+        userId: req.user.id,
+        month: currentMonth,
+        year: currentYear,
+        ratings: processedRatings,
+        averageRating: averageRating.toString(),
+        comments,
+        isCompleted: true,
+        createdAt: new Date()
+      });
+      
+      return res.status(201).json(newFeedback);
     } catch (error) {
       console.error("Error submitting feedback:", error);
       res.status(500).json({ error: "Failed to submit feedback" });

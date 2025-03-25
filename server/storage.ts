@@ -1,4 +1,7 @@
-import { users, orders, orderComments, notifications, messages, domains, invoices, supportTickets, feedback, feedbackQuestions } from "@shared/schema";
+import { 
+  users, orders, orderComments, notifications, messages, domains, 
+  invoices, supportTickets, feedback, feedbackQuestionTable, defaultFeedbackQuestions 
+} from "@shared/schema";
 import type {
   User, InsertUser, Domain, InsertDomain,
   Order, OrderComment, InsertOrderComment,
@@ -6,7 +9,8 @@ import type {
   Message, InsertMessage,
   Invoice, InsertInvoice,
   SupportTicket, InsertTicket, UpdateTicket,
-  Feedback, InsertFeedback
+  Feedback, InsertFeedback,
+  FeedbackQuestion, InsertFeedbackQuestion
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, or, and, desc, gte, lte, between, asc, isNull } from "drizzle-orm";
@@ -81,6 +85,15 @@ export interface IStorage {
   updateSupportTicket(id: number, updates: UpdateTicket): Promise<SupportTicket>;
   closeSupportTicket(id: number, rating?: number, feedback?: string): Promise<SupportTicket>;
   
+  // Feedback questions operations
+  getFeedbackQuestions(): Promise<FeedbackQuestion[]>;
+  getActiveFeedbackQuestions(): Promise<FeedbackQuestion[]>;
+  getFeedbackQuestion(id: number): Promise<FeedbackQuestion | undefined>;
+  createFeedbackQuestion(question: InsertFeedbackQuestion): Promise<FeedbackQuestion>;
+  updateFeedbackQuestion(id: number, updates: Partial<FeedbackQuestion>): Promise<FeedbackQuestion>;
+  toggleFeedbackQuestionStatus(id: number): Promise<FeedbackQuestion>;
+  reorderFeedbackQuestions(questionIds: number[]): Promise<FeedbackQuestion[]>;
+  
   // Feedback operations
   getFeedback(id: number): Promise<Feedback | undefined>;
   getUserFeedback(userId: number): Promise<Feedback[]>;
@@ -98,6 +111,78 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
+  
+  // Feedback questions operations
+  async getFeedbackQuestions(): Promise<FeedbackQuestion[]> {
+    return await db.select().from(feedbackQuestionTable).orderBy(feedbackQuestionTable.sortOrder);
+  }
+  
+  async getActiveFeedbackQuestions(): Promise<FeedbackQuestion[]> {
+    return await db.select().from(feedbackQuestionTable)
+      .where(eq(feedbackQuestionTable.isActive, true))
+      .orderBy(feedbackQuestionTable.sortOrder);
+  }
+  
+  async getFeedbackQuestion(id: number): Promise<FeedbackQuestion | undefined> {
+    const [result] = await db.select().from(feedbackQuestionTable).where(eq(feedbackQuestionTable.id, id));
+    return result;
+  }
+  
+  async createFeedbackQuestion(question: InsertFeedbackQuestion): Promise<FeedbackQuestion> {
+    // Get the highest current sort order
+    const questions = await this.getFeedbackQuestions();
+    const maxSortOrder = questions.length > 0 
+      ? Math.max(...questions.map(q => q.sortOrder || 0))
+      : 0;
+    
+    // Set the new question's sort order to be next in sequence
+    const questionWithSortOrder = {
+      ...question,
+      sortOrder: maxSortOrder + 1
+    };
+    
+    const [result] = await db.insert(feedbackQuestionTable).values(questionWithSortOrder).returning();
+    return result;
+  }
+  
+  async updateFeedbackQuestion(id: number, updates: Partial<FeedbackQuestion>): Promise<FeedbackQuestion> {
+    const [result] = await db.update(feedbackQuestionTable)
+      .set(updates)
+      .where(eq(feedbackQuestionTable.id, id))
+      .returning();
+    return result;
+  }
+  
+  async toggleFeedbackQuestionStatus(id: number): Promise<FeedbackQuestion> {
+    // Get current question
+    const question = await this.getFeedbackQuestion(id);
+    if (!question) {
+      throw new Error(`Feedback question with id ${id} not found`);
+    }
+    
+    // Toggle the status
+    const [result] = await db.update(feedbackQuestionTable)
+      .set({ isActive: !question.isActive })
+      .where(eq(feedbackQuestionTable.id, id))
+      .returning();
+    
+    return result;
+  }
+  
+  async reorderFeedbackQuestions(questionIds: number[]): Promise<FeedbackQuestion[]> {
+    // Update sort order for each question
+    const updates = questionIds.map((id, index) => {
+      return db.update(feedbackQuestionTable)
+        .set({ sortOrder: index + 1 })
+        .where(eq(feedbackQuestionTable.id, id));
+    });
+    
+    // Execute all updates
+    await Promise.all(updates.map(update => update.execute()));
+    
+    // Return the reordered questions
+    return this.getFeedbackQuestions();
+  }
   
   // Feedback operations implementation
   async getFeedback(id: number): Promise<Feedback | undefined> {

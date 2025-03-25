@@ -384,7 +384,24 @@ export type UpdateTicket = z.infer<typeof updateTicketSchema>;
 export type SupportTicket = typeof supportTickets.$inferSelect;
 
 // Feedback schema
-export const feedbackQuestions = [
+export const feedbackQuestionTable = pgTable("feedback_questions", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id),
+  sortOrder: integer("sort_order").default(0).notNull()
+});
+
+export const insertFeedbackQuestionSchema = createInsertSchema(feedbackQuestionTable, {
+  id: undefined
+});
+
+export type InsertFeedbackQuestion = z.infer<typeof insertFeedbackQuestionSchema>;
+export type FeedbackQuestion = typeof feedbackQuestionTable.$inferSelect;
+
+// Default feedback questions (used as initial data)
+export const defaultFeedbackQuestions = [
   "How satisfied are you with the quality of our link building services?",
   "How would you rate the communication during the order process?",
   "How satisfied are you with the turnaround time for your orders?", 

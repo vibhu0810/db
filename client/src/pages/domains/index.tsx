@@ -345,7 +345,7 @@ export default function DomainsPage() {
 
   // Function to export domains as CSV
   const exportDomainsAsCSV = () => {
-    const headers = ['Website Name', 'Website URL', 'Domain Rating', 'Website Traffic', 'Niche', 'Type', 'Guest Post Price', 'Niche Edit Price', 'Guidelines'];
+    const headers = ['Website Name', 'Website URL', 'Domain Rating', 'Website Traffic', 'Niche', 'Type', 'Guest Post Price', 'Guest Post TAT', 'Niche Edit Price', 'Niche Edit TAT', 'Guidelines'];
     const csvData = domains.map((domain: Domain) => [
       domain.websiteName || '',
       domain.websiteUrl || '',
@@ -354,7 +354,9 @@ export default function DomainsPage() {
       domain.niche || '',
       domain.type || '',
       domain.guestPostPrice || '',
+      domain.gpTat || '',
       domain.nicheEditPrice || '',
+      domain.neTat || '',
       domain.guidelines || ''
     ]);
     

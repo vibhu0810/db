@@ -2397,6 +2397,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to generate feedback requests" });
     }
   });
+  
+  // ========= Feedback Questions Management Routes (Admin only) =========
+  
+  // Get all feedback questions (active and inactive)
+  app.get("/api/feedback/questions", async (req, res) => {
+    try {
+      // Regular users only get active questions
+      if (!req.user?.is_admin) {
+        const activeQuestions = await storage.getActiveFeedbackQuestions();
+        return res.json(activeQuestions);
+      }
+      
+      // Admins can see all questions
+      const questions = await storage.getFeedbackQuestions();
+      res.json(questions);
+    } catch (error) {
+      console.error("Error fetching feedback questions:", error);
+      res.status(500).json({ error: "Failed to fetch feedback questions" });
+    }
+  });
+  
+  // Get a specific feedback question
+  app.get("/api/feedback/questions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid question ID" });
+      }
+      
+      const question = await storage.getFeedbackQuestion(id);
+      
+      if (!question) {
+        return res.status(404).json({ error: "Feedback question not found" });
+      }
+      
+      // Regular users only get active questions
+      if (!req.user?.is_admin && !question.isActive) {
+        return res.status(404).json({ error: "Feedback question not found" });
+      }
+      
+      res.json(question);
+    } catch (error) {
+      console.error("Error fetching feedback question:", error);
+      res.status(500).json({ error: "Failed to fetch feedback question" });
+    }
+  });
+  
+  // Create a new feedback question (admin only)
+  app.post("/api/feedback/questions", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const { question } = req.body;
+      
+      if (!question || typeof question !== 'string' || question.trim().length < 10) {
+        return res.status(400).json({ error: "Question must be at least 10 characters long" });
+      }
+      
+      const newQuestion = await storage.createFeedbackQuestion({
+        question: question.trim(),
+        isActive: true,
+        createdAt: new Date(),
+        createdBy: req.user.id
+      });
+      
+      res.status(201).json(newQuestion);
+    } catch (error) {
+      console.error("Error creating feedback question:", error);
+      res.status(500).json({ error: "Failed to create feedback question" });
+    }
+  });
+  
+  // Update a feedback question (admin only)
+  app.patch("/api/feedback/questions/:id", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid question ID" });
+      }
+      
+      const { question } = req.body;
+      
+      if (!question || typeof question !== 'string' || question.trim().length < 10) {
+        return res.status(400).json({ error: "Question must be at least 10 characters long" });
+      }
+      
+      // Check if question exists
+      const existingQuestion = await storage.getFeedbackQuestion(id);
+      
+      if (!existingQuestion) {
+        return res.status(404).json({ error: "Feedback question not found" });
+      }
+      
+      const updatedQuestion = await storage.updateFeedbackQuestion(id, {
+        question: question.trim()
+      });
+      
+      res.json(updatedQuestion);
+    } catch (error) {
+      console.error("Error updating feedback question:", error);
+      res.status(500).json({ error: "Failed to update feedback question" });
+    }
+  });
+  
+  // Toggle question active status (admin only)
+  app.patch("/api/feedback/questions/:id/toggle", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid question ID" });
+      }
+      
+      // Check if question exists
+      const existingQuestion = await storage.getFeedbackQuestion(id);
+      
+      if (!existingQuestion) {
+        return res.status(404).json({ error: "Feedback question not found" });
+      }
+      
+      const updatedQuestion = await storage.toggleFeedbackQuestionStatus(id);
+      
+      res.json(updatedQuestion);
+    } catch (error) {
+      console.error("Error toggling feedback question status:", error);
+      res.status(500).json({ error: "Failed to toggle feedback question status" });
+    }
+  });
+  
+  // Reorder feedback questions (admin only)
+  app.post("/api/feedback/questions/reorder", async (req, res) => {
+    try {
+      if (!req.user?.is_admin) {
+        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      }
+      
+      const { questionIds } = req.body;
+      
+      if (!Array.isArray(questionIds) || questionIds.length === 0) {
+        return res.status(400).json({ error: "Question IDs array is required" });
+      }
+      
+      // Validate all IDs are numbers
+      if (!questionIds.every(id => typeof id === 'number')) {
+        return res.status(400).json({ error: "All question IDs must be numbers" });
+      }
+      
+      const reorderedQuestions = await storage.reorderFeedbackQuestions(questionIds);
+      
+      res.json(reorderedQuestions);
+    } catch (error) {
+      console.error("Error reordering feedback questions:", error);
+      res.status(500).json({ error: "Failed to reorder feedback questions" });
+    }
+  });
 
   // Update username endpoint
   app.patch("/api/user/username", async (req, res) => {

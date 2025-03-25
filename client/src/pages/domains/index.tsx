@@ -245,7 +245,7 @@ export default function DomainsPage() {
     action: 100,
   });
 
-  const { data: domains = [], isLoading } = useQuery({
+  const { data: domains = [], isLoading } = useQuery<Domain[]>({
     queryKey: ['/api/domains'],
     enabled: true,
   });
@@ -346,24 +346,28 @@ export default function DomainsPage() {
   // Function to export domains as CSV
   const exportDomainsAsCSV = () => {
     const headers = ['Website Name', 'Website URL', 'Domain Rating', 'Website Traffic', 'Niche', 'Type', 'Guest Post Price', 'Guest Post TAT', 'Niche Edit Price', 'Niche Edit TAT', 'Guidelines'];
-    const csvData = domains.map((domain: Domain) => [
-      domain.websiteName || '',
-      domain.websiteUrl || '',
-      domain.domainRating || '',
-      domain.websiteTraffic || '',
-      domain.niche || '',
-      domain.type || '',
-      domain.guestPostPrice || '',
-      domain.gpTat || '',
-      domain.nicheEditPrice || '',
-      domain.neTat || '',
-      domain.guidelines || ''
-    ]);
+    
+    // Process the domains into a uniform array of strings
+    const processedDomains = (domains as Domain[]).map(domain => {
+      return [
+        domain.websiteName || '',
+        domain.websiteUrl || '',
+        domain.domainRating || '',
+        domain.websiteTraffic?.toString() || '',
+        domain.niche || '',
+        domain.type || '',
+        domain.guestPostPrice || '',
+        domain.gpTat || '',
+        domain.nicheEditPrice || '',
+        domain.neTat || '',
+        domain.guidelines || ''
+      ];
+    });
     
     // Create CSV content
     const csvContent = [
       headers.join(','),
-      ...csvData.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ...processedDomains.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
     
     // Create download link
@@ -602,7 +606,7 @@ export default function DomainsPage() {
   };
 
   // Apply filters and sorting
-  let filteredDomains = [...domains];
+  let filteredDomains: Domain[] = [...(domains as Domain[])];
   
   // Apply search filter
   if (searchQuery) {

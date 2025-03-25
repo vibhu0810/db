@@ -2526,8 +2526,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update the user record with the reset token and expiry
       await storage.updateUser(user.id, {
-        passwordResetToken: resetToken,
-        passwordResetExpires: resetExpires
+        password_reset_token: resetToken,
+        password_reset_expires: resetExpires
       });
       
       // Create the reset link

@@ -138,13 +138,7 @@ export function Sidebar() {
                 )}
               </span>
               
-              {/* Tooltip for when sidebar is collapsed */}
-              <span className={cn(
-                "absolute left-full ml-2 px-2 py-1 bg-black/80 text-white text-xs rounded pointer-events-none transition-all duration-200 whitespace-nowrap",
-                expanded ? "opacity-0 scale-0" : "opacity-0 scale-100 origin-left hover:opacity-100 group-hover:opacity-100"
-              )}>
-                {item.name}
-              </span>
+              {/* Tooltip removed as requested */}
             </Link>
           );
         })}

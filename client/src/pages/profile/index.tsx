@@ -268,7 +268,7 @@ export default function ProfilePage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="profile">
             <User className="mr-2 h-4 w-4" />
             Profile
@@ -276,10 +276,6 @@ export default function ProfilePage() {
           <TabsTrigger value="security">
             <Lock className="mr-2 h-4 w-4" />
             Security
-          </TabsTrigger>
-          <TabsTrigger value="email">
-            <Mail className="mr-2 h-4 w-4" />
-            Email
           </TabsTrigger>
         </TabsList>
         
@@ -371,15 +367,51 @@ export default function ProfilePage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email Address *</FormLabel>
+                          <div className="flex items-center gap-2">
+                            <FormLabel>Email Address *</FormLabel>
+                            {user?.emailVerified ? (
+                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 flex items-center gap-1 py-0">
+                                <Check className="h-3 w-3" />
+                                Verified
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200 flex items-center gap-1 py-0">
+                                !
+                                Not Verified
+                              </Badge>
+                            )}
+                          </div>
                           <FormControl>
-                            <Input 
-                              type="email" 
-                              {...field} 
-                              disabled={updateProfileMutation.isPending}
-                              placeholder="you@example.com"
-                            />
+                            <div className="relative">
+                              <Input 
+                                type="email" 
+                                {...field} 
+                                disabled={updateProfileMutation.isPending}
+                                placeholder="you@example.com"
+                              />
+                              {!user?.emailVerified && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3 text-xs"
+                                  onClick={handleVerificationRequest}
+                                  disabled={requestVerificationMutation.isPending}
+                                >
+                                  {requestVerificationMutation.isPending ? (
+                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                  ) : null}
+                                  Verify
+                                </Button>
+                              )}
+                            </div>
                           </FormControl>
+                          <FormDescription>
+                            {!user?.emailVerified ? 
+                              "Please verify your email address to ensure the security of your account." :
+                              "Your email has been verified."
+                            }
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

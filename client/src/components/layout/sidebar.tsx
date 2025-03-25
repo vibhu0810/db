@@ -20,7 +20,7 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { usePendingFeedback } from "@/hooks/use-pending-feedback";
 
 const userNavigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
   { name: "Reports", href: "/reports", icon: BarChart },

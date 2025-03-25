@@ -1556,7 +1556,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate the update data based on domain type
-      const updateData = req.body;
+      const updateData = {...req.body};
+      
+      // Convert empty strings to null for decimal fields to avoid database errors
+      if (updateData.domainRating === '') updateData.domainRating = null;
+      if (updateData.domainAuthority === '') updateData.domainAuthority = null;
+      if (updateData.guestPostPrice === '') updateData.guestPostPrice = null;
+      if (updateData.nicheEditPrice === '') updateData.nicheEditPrice = null;
+      if (updateData.websiteTraffic === '') updateData.websiteTraffic = null;
       
       if (updateData.type) {
         const type = updateData.type;

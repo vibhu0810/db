@@ -25,23 +25,21 @@ export default function ResetPasswordPage() {
   const [resetError, setResetError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Extract token from URL
+    // Extract token from URL using a simpler approach
     try {
       console.log("Current location:", location);
-      const urlParts = location.split('?');
-      if (urlParts.length > 1) {
-        const params = new URLSearchParams(urlParts[1]);
-        const tokenFromUrl = params.get('token');
-        console.log("Token extracted from URL:", tokenFromUrl);
-        if (tokenFromUrl) {
-          setToken(tokenFromUrl);
-        } else {
-          console.error("No token found in URL parameters");
-          setResetError("No reset token found in URL");
-        }
+      
+      // Simplify: Just use URLSearchParams with window.location.search
+      const searchParams = new URLSearchParams(window.location.search);
+      const tokenFromSearch = searchParams.get('token');
+      console.log("Token from URL search params:", tokenFromSearch);
+      
+      if (tokenFromSearch) {
+        console.log("Found token in URL, setting token state:", tokenFromSearch);
+        setToken(tokenFromSearch);
       } else {
-        console.error("No query parameters in URL");
-        setResetError("Invalid reset URL format");
+        console.error("No token found in URL parameters");
+        setResetError("No reset token found in URL");
       }
     } catch (error) {
       console.error("Error parsing URL for token:", error);
@@ -106,6 +104,13 @@ export default function ResetPasswordPage() {
       setResetError("Reset token is missing or invalid");
       return;
     }
+    
+    console.log("Submitting reset password form with data:", { 
+      password: password.substring(0, 1) + "*****", 
+      confirmPassword: confirmPassword.substring(0, 1) + "*****", 
+      token, 
+      tokenLength: token.length 
+    });
     
     resetPasswordMutation.mutate({ password, confirmPassword, token });
   };

@@ -149,11 +149,11 @@ function getNicheEditTAT(domain: Domain): string {
 
 // Define schema for domain form
 const domainFormSchema = z.object({
-  websiteName: z.string().min(2, "Website name is required"),
+  websiteName: z.string().optional().default(""),
   websiteUrl: z.string().min(3, "Website URL is required"),
   domainRating: z.string().optional(),
   websiteTraffic: z.coerce.number().min(0, "Traffic must be a positive number").optional(),
-  niche: z.string().min(2, "Niche is required"),
+  niche: z.string().optional().default(""),
   type: z.enum(["guest_post", "niche_edit", "both"]),
   guestPostPrice: z.string().optional(),
   nicheEditPrice: z.string().optional(),
@@ -578,19 +578,7 @@ export default function DomainsPage() {
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="websiteName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Website Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Example Blog" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Website name field is now optional and not shown in the form */}
           <FormField
             control={form.control}
             name="websiteUrl"

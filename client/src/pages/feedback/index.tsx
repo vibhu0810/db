@@ -173,7 +173,7 @@ function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
         <CardHeader className="relative z-10">
           <div className="flex justify-between items-center mb-2">
             <CardTitle className="text-xl font-bold">
-              Feedback for {formatMonth(feedback.month)} {feedback.year}
+              Your Rating
             </CardTitle>
             <div className="bg-gradient-to-r from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 rounded-full px-4 py-1 text-sm font-semibold text-red-700 dark:text-red-300 flex items-center gap-2">
               <HeartIcon className="h-4 w-4 fill-red-500 text-red-500" />
@@ -181,7 +181,7 @@ function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
             </div>
           </div>
           <CardDescription className="text-muted-foreground">
-            Your feedback helps us improve our services
+            Submitted on {new Date(feedback.createdAt).toLocaleDateString()}
           </CardDescription>
         </CardHeader>
         
@@ -318,9 +318,9 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
         <CardHeader className="relative z-10">
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle className="text-xl">Your Feedback</CardTitle>
+              <CardTitle className="text-xl">Share Your Feedback</CardTitle>
               <CardDescription className="text-muted-foreground">
-                {formatMonth(feedback.month)} {feedback.year}
+                Help us improve our services
               </CardDescription>
             </div>
             

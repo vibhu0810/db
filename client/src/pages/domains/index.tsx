@@ -157,6 +157,44 @@ const domainFormSchema = z.object({
   guestPostPrice: z.string().optional(),
   nicheEditPrice: z.string().optional(),
   guidelines: z.string().optional(),
+}).refine(data => {
+  // Validation for Guest Post domains
+  if (data.type === "guest_post") {
+    // Must have guest post price
+    if (!data.guestPostPrice || data.guestPostPrice.trim() === "") {
+      return false;
+    }
+    // Must not have niche edit price
+    if (data.nicheEditPrice && data.nicheEditPrice.trim() !== "") {
+      return false;
+    }
+  }
+  
+  // Validation for Niche Edit domains
+  if (data.type === "niche_edit") {
+    // Must have niche edit price
+    if (!data.nicheEditPrice || data.nicheEditPrice.trim() === "") {
+      return false;
+    }
+    // Must not have guest post price
+    if (data.guestPostPrice && data.guestPostPrice.trim() !== "") {
+      return false;
+    }
+  }
+  
+  // Validation for Both type domains
+  if (data.type === "both") {
+    // Must have both prices
+    if (!data.guestPostPrice || data.guestPostPrice.trim() === "" || 
+        !data.nicheEditPrice || data.nicheEditPrice.trim() === "") {
+      return false;
+    }
+  }
+  
+  return true;
+}, {
+  message: "Price fields must match the selected domain type. Guest Post domains should only have GP Price, Niche Edit domains should only have NE Price, and Both type domains need both prices.",
+  path: ["type"] // Show error on the type field
 });
 
 type DomainFormValues = z.infer<typeof domainFormSchema>;

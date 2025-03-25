@@ -1,16 +1,16 @@
 import pandas as pd
-from openpyxl.styles import Font
+from openpyxl.styles import Font, PatternFill
 
-# Define the template data
+# Define the template data with strict adherence to domain type rules
 data = {
     "Website URL": ["example.com", "blog-example.com", "multi-example.com"],
     "Domain Rating": [75, 68, 72],
     "Website Traffic": [25000, 18000, 32000],
     "Type": ["guest_post", "niche_edit", "both"],
-    "Guest Post Price": [350, None, 400],
-    "Niche Edit Price": [None, 280, 320],
-    "GP TAT (in days)": [10, None, 14],
-    "NE TAT (in days)": [None, 7, 7],
+    "Guest Post Price": [350, None, 400],  # Guest post only has GP price
+    "Niche Edit Price": [None, 280, 320],  # Niche edit only has NE price
+    "GP TAT (in days)": [10, None, 14],    # Guest post only has GP TAT
+    "NE TAT (in days)": [None, 7, 7],      # Niche edit only has NE TAT
     "Guidelines": ["Please provide well-researched content", "No branded anchor text", "Must be related to tech industry"]
 }
 

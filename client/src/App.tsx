@@ -16,6 +16,8 @@ import KanbanPage from "./pages/kanban";
 import InvoicesPage from "./pages/invoices";
 import FeedbackPage from "./pages/feedback";
 import VerifyEmailPage from "./pages/verify-email";
+import ForgotPasswordPage from "./pages/forgot-password";
+import ResetPasswordPage from "./pages/reset-password";
 import AuthDebugPage from "./pages/debug/auth";
 import AdminTicketTools from "./pages/admin/ticket-tools";
 
@@ -24,6 +26,9 @@ function App() {
     <div className="min-h-screen bg-background">
       <Switch>
         <Route path="/login" component={AuthPage} />
+        <Route path="/auth" component={AuthPage} />
+        <Route path="/forgot-password" component={ForgotPasswordPage} />
+        <Route path="/reset-password" component={ResetPasswordPage} />
         <Route path="/domains">
           <ProtectedRoute>
             <DashboardShell>

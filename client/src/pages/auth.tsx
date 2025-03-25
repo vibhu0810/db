@@ -153,6 +153,17 @@ export default function AuthPage() {
               ) : null}
               Sign in
             </Button>
+            
+            <div className="mt-4 text-center">
+              <Button 
+                type="button" 
+                variant="link" 
+                className="text-sm text-primary hover:text-primary/80"
+                onClick={() => window.location.href = '/forgot-password'}
+              >
+                Forgot password?
+              </Button>
+            </div>
           </form>
 
           {seoJokeData && seoJokeData.joke && (

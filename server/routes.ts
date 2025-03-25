@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import express from "express";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { generateSEOJoke, generateWelcomeMessage } from "./openai";
+import { generateSEOJoke, generateWelcomeMessage, determineDomainInfo } from "./openai";
 import { 
   insertMessageSchema, 
   insertDomainSchema, 

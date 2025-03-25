@@ -30,7 +30,8 @@ import {
   Trash2,
   Trash,
   Upload,
-  X
+  X,
+  Wand2
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";

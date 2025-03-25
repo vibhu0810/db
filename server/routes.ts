@@ -17,7 +17,7 @@ import {
   passwordResetRequestSchema,
   passwordResetSchema
 } from "@shared/schema";
-import crypto from "crypto";
+import * as crypto from "crypto";
 import { hashPassword, comparePasswords } from "./auth";
 import {
   sendOrderNotificationEmail,

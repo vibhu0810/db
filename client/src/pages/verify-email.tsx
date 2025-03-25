@@ -32,8 +32,8 @@ export default function VerifyEmailPage() {
           localStorage.setItem("pendingVerificationToken", token);
         }
 
-        // Submit the token to verify email - use the public endpoint since we might not be logged in
-        const res = await apiRequest("POST", "/api/public/verify-email", { token });
+        // Submit the token to verify email - use the auth endpoint
+        const res = await apiRequest("POST", "/api/auth/verify-email", { token });
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.error || "Verification failed");

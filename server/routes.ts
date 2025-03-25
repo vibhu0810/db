@@ -17,7 +17,7 @@ import {
   passwordResetRequestSchema,
   passwordResetSchema
 } from "@shared/schema";
-import { randomBytes } from "crypto";
+import crypto from "crypto";
 import { hashPassword, comparePasswords } from "./auth";
 import {
   sendOrderNotificationEmail,
@@ -2520,7 +2520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Generate a reset token
-      const resetToken = randomBytes(32).toString("hex");
+      const resetToken = crypto.randomBytes(32).toString("hex");
       const resetExpires = new Date();
       resetExpires.setHours(resetExpires.getHours() + 1); // Token expires in 1 hour
       
@@ -2609,7 +2609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Generate a verification token
-      const verificationToken = randomBytes(32).toString("hex");
+      const verificationToken = crypto.randomBytes(32).toString("hex");
       
       // Update the user with the new email (unverified) and token
       await storage.updateUser(req.user.id, {

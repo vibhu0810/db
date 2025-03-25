@@ -40,9 +40,10 @@ export default function ResetPasswordPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ password, token }),
+        body: JSON.stringify({ password, confirmPassword: password, token }),
       });
-      return response as PasswordResetResponse;
+      const data = await response.json();
+      return data as PasswordResetResponse;
     },
     onSuccess: () => {
       setResetSuccess(true);

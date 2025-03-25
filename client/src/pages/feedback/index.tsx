@@ -11,6 +11,8 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { motion } from "framer-motion";
+import { HeartIcon, Heart } from "lucide-react";
 
 // Define the list of feedback questions
 const FEEDBACK_QUESTIONS = [
@@ -39,31 +41,65 @@ interface Feedback {
   };
 }
 
-// HeartRating component
+// Modern HeartRating component with animations
 function StarRating({ rating, onRatingChange }: { rating: number, onRatingChange?: (rating: number) => void }) {
   const [hoverRating, setHoverRating] = useState(0);
   
+  const activeRating = hoverRating || rating;
+  
   return (
-    <div className="flex items-center">
-      {[1, 2, 3, 4, 5].map((heart) => (
-        <button
-          key={heart}
-          type="button"
-          className={`text-xl focus:outline-none transition-all duration-300 transform ${
-            (hoverRating || rating) >= heart
-              ? "text-red-500 scale-110"
-              : "text-gray-300 dark:text-gray-600"
-          }`}
-          onClick={() => onRatingChange?.(heart)}
-          onMouseEnter={() => setHoverRating(heart)}
-          onMouseLeave={() => setHoverRating(0)}
-          disabled={!onRatingChange}
-        >
-          ❤️
-        </button>
-      ))}
+    <div className="flex items-center gap-1 py-2">
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((heart) => (
+          <motion.button
+            key={heart}
+            type="button"
+            initial={{ scale: 1 }}
+            whileHover={{ scale: onRatingChange ? 1.2 : 1 }}
+            whileTap={{ scale: onRatingChange ? 0.9 : 1 }}
+            transition={{ duration: 0.2 }}
+            className={`relative focus:outline-none rounded-full p-1 
+              ${activeRating >= heart 
+                ? "text-red-500" 
+                : "text-gray-300 dark:text-gray-600"}`}
+            onClick={() => onRatingChange?.(heart)}
+            onMouseEnter={() => onRatingChange && setHoverRating(heart)}
+            onMouseLeave={() => onRatingChange && setHoverRating(0)}
+            disabled={!onRatingChange}
+          >
+            <Heart
+              fill={activeRating >= heart ? "currentColor" : "none"}
+              className={`h-6 w-6 transition-all duration-300`}
+              strokeWidth={activeRating >= heart ? 1.5 : 1.5}
+            />
+            
+            {/* Animate the heart when it becomes active */}
+            {activeRating === heart && onRatingChange && (
+              <motion.span
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1.5, opacity: 0 }}
+                transition={{ 
+                  repeat: 1, 
+                  duration: 0.5,
+                  ease: "easeOut" 
+                }}
+              >
+                <Heart fill="currentColor" className="h-6 w-6 text-red-500" />
+              </motion.span>
+            )}
+          </motion.button>
+        ))}
+      </div>
+      
       {rating > 0 && (
-        <span className="ml-2 text-sm text-muted-foreground">{rating}/5</span>
+        <motion.span 
+          initial={{ opacity: 0, x: -5 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="ml-2 text-sm font-medium text-red-500"
+        >
+          {rating}/5
+        </motion.span>
       )}
     </div>
   );
@@ -75,6 +111,24 @@ function formatMonth(month: number): string {
     "July", "August", "September", "October", "November", "December"
   ];
   return months[month - 1];
+}
+
+// Heart display component for average ratings
+function HeartRatingDisplay({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-1">
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((heart) => (
+          <Heart
+            key={heart}
+            fill={heart <= Math.round(rating) ? "currentColor" : "none"}
+            className={`h-4 w-4 ${heart <= Math.round(rating) ? "text-red-500" : "text-gray-300 dark:text-gray-600"}`}
+          />
+        ))}
+      </div>
+      <span className="ml-1 text-sm font-medium text-red-500">{rating.toFixed(1)}</span>
+    </div>
+  );
 }
 
 function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
@@ -102,43 +156,66 @@ function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
   const averageRating = parseFloat(feedback.averageRating || "0");
   
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <span>Feedback for {formatMonth(feedback.month)} {feedback.year}</span>
-          <span className="ml-2 text-red-500 text-xl flex">
-            {[1, 2, 3, 4, 5].map((heart) => (
-              <span key={heart} className="inline-block px-0.5">
-                {heart <= Math.round(averageRating) ? "❤️" : "🤍"}
-              </span>
-            ))}
-          </span>
-        </CardTitle>
-        <CardDescription>
-          Average Rating: {averageRating.toFixed(1)} / 5.0
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {FEEDBACK_QUESTIONS.map((question, index) => (
-          <div key={index} className="mb-4">
-            <div className="font-medium mb-1">{question}</div>
-            <div className="flex items-center">
-              <StarRating rating={ratings[index] || 0} />
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <Card className="w-full overflow-hidden">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-100 to-transparent opacity-50 rounded-bl-full transform rotate-6 -mr-6 -mt-6 dark:from-red-900 dark:opacity-20"></div>
+        
+        <CardHeader className="relative z-10">
+          <div className="flex justify-between items-center mb-2">
+            <CardTitle className="text-xl font-bold">
+              Feedback for {formatMonth(feedback.month)} {feedback.year}
+            </CardTitle>
+            <div className="bg-gradient-to-r from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 rounded-full px-4 py-1 text-sm font-semibold text-red-700 dark:text-red-300 flex items-center gap-2">
+              <HeartIcon className="h-4 w-4 fill-red-500 text-red-500" />
+              {averageRating.toFixed(1)}
             </div>
           </div>
-        ))}
+          <CardDescription className="text-muted-foreground">
+            Your feedback helps us improve our services
+          </CardDescription>
+        </CardHeader>
         
-        {feedback.comments && (
-          <>
-            <Separator className="my-4" />
-            <div>
-              <h4 className="font-medium mb-2">Additional Comments:</h4>
-              <p className="text-sm text-muted-foreground whitespace-pre-line">{feedback.comments}</p>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+        <CardContent className="relative z-10 space-y-6">
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+            {FEEDBACK_QUESTIONS.map((question, index) => (
+              <motion.div 
+                key={index}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.3 }}
+                className="p-4 rounded-lg bg-muted/50 border border-muted-foreground/10"
+              >
+                <div className="font-medium mb-2 text-sm">{question}</div>
+                <div className="flex items-center">
+                  <StarRating rating={ratings[index] || 0} />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          {feedback.comments && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Separator className="my-4" />
+              <div className="bg-muted/30 p-4 rounded-lg border border-muted-foreground/10">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <span className="h-1 w-4 bg-red-500 rounded-full"></span>
+                  Additional Comments
+                </h4>
+                <p className="text-sm whitespace-pre-line italic text-muted-foreground">"{feedback.comments}"</p>
+              </div>
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -146,6 +223,11 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
   const { toast } = useToast();
   const [ratings, setRatings] = useState<number[]>(Array(FEEDBACK_QUESTIONS.length).fill(0));
   const [comments, setComments] = useState("");
+  const [activeSection, setActiveSection] = useState(0);
+  
+  // Calculate current progress
+  const completedRatings = ratings.filter(r => r > 0).length;
+  const progress = Math.round((completedRatings / FEEDBACK_QUESTIONS.length) * 100);
   
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -188,6 +270,13 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
     const newRatings = [...ratings];
     newRatings[questionIndex] = rating;
     setRatings(newRatings);
+    
+    // Auto advance to next question if possible
+    if (questionIndex < FEEDBACK_QUESTIONS.length - 1) {
+      setTimeout(() => {
+        setActiveSection(questionIndex + 1);
+      }, 400);
+    }
   };
   
   const handleSubmit = () => {
@@ -204,44 +293,154 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
     submitMutation.mutate();
   };
   
+  // Create calculated average rating for live preview
+  const calculatedAverage = () => {
+    const validRatings = ratings.filter(r => r > 0);
+    if (validRatings.length === 0) return 0;
+    return validRatings.reduce((sum, rating) => sum + rating, 0) / validRatings.length;
+  };
+  
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Your Feedback for {formatMonth(feedback.month)} {feedback.year}</CardTitle>
-        <CardDescription>
-          Help us improve our services by sharing your experience
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {FEEDBACK_QUESTIONS.map((question, index) => (
-          <div key={index} className="space-y-2">
-            <div className="font-medium">{question}</div>
-            <StarRating 
-              rating={ratings[index]} 
-              onRatingChange={(rating) => handleRatingChange(index, rating)} 
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <Card className="w-full overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-100 to-transparent opacity-50 rounded-bl-full transform -rotate-6 -mr-8 -mt-8 dark:from-red-900 dark:opacity-20"></div>
+        
+        <CardHeader className="relative z-10">
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-xl">Your Feedback</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                {formatMonth(feedback.month)} {feedback.year}
+              </CardDescription>
+            </div>
+            
+            {progress > 0 && (
+              <div className="bg-red-50 dark:bg-red-900/30 px-3 py-1 rounded-full">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-16 bg-muted rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      className="h-full bg-red-500"
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-red-600 dark:text-red-300">{progress}%</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        
+        <CardContent className="relative z-10 space-y-8">
+          <div className="space-y-6">
+            {FEEDBACK_QUESTIONS.map((question, index) => (
+              <motion.div 
+                key={index}
+                initial={{ opacity: 0.7, y: 5 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0,
+                  scale: activeSection === index ? 1.02 : 1
+                }}
+                transition={{ duration: 0.3 }}
+                className={`p-5 rounded-lg border border-muted transition-all duration-300 ${
+                  activeSection === index 
+                    ? "bg-card shadow-md border-red-200 dark:border-red-900/50" 
+                    : "bg-muted/20"
+                }`}
+                onClick={() => setActiveSection(index)}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="font-medium flex items-center gap-2">
+                    <div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                      ratings[index] > 0 
+                        ? "bg-red-500 text-white" 
+                        : "bg-muted text-muted-foreground"
+                    }`}>
+                      {index + 1}
+                    </div>
+                    <span>{question}</span>
+                  </div>
+                  {ratings[index] > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-green-500 text-xs font-medium px-2 py-0.5 bg-green-50 dark:bg-green-900/20 rounded-full">
+                      Rated {ratings[index]}/5
+                    </motion.div>
+                  )}
+                </div>
+                <div className="flex items-center">
+                  <StarRating 
+                    rating={ratings[index]} 
+                    onRatingChange={(rating) => handleRatingChange(index, rating)} 
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          <div className="p-5 rounded-lg border border-muted bg-muted/10">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold bg-muted text-muted-foreground">
+                {FEEDBACK_QUESTIONS.length + 1}
+              </span>
+              <label className="font-medium">Additional Comments (Optional)</label>
+            </div>
+            <Textarea
+              placeholder="Share any additional thoughts or suggestions to help us improve..."
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              rows={4}
+              className="bg-card resize-none"
             />
           </div>
-        ))}
+          
+          {/* Live rating summary */}
+          {completedRatings > 1 && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-red-100 dark:border-red-900/30"
+            >
+              <div className="flex items-center justify-between">
+                <div className="font-medium">Your Average Rating</div>
+                <div className="flex items-center gap-2">
+                  <HeartRatingDisplay rating={calculatedAverage()} />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </CardContent>
         
-        <div className="space-y-2">
-          <label className="font-medium">Additional Comments (Optional)</label>
-          <Textarea
-            placeholder="Share any additional thoughts or suggestions..."
-            value={comments}
-            onChange={(e) => setComments(e.target.value)}
-            rows={4}
-          />
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button 
-          onClick={handleSubmit} 
-          disabled={submitMutation.isPending || ratings.some(rating => rating === 0)}
-        >
-          {submitMutation.isPending ? "Submitting..." : "Submit Feedback"}
-        </Button>
-      </CardFooter>
-    </Card>
+        <CardFooter className="border-t px-6 py-4 bg-muted/5">
+          <div className="flex w-full items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {ratings.some(r => r === 0) 
+                ? `Please rate all ${FEEDBACK_QUESTIONS.length} questions` 
+                : 'All questions answered! Ready to submit.'}
+            </div>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={submitMutation.isPending || ratings.some(rating => rating === 0)}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {submitMutation.isPending ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                  Submitting...
+                </>
+              ) : "Submit Feedback"}
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -330,26 +529,32 @@ function UserFeedbackTab() {
                   )}
                   
                   {completedFeedback.map((feedback: Feedback) => (
-                    <Button
+                    <motion.div
                       key={feedback.id}
-                      variant={selectedFeedback?.id === feedback.id ? "default" : "outline"}
-                      className="w-full justify-start text-left font-normal h-auto py-2"
-                      onClick={() => setSelectedFeedback(feedback)}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <div>
-                        <div className="font-medium">{formatMonth(feedback.month)} {feedback.year}</div>
-                        <div className="text-xs flex items-center text-red-500 mt-1">
-                          <span>{parseFloat(feedback.averageRating).toFixed(1)}/5.0</span>
-                          <span className="ml-1 flex">
-                            {[1, 2, 3, 4, 5].map((heart) => (
-                              <span key={heart} className="inline-block px-0.5">
-                                {heart <= Math.round(parseFloat(feedback.averageRating)) ? "❤️" : "🤍"}
-                              </span>
-                            ))}
-                          </span>
+                      <Button
+                        variant={selectedFeedback?.id === feedback.id ? "default" : "outline"}
+                        className="w-full justify-start text-left font-normal h-auto py-3 mb-2"
+                        onClick={() => setSelectedFeedback(feedback)}
+                      >
+                        <div className="w-full">
+                          <div className="flex justify-between items-center mb-1">
+                            <div className="font-medium">{formatMonth(feedback.month)} {feedback.year}</div>
+                            <div className="text-xs bg-red-50 dark:bg-red-900/30 rounded-full px-2 py-0.5 text-red-600 dark:text-red-300">
+                              {new Date(feedback.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          
+                          <div className="mt-2 flex items-center">
+                            <HeartRatingDisplay rating={parseFloat(feedback.averageRating)} />
+                          </div>
                         </div>
-                      </div>
-                    </Button>
+                      </Button>
+                    </motion.div>
                   ))}
                 </div>
               </ScrollArea>
@@ -475,15 +680,11 @@ function AdminFeedbackTab() {
                     {completedFeedback.length > 0 && (
                       <div className="text-right">
                         <div className="text-sm text-muted-foreground">Average Rating</div>
-                        <div className="flex items-center justify-end text-xl font-bold text-red-500">
-                          <span>{overallAverage.toFixed(1)}</span>
-                          <span className="text-lg ml-2 flex">
-                            {[1, 2, 3, 4, 5].map((heart) => (
-                              <span key={heart} className="inline-block px-0.5">
-                                {heart <= Math.round(overallAverage) ? "❤️" : "🤍"}
-                              </span>
-                            ))}
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="text-xl font-bold text-red-500">
+                            {overallAverage.toFixed(1)}
                           </span>
+                          <HeartRatingDisplay rating={overallAverage} />
                         </div>
                       </div>
                     )}
@@ -537,23 +738,52 @@ export default function FeedbackPage() {
   
   return (
     <DashboardShell>
-      <div className="flex flex-col space-y-4">
-        <div>
-          <h1 className="text-3xl font-bold">Feedback</h1>
-          <p className="text-muted-foreground">
-            {isAdmin ? 
-              "View and manage customer feedback" : 
-              "Share your thoughts about our services"
-            }
-          </p>
+      <div className="flex flex-col space-y-6">
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-950 dark:to-red-900 p-8 mb-4">
+          <div className="absolute inset-0 bg-grid-black/5 dark:bg-grid-white/5" />
+          
+          <div className="relative">
+            <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight text-red-900 dark:text-red-100 sm:text-4xl">
+                  Customer Feedback
+                </h1>
+                <p className="mt-2 text-muted-foreground max-w-3xl">
+                  {isAdmin ? 
+                    "Monitor customer satisfaction and understand how clients feel about your services. Generate monthly feedback requests to maintain engagement." : 
+                    "Share your thoughts and help us improve our service quality. Your feedback is invaluable to us."
+                  }
+                </p>
+              </div>
+              
+              <div className="flex items-end">
+                <div className="flex -space-x-2">
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1, duration: 0.3 }}
+                    >
+                      <Heart 
+                        key={i} 
+                        className={`h-8 w-8 ${i % 2 === 0 ? 'text-red-500' : 'text-red-400'}`} 
+                        fill="currentColor" 
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
         <Tabs defaultValue={isAdmin ? "admin" : "user"} className="w-full">
           {isAdmin && (
             <>
-              <TabsList className="mb-4">
-                <TabsTrigger value="admin">All Feedback</TabsTrigger>
-                <TabsTrigger value="user">My Feedback</TabsTrigger>
+              <TabsList className="mb-6">
+                <TabsTrigger value="admin">All Customer Feedback</TabsTrigger>
+                <TabsTrigger value="user">My Personal Feedback</TabsTrigger>
               </TabsList>
               
               <TabsContent value="admin">

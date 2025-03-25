@@ -2556,6 +2556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Password reset with token route
   app.post("/api/auth/reset-password", async (req, res) => {
     try {
+      console.log("Password reset request received:", req.body);
       const { token, password } = passwordResetSchema.parse(req.body);
       
       // Find user with this reset token that hasn't expired
@@ -2566,6 +2567,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
              u.passwordResetExpires && 
              new Date(u.passwordResetExpires) > now
       );
+      
+      console.log("Token validation result:", user ? "Valid token" : "Invalid token");
       
       if (!user) {
         return res.status(400).json({ 
@@ -2583,12 +2586,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         passwordResetExpires: null
       });
       
+      console.log("Password reset successful for user:", user.username);
+      
       res.json({ 
         success: true, 
         message: "Password has been reset successfully. You can now log in with your new password."
       });
     } catch (error) {
       console.error("Error resetting password:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid input data" });
+      }
       res.status(500).json({ error: "Failed to reset password" });
     }
   });

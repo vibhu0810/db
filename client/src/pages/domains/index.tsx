@@ -177,6 +177,10 @@ export default function DomainsPage() {
   const [domainToEdit, setDomainToEdit] = useState<Domain | null>(null);
   const [domainToDelete, setDomainToDelete] = useState<Domain | null>(null);
   const [isActionInProgress, setIsActionInProgress] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+  const [importError, setImportError] = useState("");
+  const [importInProgress, setImportInProgress] = useState(false);
   const queryClient = useQueryClient();
   
   // Column width states - optimized for better screen fit
@@ -300,6 +304,153 @@ export default function DomainsPage() {
   });
   
   // Function to export domains as CSV
+  // Import domains mutation
+  const importDomainsMutation = useMutation({
+    mutationFn: async (domains: any[]) => {
+      setImportInProgress(true);
+      const res = await apiRequest("POST", "/api/domains/import", { domains });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to import domains");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/domains'] });
+      setImportInProgress(false);
+      setImportFile(null);
+      setImportPreview([]);
+      setImportError("");
+      toast({
+        title: "Import successful",
+        description: `${data.imported} domains have been imported successfully.`
+      });
+    },
+    onError: (error: Error) => {
+      setImportInProgress(false);
+      toast({
+        title: "Import failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Process CSV file for import
+  const handleImportPreview = async () => {
+    if (!importFile) return;
+    setImportInProgress(true);
+    setImportError("");
+
+    try {
+      const text = await importFile.text();
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+      
+      if (lines.length === 0) {
+        setImportError("CSV file is empty");
+        setImportInProgress(false);
+        return;
+      }
+
+      // Parse headers (first line)
+      const headers = lines[0].split(',').map(header => header.trim());
+      
+      // Required fields check
+      const requiredFields = ['Website URL', 'Type'];
+      const missingFields = requiredFields.filter(field => 
+        !headers.some(header => header.toLowerCase() === field.toLowerCase())
+      );
+      
+      if (missingFields.length > 0) {
+        setImportError(`Missing required fields: ${missingFields.join(', ')}`);
+        setImportInProgress(false);
+        return;
+      }
+
+      // Parse data rows
+      const domains = [];
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(value => value.trim());
+        if (values.length !== headers.length) continue;
+        
+        const domain: any = {};
+        headers.forEach((header, index) => {
+          const value = values[index];
+          
+          switch (header.toLowerCase()) {
+            case 'website name':
+              domain.websiteName = value;
+              break;
+            case 'website url':
+              domain.websiteUrl = value;
+              break;
+            case 'domain rating':
+            case 'dr':
+              domain.domainRating = value;
+              break;
+            case 'traffic':
+            case 'website traffic':
+              domain.websiteTraffic = parseInt(value) || 0;
+              break;
+            case 'niche':
+              domain.niche = value;
+              break;
+            case 'type':
+              domain.type = value.toLowerCase() === 'guest post' ? 'guest_post' : 
+                           value.toLowerCase() === 'niche edit' ? 'niche_edit' : 
+                           value.toLowerCase() === 'both' ? 'both' : 'both';
+              break;
+            case 'guest post price':
+              domain.guestPostPrice = value;
+              break;
+            case 'niche edit price':
+              domain.nicheEditPrice = value;
+              break;
+            case 'guidelines':
+              domain.guidelines = value;
+              break;
+          }
+        });
+        
+        // Validate the domain
+        if (!domain.websiteUrl) continue;
+        
+        // Fix any missing fields with defaults
+        if (!domain.websiteName) domain.websiteName = domain.websiteUrl;
+        if (!domain.type) domain.type = 'both';
+        
+        domains.push(domain);
+      }
+      
+      if (domains.length === 0) {
+        setImportError("No valid domains found in CSV");
+        setImportInProgress(false);
+        return;
+      }
+
+      // If preview is empty, set the preview
+      if (importPreview.length === 0) {
+        setImportPreview(domains);
+        setImportInProgress(false);
+      } else {
+        // If preview exists, proceed with actual import
+        importDomainsMutation.mutate(domains);
+      }
+    } catch (error) {
+      console.error("Error parsing CSV:", error);
+      setImportError("Error parsing CSV file");
+      setImportInProgress(false);
+    }
+  };
+
+  // Import domains from selected file
+  const handleImportDomains = () => {
+    if (importPreview.length > 0) {
+      importDomainsMutation.mutate(importPreview);
+    }
+  };
+
+  // Export domains to CSV
   const exportDomainsAsCSV = () => {
     // Create CSV content
     const headers = ['Website Name', 'Website URL', 'Domain Rating', 'Traffic', 'Niche', 'Type', 'Guest Post Price', 'Niche Edit Price', 'Guidelines'];
@@ -1154,7 +1305,7 @@ export default function DomainsPage() {
               Import Domains
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Import Domains</DialogTitle>
               <DialogDescription>
@@ -1163,16 +1314,74 @@ export default function DomainsPage() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="file">CSV File</Label>
-                <Input id="file" type="file" accept=".csv" />
+                <Label htmlFor="csvFile">CSV File</Label>
+                <Input 
+                  id="csvFile" 
+                  type="file" 
+                  accept=".csv" 
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setImportFile(e.target.files[0]);
+                    }
+                  }}
+                />
               </div>
+              {importError && (
+                <div className="text-destructive text-sm">{importError}</div>
+              )}
+              {importPreview.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="font-medium mb-2">Preview ({importPreview.length} domains)</h3>
+                  <div className="border rounded-md max-h-[200px] overflow-y-auto p-2">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-1">Website URL</th>
+                          <th className="text-left p-1">DR</th>
+                          <th className="text-left p-1">Type</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importPreview.map((domain, index) => (
+                          <tr key={index} className="border-b border-muted">
+                            <td className="p-1">{domain.websiteUrl}</td>
+                            <td className="p-1">{domain.domainRating}</td>
+                            <td className="p-1">{domain.type}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
-              <Button type="submit" disabled>Import</Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setImportFile(null);
+                  setImportPreview([]);
+                  setImportError("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                onClick={importPreview.length === 0 ? handleImportPreview : handleImportDomains} 
+                disabled={!importFile || importInProgress}
+              >
+                {importInProgress ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {importPreview.length === 0 ? "Processing..." : "Importing..."}
+                  </>
+                ) : (
+                  importPreview.length === 0 ? "Preview" : "Import"
+                )}
+              </Button>
             </DialogFooter>
-            <div className="mt-4 text-xs text-muted-foreground">
-              <p>Note: This feature is currently under development. Please use the "Add Domain" button to add domains manually.</p>
-            </div>
           </DialogContent>
         </Dialog>
       )}

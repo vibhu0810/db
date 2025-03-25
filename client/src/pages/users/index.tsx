@@ -59,34 +59,36 @@ export default function UsersPage() {
     }
   };
 
-  const filteredUsers = users
-    .filter(user =>
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.companyName.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      const getValue = (user: UserWithStats, field: string) => {
-        if (field.startsWith("orders.")) {
-          const key = field.split(".")[1] as keyof typeof user.orders;
-          return user.orders[key];
+  // Ensure users is an array before filtering
+  const filteredUsers = Array.isArray(users) 
+    ? users.filter((user: UserWithStats) =>
+        user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .sort((a: UserWithStats, b: UserWithStats) => {
+        const getValue = (user: UserWithStats, field: string) => {
+          if (field.startsWith("orders.")) {
+            const key = field.split(".")[1] as keyof typeof user.orders;
+            return user.orders[key];
+          }
+          return (user as any)[field];
+        };
+
+        const aValue = getValue(a, sortField);
+        const bValue = getValue(b, sortField);
+
+        if (typeof aValue === "string") {
+          return sortDirection === "asc"
+            ? aValue.localeCompare(bValue as string)
+            : (bValue as string).localeCompare(aValue);
         }
-        return (user as any)[field];
-      };
 
-      const aValue = getValue(a, sortField);
-      const bValue = getValue(b, sortField);
-
-      if (typeof aValue === "string") {
         return sortDirection === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
-
-      return sortDirection === "asc"
-        ? (aValue as number) - (bValue as number)
-        : (bValue as number) - (aValue as number);
-    });
+          ? (aValue as number) - (bValue as number)
+          : (bValue as number) - (aValue as number);
+      })
+    : [];
 
   if (isLoading) {
     return (
@@ -135,7 +137,7 @@ export default function UsersPage() {
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
+            <div className="text-2xl font-bold">{Array.isArray(users) ? users.length : 0}</div>
           </CardContent>
         </Card>
 
@@ -145,7 +147,7 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.filter((u) => u.orders.total > 0).length}
+              {Array.isArray(users) ? users.filter((u) => u.orders?.total > 0).length : 0}
             </div>
           </CardContent>
         </Card>
@@ -205,7 +207,7 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
+                  {filteredUsers.map((user: UserWithStats) => (
                     <React.Fragment key={user.id}>
                       <TableRow className="hover:bg-muted/50 cursor-pointer">
                         <TableCell className="w-[50px]">

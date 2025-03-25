@@ -145,6 +145,8 @@ interface CustomOrderFormData {
   textEdit: string;
   notes: string;
   price: number;
+  sendNotification: boolean;
+  type: "niche_edit" | "guest_post";
 }
 
 const customOrderSchema = z.object({
@@ -155,6 +157,8 @@ const customOrderSchema = z.object({
   textEdit: z.string().optional(),
   notes: z.string().optional(),
   price: z.number().min(0, "Price must be 0 or greater"),
+  sendNotification: z.boolean().default(true),
+  type: z.enum(["niche_edit", "guest_post"]).default("niche_edit"),
 });
 
 function EditOrderSheet({
@@ -755,6 +759,8 @@ export default function Orders() {
       textEdit: "",
       notes: "",
       price: 0,
+      sendNotification: true,
+      type: "niche_edit",
     },
     mode: "onTouched", // Only validate fields after they've been touched
   });
@@ -838,14 +844,14 @@ export default function Orders() {
       }
       
       // Filter by date range
-      if (dateRange.from) {
+      if (dateRange && dateRange.from) {
         const orderDate = new Date(order.dateOrdered);
         if (orderDate < dateRange.from) {
           return false;
         }
       }
       
-      if (dateRange.to) {
+      if (dateRange && dateRange.to) {
         const orderDate = new Date(order.dateOrdered);
         const endOfDay = new Date(dateRange.to);
         endOfDay.setHours(23, 59, 59, 999);

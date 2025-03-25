@@ -22,7 +22,8 @@ import {
   sendCommentNotificationEmail,
   sendStatusUpdateEmail,
   sendChatNotificationEmail,
-  sendTicketResponseEmail
+  sendTicketResponseEmail,
+  sendVerificationEmail
 } from "./email";
 import { uploadthingHandler } from "./uploadthingHandler";
 
@@ -2401,9 +2402,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send verification email using our email service
       try {
-        // Import the email service
-        const { sendVerificationEmail } = require('./email');
-        
         // Send the email
         await sendVerificationEmail(
           user.email,

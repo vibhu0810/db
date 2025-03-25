@@ -627,7 +627,14 @@ export default function Orders() {
         const error = await res.json();
         throw new Error(error.error || "Failed to delete order");
       }
-      return res.json();
+      
+      // Try to parse JSON response, but don't fail if it's not valid JSON
+      try {
+        return res.json();
+      } catch (e) {
+        // If the response is not valid JSON (like "OK"), just return a success object
+        return { success: true };
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });

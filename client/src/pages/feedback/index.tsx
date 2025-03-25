@@ -121,18 +121,33 @@ function formatMonth(month: number): string {
 
 // Heart display component for average ratings
 function HeartRatingDisplay({ rating }: { rating: number }) {
+  // Ensure rating is a valid number
+  const validRating = isNaN(rating) ? 0 : rating;
+  
   return (
     <div className="flex items-center gap-1">
       <div className="flex gap-0.5">
-        {[1, 2, 3, 4, 5].map((heart) => (
-          <Heart
-            key={heart}
-            fill={heart <= Math.round(rating) ? "currentColor" : "none"}
-            className={`h-4 w-4 ${heart <= Math.round(rating) ? "text-red-500" : "text-gray-300 dark:text-gray-600"}`}
-          />
-        ))}
+        {[1, 2, 3, 4, 5].map((heart) => {
+          // Use a more precise method to determine partially filled hearts
+          const isFilled = heart <= Math.floor(validRating);
+          const isHalfFilled = !isFilled && (heart - 0.5) <= validRating;
+          
+          return (
+            <Heart
+              key={heart}
+              fill={isFilled ? "currentColor" : "none"}
+              className={`h-4 w-4 ${
+                isFilled 
+                  ? "text-red-500" 
+                  : isHalfFilled 
+                    ? "text-red-300" 
+                    : "text-gray-300 dark:text-gray-600"
+              }`}
+            />
+          );
+        })}
       </div>
-      <span className="ml-1 text-sm font-medium text-red-500">{rating.toFixed(1)}</span>
+      <span className="ml-1 text-sm font-medium text-red-500">{validRating.toFixed(1)}</span>
     </div>
   );
 }
@@ -806,11 +821,16 @@ function UserFeedbackTab() {
 function AdminFeedbackTab() {
   const { toast } = useToast();
   
-  const { data: feedbackData = [], isLoading } = useQuery<Feedback[]>({
+  const { data: feedbackData = [], isLoading, isError, error } = useQuery<Feedback[]>({
     queryKey: ['/api/feedback/all'],
   });
   
   console.log("Admin Feedback Tab - received feedback data:", feedbackData);
+  console.log("Admin Feedback Tab - isLoading:", isLoading, "isError:", isError);
+  
+  if (isError) {
+    console.error("Admin Feedback Tab - Error fetching feedback:", error);
+  }
   
   const generateMutation = useMutation<{ count: number }>({
     mutationFn: async () => {
@@ -842,6 +862,24 @@ function AdminFeedbackTab() {
         <Skeleton className="h-12 w-full" />
         <Skeleton className="h-64 w-full" />
       </div>
+    );
+  }
+  
+  if (isError) {
+    return (
+      <Card className="w-full text-center p-8">
+        <CardContent>
+          <p className="text-muted-foreground my-8">
+            Error loading feedback data. Please try again later.
+          </p>
+          <Button 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/feedback/all'] })}
+            variant="outline"
+          >
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
   
@@ -1017,8 +1055,8 @@ export default function FeedbackPage() {
           {isAdmin && (
             <>
               <TabsList className="mb-6">
-                <TabsTrigger value="admin">All Customer Feedback</TabsTrigger>
-                <TabsTrigger value="user">My Admin Feedback</TabsTrigger>
+                <TabsTrigger value="admin">Customer Feedback</TabsTrigger>
+                <TabsTrigger value="user">My Personal Feedback</TabsTrigger>
               </TabsList>
               
               <TabsContent value="admin">

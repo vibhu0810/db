@@ -3,10 +3,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { Redirect } from "wouter";
 import { useSEOJoke } from "@/hooks/use-seo-joke";
 import { Logo } from "@/components/ui/logo";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function AuthPage() {
   const { user, loginMutation } = useAuth();
@@ -16,6 +17,7 @@ export default function AuthPage() {
   const [displayText, setDisplayText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
   const [showAltText, setShowAltText] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const fullText = "Welcome to SaaSxLinks!";
   const { data: seoJokeData, refetch: fetchJoke } = useSEOJoke();
 
@@ -44,6 +46,15 @@ export default function AuthPage() {
 
     return () => clearInterval(textTimer);
   }, []);
+  
+  // Handle login errors
+  useEffect(() => {
+    if (loginMutation.error) {
+      setLoginError(loginMutation.error.message);
+    } else {
+      setLoginError(null);
+    }
+  }, [loginMutation.error]);
 
   // If user is already logged in, redirect to home
   if (user) {
@@ -82,9 +93,16 @@ export default function AuthPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {loginError && (
+              <Alert variant="destructive" className="animate-in fade-in-50 duration-300">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{loginError}</AlertDescription>
+              </Alert>
+            )}
+            
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="username">
-                Username
+                Username or Email
               </label>
               <Input
                 id="username"
@@ -93,7 +111,11 @@ export default function AuthPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 className="transition-all duration-200 focus:scale-[1.02]"
+                placeholder="Enter username or verified email"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                You can log in with your verified email address
+              </p>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="password">

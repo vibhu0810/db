@@ -668,7 +668,7 @@ export default function Orders() {
         [orderId]: Date.now()
       }));
       
-      const res = await apiRequest("PATCH", `/api/orders/${orderId}`, { status });
+      const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to update status");

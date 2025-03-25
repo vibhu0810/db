@@ -137,7 +137,7 @@ function HeartRatingDisplay({ rating }: { rating: number }) {
   );
 }
 
-function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
+function FeedbackDisplay({ feedback, showHistory = false }: { feedback: Feedback, showHistory?: boolean }) {
   // Parse the ratings JSON with error handling
   let ratings: number[] = [];
   try {
@@ -173,7 +173,7 @@ function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
         <CardHeader className="relative z-10">
           <div className="flex justify-between items-center mb-2">
             <CardTitle className="text-xl font-bold">
-              Your Rating
+              {showHistory ? "Your Rating" : `${formatMonth(feedback.month)} ${feedback.year} Feedback`}
             </CardTitle>
             <div className="bg-gradient-to-r from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 rounded-full px-4 py-1 text-sm font-semibold text-red-700 dark:text-red-300 flex items-center gap-2">
               <HeartIcon className="h-4 w-4 fill-red-500 text-red-500" />
@@ -181,7 +181,7 @@ function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
             </div>
           </div>
           <CardDescription className="text-muted-foreground">
-            Submitted on {new Date(feedback.createdAt).toLocaleDateString()}
+            {showHistory ? `Submitted on ${new Date(feedback.createdAt).toLocaleDateString()}` : 'Thank you for your feedback'}
           </CardDescription>
         </CardHeader>
         
@@ -777,7 +777,7 @@ function UserFeedbackTab() {
               transition={{ duration: 0.3 }}
             >
               {selectedFeedback.isCompleted ? (
-                <FeedbackDisplay feedback={selectedFeedback} />
+                <FeedbackDisplay feedback={selectedFeedback} showHistory={true} />
               ) : (
                 <FeedbackForm 
                   feedback={selectedFeedback} 
@@ -929,7 +929,7 @@ function AdminFeedbackTab() {
                     {sortedFeedback.map(feedback => (
                       <TabsContent key={feedback.id} value={feedback.id.toString()}>
                         {feedback.isCompleted ? (
-                          <FeedbackDisplay feedback={feedback} />
+                          <FeedbackDisplay feedback={feedback} showHistory={true} />
                         ) : (
                           <div className="p-4 bg-muted rounded-lg text-center">
                             <p className="text-muted-foreground">

@@ -100,13 +100,8 @@ function extractDomainFromUrl(url: string): string {
   }
 }
 
-// Make sure our DateRange is compatible with react-day-picker's DateRange
-import { DateRange as DayPickerDateRange } from "react-day-picker";
-
-interface DateRange {
-  from?: Date;
-  to?: Date;
-}
+// Import DateRange from react-day-picker to ensure compatibility
+import type { DateRange } from "react-day-picker";
 
 interface EditOrderFormData {
   sourceUrl: string;
@@ -345,7 +340,7 @@ export default function Orders() {
   const { isAdmin, user } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [dateRange, setDateRange] = useState<DateRange>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [newComment, setNewComment] = useState<string>("");
   const [sortField, setSortField] = useState<string>("dateOrdered");
@@ -887,7 +882,7 @@ export default function Orders() {
   const resetFilters = () => {
     setStatusFilter("all");
     setSearchQuery("");
-    setDateRange({});
+    setDateRange(undefined);
     setUserFilter("all");
     setSelectedType("all");
   };

@@ -103,7 +103,7 @@ export default function DomainsPage() {
     website: 200,
     dr: 80,
     traffic: 100,
-    type: 85,
+    type: 80,
     guestPostPrice: 110,
     nicheEditPrice: 110,
     guestPostTat: 120,
@@ -397,240 +397,243 @@ export default function DomainsPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border overflow-x-auto max-w-[1400px] mx-auto" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <div className="min-w-[1200px]">
-          <Table className="w-full">
-          <TableHeader>
-            <TableRow>
-              <TableHead style={{ width: columnWidths.website }}>
-                <Resizable
-                  width={columnWidths.website}
-                  height={38}
-                  onResize={onResize('website')}
-                  resizeHandles={['e']}
-                  handle={
-                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                  }
-                >
-                  <div className="h-full flex items-center pr-4">
-                    <SortableHeader field="websiteUrl">Website</SortableHeader>
-                  </div>
-                </Resizable>
-              </TableHead>
-              <TableHead style={{ width: columnWidths.dr }}>
-                <Resizable
-                  width={columnWidths.dr}
-                  height={38}
-                  onResize={onResize('dr')}
-                  resizeHandles={['e']}
-                  handle={
-                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                  }
-                >
-                  <div className="h-full flex items-center justify-center pr-4">
-                    <SortableHeader field="domainRating">DR</SortableHeader>
-                  </div>
-                </Resizable>
-              </TableHead>
-              <TableHead style={{ width: columnWidths.traffic }}>
-                <Resizable
-                  width={columnWidths.traffic}
-                  height={38}
-                  onResize={onResize('traffic')}
-                  resizeHandles={['e']}
-                  handle={
-                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                  }
-                >
-                  <div className="h-full flex items-center justify-center pr-4">
-                    <SortableHeader field="websiteTraffic">Traffic</SortableHeader>
-                  </div>
-                </Resizable>
-              </TableHead>
-              <TableHead style={{ width: columnWidths.type }}>
-                <Resizable
-                  width={columnWidths.type}
-                  height={38}
-                  onResize={onResize('type')}
-                  resizeHandles={['e']}
-                  handle={
-                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                  }
-                >
-                  <div className="h-full flex items-center pr-4">
-                    <SortableHeader field="type">Type</SortableHeader>
-                  </div>
-                </Resizable>
-              </TableHead>
-              <TableHead style={{ width: columnWidths.guestPostPrice }}>
-                <Resizable
-                  width={columnWidths.guestPostPrice}
-                  height={38}
-                  onResize={onResize('guestPostPrice')}
-                  resizeHandles={['e']}
-                  handle={
-                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                  }
-                >
-                  <div className="h-full flex items-center justify-center pr-4">
-                    <SortableHeader field="guestPostPrice">GP Price</SortableHeader>
-                  </div>
-                </Resizable>
-              </TableHead>
-              <TableHead style={{ width: columnWidths.nicheEditPrice }}>
-                <Resizable
-                  width={columnWidths.nicheEditPrice}
-                  height={38}
-                  onResize={onResize('nicheEditPrice')}
-                  resizeHandles={['e']}
-                  handle={
-                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                  }
-                >
-                  <div className="h-full flex items-center justify-center pr-4">
-                    <SortableHeader field="nicheEditPrice">NE Price</SortableHeader>
-                  </div>
-                </Resizable>
-              </TableHead>
-              <TableHead style={{ width: columnWidths.guestPostTat }}>
-                <Resizable
-                  width={columnWidths.guestPostTat}
-                  height={38}
-                  onResize={onResize('guestPostTat')}
-                  resizeHandles={['e']}
-                  handle={
-                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                  }
-                >
-                  <div className="h-full flex items-center justify-center pr-4">
-                    GP TAT (in days)
-                  </div>
-                </Resizable>
-              </TableHead>
-              <TableHead style={{ width: columnWidths.nicheEditTat }}>
-                <Resizable
-                  width={columnWidths.nicheEditTat}
-                  height={38}
-                  onResize={onResize('nicheEditTat')}
-                  resizeHandles={['e']}
-                  handle={
-                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                  }
-                >
-                  <div className="h-full flex items-center justify-center pr-4">
-                    NE TAT (in days)
-                  </div>
-                </Resizable>
-              </TableHead>
-              <TableHead style={{ width: columnWidths.guidelines }}>
-                <Resizable
-                  width={columnWidths.guidelines}
-                  height={38}
-                  onResize={onResize('guidelines')}
-                  resizeHandles={['e']}
-                  handle={
-                    <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                  }
-                >
-                  <div className="h-full flex items-center pr-4">
-                    Guidelines
-                  </div>
-                </Resizable>
-              </TableHead>
-              {!isAdmin && (
-                <TableHead style={{ width: columnWidths.action }}>
-                  <Resizable
-                    width={columnWidths.action}
-                    height={38}
-                    onResize={onResize('action')}
-                    resizeHandles={['e']}
-                    handle={
-                      <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
-                    }
-                  >
-                    <div className="h-full flex items-center pr-4">
-                      Action
-                    </div>
-                  </Resizable>
-                </TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedDomains.map((domain: Domain) => (
-              <TableRow key={domain.id}>
-                <TableCell className="max-w-[200px]">
-                  <div className="flex items-center space-x-2">
-                    <a
-                      href={`https://${domain.websiteUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-primary hover:underline truncate"
+      {/* Table container with horizontal scrolling */}
+      <div className="rounded-lg border max-w-[1400px] mx-auto">
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin' }}>
+          <div className="min-w-[1200px]">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead style={{ width: columnWidths.website }}>
+                    <Resizable
+                      width={columnWidths.website}
+                      height={38}
+                      onResize={onResize('website')}
+                      resizeHandles={['e']}
+                      handle={
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                      }
                     >
-                      {domain.websiteUrl}
-                      <ExternalLink className="h-4 w-4 shrink-0" />
-                    </a>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => copyToClipboard(domain.websiteUrl)}
-                      className="h-8 w-8 shrink-0"
+                      <div className="h-full flex items-center pr-4">
+                        <SortableHeader field="websiteUrl">Website</SortableHeader>
+                      </div>
+                    </Resizable>
+                  </TableHead>
+                  <TableHead style={{ width: columnWidths.dr }}>
+                    <Resizable
+                      width={columnWidths.dr}
+                      height={38}
+                      onResize={onResize('dr')}
+                      resizeHandles={['e']}
+                      handle={
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                      }
                     >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">{domain.domainRating}</TableCell>
-                <TableCell className="text-center">{Number(domain.websiteTraffic).toLocaleString()}</TableCell>
-                <TableCell>
-                  {domain.type === "both"
-                    ? "Both"
-                    : domain.type === "guest_post"
-                      ? "Guest Post"
-                      : "Niche Edit"}
-                </TableCell>
-                <TableCell className="text-center">
-                  {domain.type !== "niche_edit" && domain.guestPostPrice ? `$${domain.guestPostPrice}` : "N/A"}
-                </TableCell>
-                <TableCell className="text-center">
-                  {domain.type !== "guest_post" && domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : "N/A"}
-                </TableCell>
-                <TableCell className="text-center">
-                  {domain.type !== "niche_edit" ? getGuestPostTAT(domain) : "N/A"}
-                </TableCell>
-                <TableCell className="text-center">
-                  {domain.type !== "guest_post" ? getNicheEditTAT(domain) : "N/A"}
-                </TableCell>
-                <TableCell className="max-w-[200px]">
-                  {domain.guidelines ? (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="truncate block cursor-help">{domain.guidelines}</span>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p>{domain.guidelines}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : (
-                    <span className="text-muted-foreground italic">No guidelines</span>
+                      <div className="h-full flex items-center justify-center pr-4">
+                        <SortableHeader field="domainRating">DR</SortableHeader>
+                      </div>
+                    </Resizable>
+                  </TableHead>
+                  <TableHead style={{ width: columnWidths.traffic }}>
+                    <Resizable
+                      width={columnWidths.traffic}
+                      height={38}
+                      onResize={onResize('traffic')}
+                      resizeHandles={['e']}
+                      handle={
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                      }
+                    >
+                      <div className="h-full flex items-center justify-center pr-4">
+                        <SortableHeader field="websiteTraffic">Traffic</SortableHeader>
+                      </div>
+                    </Resizable>
+                  </TableHead>
+                  <TableHead style={{ width: columnWidths.type }}>
+                    <Resizable
+                      width={columnWidths.type}
+                      height={38}
+                      onResize={onResize('type')}
+                      resizeHandles={['e']}
+                      handle={
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                      }
+                    >
+                      <div className="h-full flex items-center pr-4">
+                        <SortableHeader field="type">Type</SortableHeader>
+                      </div>
+                    </Resizable>
+                  </TableHead>
+                  <TableHead style={{ width: columnWidths.guestPostPrice }}>
+                    <Resizable
+                      width={columnWidths.guestPostPrice}
+                      height={38}
+                      onResize={onResize('guestPostPrice')}
+                      resizeHandles={['e']}
+                      handle={
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                      }
+                    >
+                      <div className="h-full flex items-center justify-center pr-4">
+                        <SortableHeader field="guestPostPrice">GP Price</SortableHeader>
+                      </div>
+                    </Resizable>
+                  </TableHead>
+                  <TableHead style={{ width: columnWidths.nicheEditPrice }}>
+                    <Resizable
+                      width={columnWidths.nicheEditPrice}
+                      height={38}
+                      onResize={onResize('nicheEditPrice')}
+                      resizeHandles={['e']}
+                      handle={
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                      }
+                    >
+                      <div className="h-full flex items-center justify-center pr-4">
+                        <SortableHeader field="nicheEditPrice">NE Price</SortableHeader>
+                      </div>
+                    </Resizable>
+                  </TableHead>
+                  <TableHead style={{ width: columnWidths.guestPostTat }}>
+                    <Resizable
+                      width={columnWidths.guestPostTat}
+                      height={38}
+                      onResize={onResize('guestPostTat')}
+                      resizeHandles={['e']}
+                      handle={
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                      }
+                    >
+                      <div className="h-full flex items-center justify-center pr-4">
+                        GP TAT (in days)
+                      </div>
+                    </Resizable>
+                  </TableHead>
+                  <TableHead style={{ width: columnWidths.nicheEditTat }}>
+                    <Resizable
+                      width={columnWidths.nicheEditTat}
+                      height={38}
+                      onResize={onResize('nicheEditTat')}
+                      resizeHandles={['e']}
+                      handle={
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                      }
+                    >
+                      <div className="h-full flex items-center justify-center pr-4">
+                        NE TAT (in days)
+                      </div>
+                    </Resizable>
+                  </TableHead>
+                  <TableHead style={{ width: columnWidths.guidelines }}>
+                    <Resizable
+                      width={columnWidths.guidelines}
+                      height={38}
+                      onResize={onResize('guidelines')}
+                      resizeHandles={['e']}
+                      handle={
+                        <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                      }
+                    >
+                      <div className="h-full flex items-center pr-4">
+                        Guidelines
+                      </div>
+                    </Resizable>
+                  </TableHead>
+                  {!isAdmin && (
+                    <TableHead style={{ width: columnWidths.action }}>
+                      <Resizable
+                        width={columnWidths.action}
+                        height={38}
+                        onResize={onResize('action')}
+                        resizeHandles={['e']}
+                        handle={
+                          <div className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-primary/10" />
+                        }
+                      >
+                        <div className="h-full flex items-center pr-4">
+                          Action
+                        </div>
+                      </Resizable>
+                    </TableHead>
                   )}
-                </TableCell>
-                {!isAdmin && (
-                  <TableCell>
-                    <Button
-                      onClick={() => setLocation(`/orders/new?domain=${domain.websiteUrl}`)}
-                      size="sm"
-                    >
-                      Place Order
-                    </Button>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedDomains.map((domain: Domain) => (
+                  <TableRow key={domain.id}>
+                    <TableCell className="max-w-[200px]">
+                      <div className="flex items-center space-x-2">
+                        <a
+                          href={`https://${domain.websiteUrl}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-primary hover:underline truncate"
+                        >
+                          {domain.websiteUrl}
+                          <ExternalLink className="h-4 w-4 shrink-0" />
+                        </a>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => copyToClipboard(domain.websiteUrl)}
+                          className="h-8 w-8 shrink-0"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">{domain.domainRating}</TableCell>
+                    <TableCell className="text-center">{Number(domain.websiteTraffic).toLocaleString()}</TableCell>
+                    <TableCell>
+                      {domain.type === "both"
+                        ? "Both"
+                        : domain.type === "guest_post"
+                          ? "Guest Post"
+                          : "Niche Edit"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {domain.type !== "niche_edit" && domain.guestPostPrice ? `$${domain.guestPostPrice}` : "N/A"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {domain.type !== "guest_post" && domain.nicheEditPrice ? `$${domain.nicheEditPrice}` : "N/A"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {domain.type !== "niche_edit" ? getGuestPostTAT(domain) : "N/A"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {domain.type !== "guest_post" ? getNicheEditTAT(domain) : "N/A"}
+                    </TableCell>
+                    <TableCell className="max-w-[200px]">
+                      {domain.guidelines ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="truncate block cursor-help">{domain.guidelines}</span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p>{domain.guidelines}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <span className="text-muted-foreground italic">No guidelines</span>
+                      )}
+                    </TableCell>
+                    {!isAdmin && (
+                      <TableCell>
+                        <Button
+                          onClick={() => setLocation(`/orders/new?domain=${domain.websiteUrl}`)}
+                          size="sm"
+                        >
+                          Place Order
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
 
@@ -685,17 +688,4 @@ export default function DomainsPage() {
       </div>
     </div>
   );
-}
-
-function getTurnaroundTime(domain: Domain): string {
-  if (domain.websiteUrl === "engagebay.com") {
-    return "3 working days";
-  } else if (domain.websiteUrl === "blog.powr.io") {
-    if (domain.type === "guest_post") {
-      return "10 working days post content approval";
-    } else {
-      return "3 working days";
-    }
-  }
-  return "7-14 business days";
 }

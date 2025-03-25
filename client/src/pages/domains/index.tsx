@@ -620,19 +620,7 @@ export default function DomainsPage() {
               )}
             />
           </div>
-          <FormField
-            control={form.control}
-            name="niche"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Niche</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Technology" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Niche field is now optional and not shown in the form */}
           <FormField
             control={form.control}
             name="type"

@@ -1388,7 +1388,7 @@ export default function DomainsPage() {
                   <Input 
                     id="csvFile" 
                     type="file" 
-                    accept=".csv" 
+                    accept=".csv,.xlsx,.xls" 
                     onChange={(e) => {
                       if (e.target.files && e.target.files.length > 0) {
                         setImportFile(e.target.files[0]);
@@ -1400,6 +1400,10 @@ export default function DomainsPage() {
                   Download templates: 
                   <a href="/templates/domains-template.csv" download className="text-primary ml-1 hover:underline">
                     CSV Template
+                  </a>
+                  <span className="mx-1">|</span>
+                  <a href="/templates/domains-template.xlsx" download className="text-primary hover:underline">
+                    Excel Template
                   </a>
                 </div>
                 {importError && (

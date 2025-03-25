@@ -13,8 +13,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion } from "framer-motion";
 import { HeartIcon, Heart } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 // Define the list of feedback questions
 const FEEDBACK_QUESTIONS = [
@@ -162,7 +160,6 @@ function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
   }
   
   const averageRating = parseFloat(feedback.averageRating || "0");
-  const [showRating, setShowRating] = useState(false);
   
   return (
     <motion.div
@@ -176,31 +173,11 @@ function FeedbackDisplay({ feedback }: { feedback: Feedback }) {
         <CardHeader className="relative z-10">
           <div className="flex justify-between items-center mb-2">
             <CardTitle className="text-xl font-bold">
-              Feedback Details
+              Your Rating
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center">
-                <Switch 
-                  id="show-rating" 
-                  checked={showRating} 
-                  onCheckedChange={setShowRating}
-                  className="mr-2"
-                />
-                <Label htmlFor="show-rating" className="text-xs text-muted-foreground cursor-pointer">
-                  Show Rating
-                </Label>
-              </div>
-              {showRating && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="bg-gradient-to-r from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 rounded-full px-4 py-1 text-sm font-semibold text-red-700 dark:text-red-300 flex items-center gap-2"
-                >
-                  <HeartIcon className="h-4 w-4 fill-red-500 text-red-500" />
-                  {averageRating.toFixed(1)}
-                </motion.div>
-              )}
+            <div className="bg-gradient-to-r from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 rounded-full px-4 py-1 text-sm font-semibold text-red-700 dark:text-red-300 flex items-center gap-2">
+              <HeartIcon className="h-4 w-4 fill-red-500 text-red-500" />
+              {averageRating.toFixed(1)}
             </div>
           </div>
           <CardDescription className="text-muted-foreground">

@@ -27,9 +27,9 @@ const MarketingPage = () => {
             <a href="https://dashboard.saasxlinks.ai/login">
               <Button variant="outline" size="sm">Sign In</Button>
             </a>
-            <Link href="/auth?tab=register">
+            <a href="https://dashboard.saasxlinks.ai/register">
               <Button size="sm">Start Free Trial</Button>
-            </Link>
+            </a>
           </div>
         </div>
       </header>
@@ -47,11 +47,11 @@ const MarketingPage = () => {
                 The all-in-one platform for managing your link building campaigns, clients, and team members efficiently.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Link href="/auth?tab=register">
+                <a href="https://dashboard.saasxlinks.ai/register">
                   <Button size="lg" className="gap-2">
                     Get Started <ChevronRight size={16} />
                   </Button>
-                </Link>
+                </a>
                 <a href="#demo">
                   <Button size="lg" variant="outline" className="gap-2">
                     Request Demo <ExternalLink size={16} />

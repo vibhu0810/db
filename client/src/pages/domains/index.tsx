@@ -125,6 +125,8 @@ interface Domain {
   guidelines: string | null;
   guestPostPrice?: string | null;
   nicheEditPrice?: string | null;
+  gpTat?: string | null;
+  neTat?: string | null;
   lastMetricsUpdate?: Date | null;
 }
 
@@ -148,7 +150,6 @@ function getNicheEditTAT(domain: Domain): string {
 
 // Define schema for domain form
 const domainFormSchema = z.object({
-  websiteName: z.string().optional().default(""),
   websiteUrl: z.string().min(3, "Website URL is required"),
   domainRating: z.string().optional(),
   websiteTraffic: z.coerce.number().min(0, "Traffic must be a positive number").optional(),
@@ -156,44 +157,52 @@ const domainFormSchema = z.object({
   type: z.enum(["guest_post", "niche_edit", "both"]),
   guestPostPrice: z.string().optional(),
   nicheEditPrice: z.string().optional(),
+  gpTat: z.string().optional(),
+  neTat: z.string().optional(),
   guidelines: z.string().optional(),
 }).refine(data => {
   // Validation for Guest Post domains
   if (data.type === "guest_post") {
-    // Must have guest post price
-    if (!data.guestPostPrice || data.guestPostPrice.trim() === "") {
+    // Must have guest post price and TAT
+    if (!data.guestPostPrice || data.guestPostPrice.trim() === "" || 
+        !data.gpTat || data.gpTat.trim() === "") {
       return false;
     }
-    // Must not have niche edit price
-    if (data.nicheEditPrice && data.nicheEditPrice.trim() !== "") {
+    // Must not have niche edit price or TAT
+    if ((data.nicheEditPrice && data.nicheEditPrice.trim() !== "") || 
+        (data.neTat && data.neTat.trim() !== "")) {
       return false;
     }
   }
   
   // Validation for Niche Edit domains
   if (data.type === "niche_edit") {
-    // Must have niche edit price
-    if (!data.nicheEditPrice || data.nicheEditPrice.trim() === "") {
+    // Must have niche edit price and TAT
+    if (!data.nicheEditPrice || data.nicheEditPrice.trim() === "" || 
+        !data.neTat || data.neTat.trim() === "") {
       return false;
     }
-    // Must not have guest post price
-    if (data.guestPostPrice && data.guestPostPrice.trim() !== "") {
+    // Must not have guest post price or TAT
+    if ((data.guestPostPrice && data.guestPostPrice.trim() !== "") || 
+        (data.gpTat && data.gpTat.trim() !== "")) {
       return false;
     }
   }
   
   // Validation for Both type domains
   if (data.type === "both") {
-    // Must have both prices
+    // Must have both prices and TATs
     if (!data.guestPostPrice || data.guestPostPrice.trim() === "" || 
-        !data.nicheEditPrice || data.nicheEditPrice.trim() === "") {
+        !data.nicheEditPrice || data.nicheEditPrice.trim() === "" ||
+        !data.gpTat || data.gpTat.trim() === "" || 
+        !data.neTat || data.neTat.trim() === "") {
       return false;
     }
   }
   
   return true;
 }, {
-  message: "Price fields must match the selected domain type. Guest Post domains should only have GP Price, Niche Edit domains should only have NE Price, and Both type domains need both prices.",
+  message: "Fields must match the selected domain type. Guest Post domains need GP Price and TAT, Niche Edit domains need NE Price and TAT, and Both type domains need all fields.",
   path: ["type"] // Show error on the type field
 });
 
@@ -684,7 +693,6 @@ export default function DomainsPage() {
     const form = useForm<DomainFormValues>({
       resolver: zodResolver(domainFormSchema),
       defaultValues: domain ? {
-        websiteName: domain.websiteName,
         websiteUrl: domain.websiteUrl,
         domainRating: domain.domainRating || "",
         websiteTraffic: domain.websiteTraffic || 0,
@@ -692,9 +700,10 @@ export default function DomainsPage() {
         type: domain.type,
         guestPostPrice: domain.guestPostPrice || "",
         nicheEditPrice: domain.nicheEditPrice || "",
+        gpTat: domain.gpTat || "",
+        neTat: domain.neTat || "",
         guidelines: domain.guidelines || "",
       } : {
-        websiteName: "",
         websiteUrl: "",
         domainRating: "",
         websiteTraffic: 0,
@@ -702,6 +711,8 @@ export default function DomainsPage() {
         type: "both",
         guestPostPrice: "",
         nicheEditPrice: "",
+        gpTat: "",
+        neTat: "",
         guidelines: "",
       }
     });
@@ -722,24 +733,7 @@ export default function DomainsPage() {
     
     return (
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="websiteName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Website Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Example Blog" {...field} />
-                </FormControl>
-                <FormDescription>
-                  The display name of the website
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">          
           <FormField
             control={form.control}
             name="websiteUrl"
@@ -829,35 +823,65 @@ export default function DomainsPage() {
           
           <div className="grid grid-cols-2 gap-4">
             {(formType === "guest_post" || formType === "both") && (
-              <FormField
-                control={form.control}
-                name="guestPostPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Guest Post Price</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 350" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <>
+                <FormField
+                  control={form.control}
+                  name="guestPostPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Guest Post Price</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. 350" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gpTat"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GP TAT (days)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. 14" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
             
             {(formType === "niche_edit" || formType === "both") && (
-              <FormField
-                control={form.control}
-                name="nicheEditPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Niche Edit Price</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 200" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <>
+                <FormField
+                  control={form.control}
+                  name="nicheEditPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Niche Edit Price</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. 200" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="neTat"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>NE TAT (days)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. 7" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
           </div>
           

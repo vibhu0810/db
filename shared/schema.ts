@@ -144,6 +144,8 @@ export const domains = pgTable("domains", {
   type: text("type").notNull(), // guest_post, niche_edit, or both
   guestPostPrice: decimal("guest_post_price"),
   nicheEditPrice: decimal("niche_edit_price"),
+  gpTat: text("gp_tat"), // Guest Post Turnaround Time
+  neTat: text("ne_tat"), // Niche Edit Turnaround Time
   guidelines: text("guidelines"),
   lastMetricsUpdate: timestamp("last_metrics_update"), // New field for tracking Ahrefs updates
 });
@@ -156,40 +158,46 @@ const baseDomainSchema = createInsertSchema(domains).omit({ id: true });
 export const insertDomainSchema = baseDomainSchema.refine((data) => {
   // Validation for Guest Post domains
   if (data.type === "guest_post") {
-    // Must have guest post price
-    if (!data.guestPostPrice || data.guestPostPrice === "") {
+    // Must have guest post price and TAT
+    if (!data.guestPostPrice || data.guestPostPrice === "" ||
+        !data.gpTat || data.gpTat === "") {
       return false;
     }
-    // Must not have niche edit price
-    if (data.nicheEditPrice && data.nicheEditPrice !== "") {
+    // Must not have niche edit price or TAT
+    if ((data.nicheEditPrice && data.nicheEditPrice !== "") ||
+        (data.neTat && data.neTat !== "")) {
       return false;
     }
   }
   
   // Validation for Niche Edit domains
   if (data.type === "niche_edit") {
-    // Must have niche edit price
-    if (!data.nicheEditPrice || data.nicheEditPrice === "") {
+    // Must have niche edit price and TAT
+    if (!data.nicheEditPrice || data.nicheEditPrice === "" ||
+        !data.neTat || data.neTat === "") {
       return false;
     }
-    // Must not have guest post price
-    if (data.guestPostPrice && data.guestPostPrice !== "") {
+    // Must not have guest post price or TAT
+    if ((data.guestPostPrice && data.guestPostPrice !== "") ||
+        (data.gpTat && data.gpTat !== "")) {
       return false;
     }
   }
   
   // Validation for Both type domains
   if (data.type === "both") {
-    // Must have both prices
+    // Must have both prices and TATs
     if (!data.guestPostPrice || data.guestPostPrice === "" || 
-        !data.nicheEditPrice || data.nicheEditPrice === "") {
+        !data.nicheEditPrice || data.nicheEditPrice === "" ||
+        !data.gpTat || data.gpTat === "" ||
+        !data.neTat || data.neTat === "") {
       return false;
     }
   }
   
   return true;
 }, {
-  message: "Domain prices must match the selected type. Guest Post domains should only have GP Price, Niche Edit domains should only have NE Price, and Both type domains need both prices."
+  message: "Domain fields must match the selected type. Guest Post domains need GP Price and TAT, Niche Edit domains need NE Price and TAT, and Both types need all fields."
 });
 
 // Types

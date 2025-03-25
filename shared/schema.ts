@@ -11,8 +11,8 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   emailVerified: boolean("email_verified").notNull().default(false),
   verificationToken: text("verification_token"),
-  passwordResetToken: text("password_reset_token"),
-  passwordResetExpires: timestamp("password_reset_expires"),
+  password_reset_token: text("password_reset_token"),
+  password_reset_expires: timestamp("password_reset_expires"),
   companyName: text("company_name").notNull(),
   country: text("country").notNull(),
   billingAddress: text("billing_address").notNull(),
@@ -50,8 +50,8 @@ export const updateProfileSchema = createInsertSchema(users)
     billingAddress: true, // Remove billing address field from profile updates
     emailVerified: true,
     verificationToken: true,
-    passwordResetToken: true,
-    passwordResetExpires: true
+    password_reset_token: true,
+    password_reset_expires: true
   })
   .extend({
     bio: z.string().min(20, "Bio must be at least 20 characters long").max(2000, "Bio must not exceed 2000 characters"),

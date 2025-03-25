@@ -2572,10 +2572,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find user with this reset token that hasn't expired
       const now = new Date();
       const users = await storage.getUsers();
+      console.log("Checking for token among users:", users.map(u => ({
+        id: u.id, 
+        username: u.username,
+        token_match: u.password_reset_token === token,
+        has_expiry: Boolean(u.password_reset_expires),
+        is_valid: u.password_reset_expires ? new Date(u.password_reset_expires) > now : false
+      })));
+      
       const user = users.find(
-        u => u.passwordResetToken === token && 
-             u.passwordResetExpires && 
-             new Date(u.passwordResetExpires) > now
+        u => u.password_reset_token === token && 
+             u.password_reset_expires && 
+             new Date(u.password_reset_expires) > now
       );
       
       console.log("Token validation result:", user ? "Valid token" : "Invalid token");
@@ -2592,8 +2600,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the user with the new password and clear the reset token
       await storage.updateUser(user.id, {
         password: hashedPassword,
-        passwordResetToken: null,
-        passwordResetExpires: null
+        password_reset_token: null,
+        password_reset_expires: null
       });
       
       console.log("Password reset successful for user:", user.username);

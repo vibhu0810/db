@@ -60,18 +60,23 @@ export function Sidebar() {
       )}
     >
       <div className="h-16 border-b flex items-center justify-center px-4">
-        {user?.companyLogo ? (
+        {user?.profilePicture ? (
           <div className="flex items-center w-full">
             <img 
-              src={user.companyLogo} 
-              alt={user.companyName || "Company Logo"} 
-              className="h-10 w-10 object-contain rounded" 
+              src={user.profilePicture} 
+              alt={user.firstName || "Profile"} 
+              className="h-10 w-10 object-cover rounded-full border-2 border-primary" 
             />
             <span className={cn(
               "ml-2 text-lg font-semibold truncate transition-opacity duration-300",
               expanded ? "opacity-100 inline" : "hidden"
             )}>
-              {isAdmin ? "Admin" : user.companyName}
+              {user.firstName} {user.lastName}
+              {isAdmin && (
+                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
+                  Admin
+                </span>
+              )}
             </span>
           </div>
         ) : (

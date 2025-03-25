@@ -11,7 +11,7 @@ import { UserRating } from "@/components/ui/user-rating";
 
 // Internal component to access the sidebar context
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { user, logoutMutation } = useAuth();
+  const { user, logoutMutation, isAdmin } = useAuth();
   const { toggle, expanded } = useSidebar();
   const isMobile = useIsMobile();
 
@@ -45,7 +45,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-2">
               <div className="text-sm font-medium">
-                Digital Gratified 🤝 {user?.companyName || user?.username}
+                {isAdmin 
+                  ? `${user?.companyName || user?.username}`
+                  : `${user?.companyName ? 'Digital Gratified 🤝 ' + user.companyName : user?.username}`}
               </div>
               <Button
                 variant="ghost"

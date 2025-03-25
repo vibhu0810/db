@@ -98,18 +98,18 @@ export default function DomainsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
-  // Column width states
+  // Column width states - optimized for better screen fit
   const [columnWidths, setColumnWidths] = useState({
-    website: 200,
-    dr: 80,
-    traffic: 100,
-    type: 150,
-    guestPostPrice: 120,
-    nicheEditPrice: 120,
-    guestPostTat: 120,
-    nicheEditTat: 120,
-    guidelines: 200,
-    action: 100,
+    website: 160,
+    dr: 60,
+    traffic: 80,
+    type: 100,
+    guestPostPrice: 90,
+    nicheEditPrice: 90,
+    guestPostTat: 100,
+    nicheEditTat: 100,
+    guidelines: 150,
+    action: 70,
   });
 
   const { data: domains = [], isLoading } = useQuery({
@@ -158,11 +158,17 @@ export default function DomainsPage() {
       table {
         width: 100%;
         table-layout: fixed;
+        font-size: 0.95rem;
       }
       
       th {
         position: relative;
         overflow: visible;
+        padding: 0.5rem 0.75rem !important;
+      }
+      
+      td {
+        padding: 0.5rem 0.75rem !important;
       }
       
       .react-resizable {
@@ -197,6 +203,13 @@ export default function DomainsPage() {
       }
       
       .truncate-cell {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      /* Optimize cell display */
+      table td, table th {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -384,8 +397,8 @@ export default function DomainsPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border overflow-x-auto">
-        <Table>
+      <div className="rounded-lg border overflow-x-auto max-w-[1000px] mx-auto">
+        <Table className="w-full">
           <TableHeader>
             <TableRow>
               <TableHead style={{ width: columnWidths.website }}>

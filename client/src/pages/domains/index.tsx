@@ -103,7 +103,7 @@ export default function DomainsPage() {
     website: 200,
     dr: 80,
     traffic: 100,
-    type: 120,
+    type: 90,
     guestPostPrice: 110,
     nicheEditPrice: 110,
     guestPostTat: 120,

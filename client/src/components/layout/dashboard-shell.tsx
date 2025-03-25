@@ -44,11 +44,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             <UserRating />
             <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-2">
-              <Link href="/profile">
-                <Button variant="ghost" className="text-sm">
-                  {user?.companyName || user?.username}
-                </Button>
-              </Link>
+              <div className="text-sm font-medium">
+                Digital Gratified 🤝 {user?.companyName || user?.username}
+              </div>
               <Button
                 variant="ghost"
                 onClick={() => logoutMutation.mutate()}

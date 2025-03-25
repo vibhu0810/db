@@ -155,14 +155,15 @@ export default function AuthPage() {
             </Button>
             
             <div className="mt-4 text-center">
-              <Button 
-                type="button" 
-                variant="link" 
-                className="text-sm text-primary hover:text-primary/80"
-                onClick={() => window.location.href = '/forgot-password'}
-              >
-                Forgot password?
-              </Button>
+              <a href="/forgot-password">
+                <Button 
+                  type="button" 
+                  variant="link" 
+                  className="text-sm text-primary hover:text-primary/80"
+                >
+                  Forgot password?
+                </Button>
+              </a>
             </div>
           </form>
 

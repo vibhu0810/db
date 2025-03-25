@@ -2592,9 +2592,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true, 
         message: "Password has been reset successfully. You can now log in with your new password."
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error resetting password:", error);
-      if (error.name === 'ZodError') {
+      if (error?.name === 'ZodError') {
         return res.status(400).json({ error: "Invalid input data" });
       }
       res.status(500).json({ error: "Failed to reset password" });
@@ -2644,7 +2644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token: verificationToken,
         link: verificationLink
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating email:", error);
       res.status(500).json({ error: "Failed to update email" });
     }
@@ -2677,7 +2677,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true, 
         message: "Email verified successfully."
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error verifying email:", error);
       res.status(500).json({ error: "Failed to verify email" });
     }

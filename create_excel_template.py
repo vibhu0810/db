@@ -1,5 +1,10 @@
 import pandas as pd
 from openpyxl.styles import Font, PatternFill
+import os
+
+# Create templates directory if it doesn't exist
+templates_dir = "client/public/templates"
+os.makedirs(templates_dir, exist_ok=True)
 
 # Define the template data with strict adherence to domain type rules
 data = {
@@ -14,11 +19,12 @@ data = {
     "Guidelines": ["Please provide well-researched content", "No branded anchor text", "Must be related to tech industry"]
 }
 
-# Create DataFrame and save to Excel
+# Create DataFrame
 df = pd.DataFrame(data)
 
 # Save to Excel with formatting
-with pd.ExcelWriter("client/public/templates/domains-template.xlsx", engine="openpyxl") as writer:
+excel_path = f"{templates_dir}/domains-template.xlsx"
+with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
     df.to_excel(writer, sheet_name="Domains Template", index=False)
     
     # Get the workbook and the worksheet
@@ -35,4 +41,9 @@ with pd.ExcelWriter("client/public/templates/domains-template.xlsx", engine="ope
         column_width = max(len(col) + 2, df[col].astype(str).map(len).max() + 2)
         worksheet.column_dimensions[chr(65 + idx)].width = column_width
 
-print("Excel template created successfully at client/public/templates/domains-template.xlsx")
+print(f"Excel template created successfully at {excel_path}")
+
+# Save to CSV
+csv_path = f"{templates_dir}/domains-template.csv"
+df.to_csv(csv_path, index=False)
+print(f"CSV template created successfully at {csv_path}")

@@ -1,4 +1,4 @@
 Website URL,Domain Rating,Website Traffic,Type,Guest Post Price,Niche Edit Price,GP TAT (in days),NE TAT (in days),Guidelines
-example.com,75,25000,guest_post,350,,,10,,Please provide well-researched content
-blog-example.com,68,18000,niche_edit,,280,,7,No branded anchor text
-multi-example.com,72,32000,both,400,320,14,7,Must be related to tech industry
+example.com,75,25000,guest_post,350.0,,10.0,,Please provide well-researched content
+blog-example.com,68,18000,niche_edit,,280.0,,7.0,No branded anchor text
+multi-example.com,72,32000,both,400.0,320.0,14.0,7.0,Must be related to tech industry

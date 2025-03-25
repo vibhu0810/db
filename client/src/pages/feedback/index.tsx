@@ -610,9 +610,14 @@ function UserFeedbackTab() {
       <div className="mb-6 mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-muted-foreground/10">
         <Heart className="w-10 h-10 text-muted-foreground/50" />
       </div>
-      <h3 className="text-xl font-medium mb-2">No Feedback Selected</h3>
+      <h3 className="text-xl font-medium mb-2">Welcome to Feedback</h3>
       <p className="text-muted-foreground">
-        Select a feedback period from the sidebar or complete your pending feedback request.
+        {pendingFeedback ? 
+          "You have a pending feedback request. Click it in the sidebar to complete it." :
+          completedFeedback.length > 0 ? 
+            "View your submitted feedback by selecting an entry from the sidebar." :
+            "You don't have any feedback requests yet. Feedback requests are generated monthly for clients with completed orders."
+        }
       </p>
     </motion.div>
   );
@@ -620,9 +625,8 @@ function UserFeedbackTab() {
   useEffect(() => {
     if (pendingFeedback) {
       setSelectedFeedback(pendingFeedback);
-    } else if (completedFeedback.length > 0 && !selectedFeedback) {
-      setSelectedFeedback(completedFeedback[0]);
-    }
+    } 
+    // Don't automatically select completed feedback because we don't want to show it by default
   }, [feedbackData, pendingFeedback]);
   
   const handleFeedbackComplete = () => {

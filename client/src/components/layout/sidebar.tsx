@@ -59,13 +59,13 @@ export function Sidebar() {
         expanded ? "w-64" : "w-16 group"
       )}
     >
-      <div className="h-16 border-b flex items-center justify-center px-4">
+      <div className="h-20 border-b flex items-center justify-center px-4">
         {user?.profilePicture ? (
           <div className="flex items-center w-full">
             <img 
               src={user.profilePicture} 
               alt={user.firstName || "Profile"} 
-              className="h-10 w-10 object-cover rounded-full border-2 border-primary" 
+              className="h-14 w-14 object-cover rounded-full border-4 border-primary aspect-square" 
             />
             <span className={cn(
               "ml-2 text-lg font-semibold truncate transition-opacity duration-300",

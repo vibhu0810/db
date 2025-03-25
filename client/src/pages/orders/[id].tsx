@@ -589,8 +589,8 @@ export default function OrderDetailsPage() {
               </div>
             )}
             
-            {/* Add Edit Order and Cancel Order buttons if order is In Progress and user owns the order */}
-            {order.status === "In Progress" && order.userId === user?.id && (
+            {/* Add Edit Order and Cancel Order buttons if order is In Progress and user owns the order OR user is admin */}
+            {order.status === "In Progress" && (isAdmin || order.userId === user?.id) && (
               <div className="mt-4 flex space-x-2">
                 {/* Edit Order Button */}
                 {isEditing ? (
@@ -753,16 +753,17 @@ export default function OrderDetailsPage() {
         </Card>
       </div>
       
-      {/* Support Ticket Section */}
-      <div className="grid gap-6 md:grid-cols-1">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Support</CardTitle>
-            <LifeBuoy className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {supportTicket && supportTicket.id && supportTicket.status !== 'closed' ? (
+      {/* Support Ticket Section - Only shown for regular users, not admins */}
+      {!isAdmin && (
+        <div className="grid gap-6 md:grid-cols-1">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Support</CardTitle>
+              <LifeBuoy className="h-5 w-5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {supportTicket && supportTicket.id && supportTicket.status !== 'closed' ? (
                 <>
                   <div className="p-4 rounded-md bg-muted">
                     <div className="flex justify-between items-start mb-2">
@@ -950,6 +951,7 @@ export default function OrderDetailsPage() {
           </CardContent>
         </Card>
       </div>
+      )}
     </div>
   );
 }

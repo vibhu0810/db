@@ -152,6 +152,7 @@ function getNicheEditTAT(domain: Domain): string {
 // Define schema for domain form
 const domainFormSchema = z.object({
   websiteUrl: z.string().min(3, "Website URL is required"),
+  websiteName: z.string().optional().default(""),
   domainRating: z.string().optional(),
   websiteTraffic: z.coerce.number().min(0, "Traffic must be a positive number").optional(),
   niche: z.string().optional().default(""),
@@ -740,10 +741,11 @@ export default function DomainsPage() {
         const data = await res.json();
         // Update form with detected info
         form.setValue("niche", data.niche);
+        form.setValue("websiteName", data.websiteName);
         
         toast({
           title: "Domain Info Detected",
-          description: `Found niche: ${data.niche}`,
+          description: `Found website: ${data.websiteName}, niche: ${data.niche}`,
         });
       } catch (error) {
         console.error("Error detecting domain info:", error);
@@ -800,7 +802,24 @@ export default function DomainsPage() {
                   </Button>
                 </div>
                 <FormDescription>
-                  The domain name without http/https. Click "Detect" to auto-fill niche.
+                  The domain name without http/https. Click "Detect" to auto-fill website name and niche.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="websiteName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Website Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Example Company" {...field} />
+                </FormControl>
+                <FormDescription>
+                  The name of the website or company that owns the domain.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

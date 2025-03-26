@@ -69,7 +69,7 @@ interface Domain {
 }
 
 export default function UserDomainsPage() {
-  const [params] = useParams();
+  const params = useParams();
   const [, navigate] = useLocation();
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();

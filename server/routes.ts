@@ -1404,18 +1404,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let domains;
       if (req.user.is_admin) {
-        // Admin users see all domains
-        domains = await storage.getDomains();
+        // Admin users see all global domains
+        domains = await storage.getGlobalDomains();
       } else {
-        // Regular users only see their own domains and global domains
+        // Regular users see their own domains and global domains
         domains = await storage.getUserDomains(req.user.id);
       }
       
-      console.log("Retrieved domains:", domains);
+      console.log("Retrieved domains:", domains.length);
       res.json(domains);
     } catch (error) {
       console.error("Error fetching domains:", error);
       res.status(500).json({ error: "Failed to fetch domains" });
+    }
+  });
+  
+  // Admin route to get all domains (global and user-specific)
+  app.get("/api/domains/all", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      if (!req.user.is_admin) return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      
+      console.log("Admin fetching all domains...");
+      const domains = await storage.getDomains();
+      
+      // Get all users to join with domain data
+      const users = await storage.getUsers();
+      
+      // Add user info to domains
+      const domainsWithUserInfo = domains.map(domain => {
+        if (domain.userId) {
+          const user = users.find(u => u.id === domain.userId);
+          return {
+            ...domain,
+            user: user ? {
+              id: user.id,
+              username: user.username,
+              companyName: user.companyName || user.username
+            } : null
+          };
+        }
+        return domain;
+      });
+      
+      console.log("Retrieved all domains:", domains.length);
+      res.json(domainsWithUserInfo);
+    } catch (error) {
+      console.error("Error fetching all domains:", error);
+      res.status(500).json({ error: "Failed to fetch all domains" });
+    }
+  });
+  
+  // Admin route to get user-specific domains
+  app.get("/api/users/:userId/domains", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      if (!req.user.is_admin) return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      console.log(`Admin fetching domains for user ${userId}...`);
+      
+      // Get both user-specific domains and global domains
+      const domains = await storage.getUserDomains(userId);
+      console.log(`Retrieved domains for user ${userId}:`, domains.length);
+      res.json(domains);
+    } catch (error) {
+      console.error("Error fetching user domains:", error);
+      res.status(500).json({ error: "Failed to fetch user domains" });
+    }
+  });
+  
+  // Admin route to add domain to user's inventory
+  app.post("/api/users/:userId/domains", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      if (!req.user.is_admin) return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      console.log(`Admin creating domain for user ${userId} with data:`, req.body);
+      
+      try {
+        // Parse and validate the domain data
+        const domainData = insertDomainSchema.parse(req.body);
+        
+        // Create domain in user's inventory
+        const domain = await storage.createUserDomain(userId, domainData);
+        console.log(`Admin created domain for user ${userId}:`, domain);
+        
+        res.status(201).json(domain);
+      } catch (parseError) {
+        console.error("Domain validation error:", parseError);
+        if (parseError instanceof z.ZodError) {
+          return res.status(400).json({ 
+            error: "Validation failed", 
+            details: parseError.errors 
+          });
+        }
+        throw parseError; // Re-throw if not a Zod error
+      }
+    } catch (error) {
+      console.error("Error creating user domain:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ 
+        error: "Failed to create user domain",
+        message: errorMessage
+      });
     }
   });
 

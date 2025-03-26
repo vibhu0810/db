@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import { db } from "../server/db";
 import { domains } from "../shared/schema";
 
@@ -12,7 +12,7 @@ async function migrateDomains() {
     
     // First check how many domains need updating
     const domainsToUpdate = await db.select().from(domains).where(eq(domains.isGlobal, false));
-    const domainsWithoutFlag = await db.select().from(domains).where(eq(domains.isGlobal, null));
+    const domainsWithoutFlag = await db.select().from(domains).where(isNull(domains.isGlobal));
     
     console.log(`Found ${domainsToUpdate.length} domains with isGlobal=false`);
     console.log(`Found ${domainsWithoutFlag.length} domains with isGlobal=null`);
@@ -31,7 +31,7 @@ async function migrateDomains() {
     if (domainsWithoutFlag.length > 0) {
       const updateNullResult = await db.update(domains)
         .set({ isGlobal: true })
-        .where(eq(domains.isGlobal, null))
+        .where(isNull(domains.isGlobal))
         .returning();
       
       console.log(`Successfully updated ${updateNullResult.length} domains from isGlobal=null to isGlobal=true`);

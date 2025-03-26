@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import express from "express";
+import { z } from "zod";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSEOJoke, generateWelcomeMessage, determineDomainInfo } from "./openai";
@@ -1317,12 +1318,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Delete the order (this will also delete associated comments and notifications)
       await storage.deleteOrder(orderId);
 
-      res.sendStatus(200);
+      // Return a proper JSON response instead of just status code
+      res.status(200).json({ success: true, message: "Order deleted successfully" });
     } catch (error) {
       console.error("Error deleting order:", error);
       res.status(500).json({
-        error: error instanceof Error ? error.message : "Failed to delete order",
-        details: error instanceof Error ? error.stack : undefined
+        error: "Failed to delete order",
+        message: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
@@ -1536,11 +1538,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             websiteName: domainData.websiteName || domainData.websiteUrl,
             websiteUrl: domainData.websiteUrl,
             domainRating: domainData.domainRating || '',
+            domainAuthority: domainData.domainAuthority || '',
             websiteTraffic: domainData.websiteTraffic || 0, 
             niche: domainData.niche || '',
             type,
             guestPostPrice,
             nicheEditPrice,
+            gpTat: type === 'guest_post' || type === 'both' ? (domainData.gpTat || '7') : null,
+            neTat: type === 'niche_edit' || type === 'both' ? (domainData.neTat || '5') : null,
             guidelines: domainData.guidelines || null
           });
           

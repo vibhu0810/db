@@ -755,8 +755,16 @@ export default function DomainsPage() {
         console.log("Detected domain info:", data);
         
         // Update form with detected info
-        form.setValue("niche", data.niche);
-        form.setValue("websiteName", data.websiteName);
+        if (data.websiteName) {
+          form.setValue("websiteName", data.websiteName);
+        }
+        
+        if (data.niche) {
+          form.setValue("niche", data.niche);
+        }
+        
+        // Explicitly trigger re-render by updating the form
+        form.trigger(["websiteName", "niche"]);
         
         toast({
           title: "Domain Info Detected",

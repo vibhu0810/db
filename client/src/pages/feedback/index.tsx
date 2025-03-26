@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { HeartIcon, Heart, Plus, PlusCircle, Edit, Check, X, Toggle } from "lucide-react";
+import { HeartIcon, Heart, Plus, PlusCircle, Edit, Check, X } from "lucide-react";
 
 // Interface for feedback questions
 interface FeedbackQuestion {
@@ -893,22 +893,37 @@ function AdminFeedbackTab() {
   });
   
   // Generate monthly feedback mutation
-  const generateMutation = useMutation<{ count: number }>({
+  const generateMutation = useMutation({
     mutationFn: async () => {
+      console.log("Generating monthly feedback requests...");
       const response = await apiRequest("/api/feedback/generate", {
         method: "POST",
       });
+      
+      // Log response for debugging
+      console.log("Generate response status:", response.status);
       const data = await response.json();
+      console.log("Generate response data:", data);
       return data;
     },
     onSuccess: (data) => {
+      console.log("Generate mutation success:", data);
       toast({
         title: "Feedback requests generated",
         description: `Successfully generated ${data.count} feedback requests`,
       });
+      
+      // Invalidate both feedback endpoints to ensure UI refreshes
       queryClient.invalidateQueries({ queryKey: ['/api/feedback/all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
+      
+      // Force refetch the feedback data
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['/api/feedback/all'] });
+      }, 300);
     },
     onError: (error: Error) => {
+      console.error("Generate mutation error:", error);
       toast({
         title: "Error generating feedback requests",
         description: error.message,

@@ -705,6 +705,7 @@ export default function DomainsPage() {
       resolver: zodResolver(domainFormSchema),
       defaultValues: domain ? {
         websiteUrl: domain.websiteUrl,
+        websiteName: domain.websiteName || "",
         domainRating: domain.domainRating || "",
         websiteTraffic: domain.websiteTraffic || 0,
         niche: domain.niche || "",
@@ -716,6 +717,7 @@ export default function DomainsPage() {
         guidelines: domain.guidelines || "",
       } : {
         websiteUrl: "",
+        websiteName: "",
         domainRating: "",
         websiteTraffic: 0,
         niche: "",
@@ -734,6 +736,11 @@ export default function DomainsPage() {
     // Auto-detect domain info when URL changes and isn't empty
     const detectDomainInfo = async () => {
       if (!websiteUrl || websiteUrl.trim() === "") {
+        toast({
+          title: "No URL provided",
+          description: "Please enter a website URL first",
+          variant: "destructive"
+        });
         return;
       }
       
@@ -745,6 +752,8 @@ export default function DomainsPage() {
         }
         
         const data = await res.json();
+        console.log("Detected domain info:", data);
+        
         // Update form with detected info
         form.setValue("niche", data.niche);
         form.setValue("websiteName", data.websiteName);

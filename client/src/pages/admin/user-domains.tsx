@@ -526,11 +526,8 @@ export default function UserDomainsPage() {
               <Card className="mb-6">
                 <CardHeader>
                   <CardTitle>
-                    User: {user?.companyName || user?.username}
+                    {user?.companyName || user?.username}
                   </CardTitle>
-                  <CardDescription>
-                    Email: {user?.email}
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex justify-between mb-4">

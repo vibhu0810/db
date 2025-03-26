@@ -340,12 +340,12 @@ export default function Orders() {
     textEdit: 200,
     notes: 200,
     status: 150,
-    id: 100,
+    id: 60,        // Decreased from 100
     price: 100,
     date: 120,
     comments: 150,
-    actions: 150,
-    user: 150,
+    actions: 70,    // Decreased from 150
+    user: 100,      // Decreased from 150
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);

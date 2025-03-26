@@ -38,8 +38,26 @@ export default function UsersPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const { data: users = [], isLoading } = useQuery<UserWithStats[]>({
-    queryKey: ['/api/users/stats'],
-    queryFn: () => apiRequest("GET", "/api/users/stats").then(res => res.json()),
+    queryKey: ['/api/users'],
+    queryFn: async () => {
+      // First get basic user data
+      const usersResponse = await apiRequest("GET", "/api/users");
+      const usersData = await usersResponse.json();
+      
+      console.log("Users data:", usersData);
+      
+      // Transform the data to include order stats
+      // Since we don't have the /api/users/stats endpoint, we'll provide default values for orders
+      return usersData.map((user: any) => ({
+        ...user,
+        orders: {
+          total: user.orders?.total || 0,
+          completed: user.orders?.completed || 0,
+          pending: user.orders?.pending || 0,
+          totalSpent: user.orders?.totalSpent || 0
+        }
+      }));
+    },
   });
 
   const toggleUserExpanded = (userId: number) => {

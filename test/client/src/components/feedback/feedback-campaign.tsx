@@ -5,7 +5,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Switch } from '../../components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../components/ui/card';
 import { useToast } from '../../hooks/use-toast';
-import { Loader2, Plus, XCircle, ArrowUpDown } from 'lucide-react';
+import { Loader2, Plus, XCircle, ArrowUpDown, GripVertical } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
@@ -703,7 +703,7 @@ const FeedbackCampaignManager: React.FC<FeedbackCampaignProps> = ({
                             className="p-3 border rounded-lg flex items-center gap-2 group hover:bg-muted/30"
                           >
                             <div className="flex-none">
-                              <DragHandleDots2Icon className="h-5 w-5 text-muted-foreground" />
+                              <GripVertical className="h-5 w-5 text-muted-foreground" />
                             </div>
                             <div className="flex-grow">
                               <p className="text-sm">{question.question}</p>

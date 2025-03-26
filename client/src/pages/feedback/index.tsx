@@ -155,7 +155,7 @@ function HeartRatingDisplay({ rating }: { rating: number }) {
 
 function FeedbackDisplay({ feedback, showHistory = false }: { feedback: Feedback, showHistory?: boolean }) {
   // Fetch feedback questions from API
-  const { data: feedbackQuestions = [], isLoading: isQuestionsLoading } = useQuery({
+  const { data: feedbackQuestions = [], isLoading: isQuestionsLoading } = useQuery<FeedbackQuestion[]>({
     queryKey: ['/api/feedback/questions'],
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -264,7 +264,7 @@ function FeedbackForm({ feedback, onComplete }: { feedback: Feedback; onComplete
   const [activeSection, setActiveSection] = useState(0);
   
   // Fetch feedback questions from API
-  const { data: feedbackQuestions = [], isLoading: isQuestionsLoading } = useQuery({
+  const { data: feedbackQuestions = [], isLoading: isQuestionsLoading } = useQuery<FeedbackQuestion[]>({
     queryKey: ['/api/feedback/questions'],
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

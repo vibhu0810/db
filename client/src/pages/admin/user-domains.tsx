@@ -391,19 +391,21 @@ export default function UserDomainsPage() {
     // Apply sorting
     filtered.sort((a: Domain, b: Domain) => {
       const getValue = (domain: Domain, field: string) => {
+        if (!domain) return "";
+        
         switch (field) {
           case "websiteName":
-            return domain.websiteName.toLowerCase();
+            return domain.websiteName ? domain.websiteName.toLowerCase() : "";
           case "websiteUrl":
-            return domain.websiteUrl.toLowerCase();
+            return domain.websiteUrl ? domain.websiteUrl.toLowerCase() : "";
           case "domainRating":
             return parseFloat(domain.domainRating || "0");
           case "websiteTraffic":
             return domain.websiteTraffic || 0;
           case "niche":
-            return domain.niche.toLowerCase();
+            return domain.niche ? domain.niche.toLowerCase() : "";
           case "type":
-            return domain.type;
+            return domain.type || "";
           case "guestPostPrice":
             return parseFloat(domain.guestPostPrice || "0");
           case "nicheEditPrice":

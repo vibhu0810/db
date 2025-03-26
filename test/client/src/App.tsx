@@ -1,83 +1,35 @@
 import React from 'react';
 import { Route, Switch } from 'wouter';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '../../../client/src/lib/queryClient';
-import { Toaster } from '../../../client/src/components/ui/toaster';
+import { Toaster } from 'react-hot-toast';
 
-// Auth Pages
-import LoginPage from './pages/login';
-import RegisterPage from './pages/register';
+// Test environment pages
+import TestDashboard from './pages/dashboard';
+import TestLogin from './pages/login';
+import TestRegister from './pages/register';
+import TestNotFound from './pages/not-found';
 
-// Dashboard Pages
-import UserDashboard from './pages/dashboard';
-import AdminDashboard from './pages/admin/dashboard';
-import ManagerDashboard from './pages/manager/dashboard';
-import InventoryDashboard from './pages/inventory/dashboard';
-
-// Admin Features
-import FeedbackDashboard from './pages/admin/feedback';
-
-// Protected route wrapper
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  // This would normally check authentication status
-  // For now, we'll assume the user is authenticated in the test environment
-  return <>{children}</>;
-};
-
-function App() {
+const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
+    <div className="test-environment">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            borderRadius: '10px',
+            background: '#333',
+            color: '#fff',
+          },
+        }}
+      />
       <Switch>
-        {/* Auth Routes */}
-        <Route path="/test/login">
-          <LoginPage />
-        </Route>
-        <Route path="/test/register">
-          <RegisterPage />
-        </Route>
-        
-        {/* Admin Routes */}
-        <Route path="/test/admin/dashboard">
-          <ProtectedRoute>
-            <AdminDashboard />
-          </ProtectedRoute>
-        </Route>
-        <Route path="/test/admin/feedback">
-          <ProtectedRoute>
-            <FeedbackDashboard />
-          </ProtectedRoute>
-        </Route>
-        
-        {/* User Manager Routes */}
-        <Route path="/test/manager/dashboard">
-          <ProtectedRoute>
-            <ManagerDashboard />
-          </ProtectedRoute>
-        </Route>
-        
-        {/* Inventory Manager Routes */}
-        <Route path="/test/inventory/dashboard">
-          <ProtectedRoute>
-            <InventoryDashboard />
-          </ProtectedRoute>
-        </Route>
-        
-        {/* Regular User Routes */}
-        <Route path="/test/dashboard">
-          <ProtectedRoute>
-            <UserDashboard />
-          </ProtectedRoute>
-        </Route>
-        
-        {/* Default Route - Redirect to login */}
-        <Route path="/test">
-          <LoginPage />
-        </Route>
+        <Route path="/test" component={TestDashboard} />
+        <Route path="/test/login" component={TestLogin} />
+        <Route path="/test/register" component={TestRegister} />
+        <Route component={TestNotFound} />
       </Switch>
-      
-      <Toaster />
-    </QueryClientProvider>
+    </div>
   );
-}
+};
 
 export default App;

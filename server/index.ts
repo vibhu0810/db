@@ -2,7 +2,9 @@ import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { setupTestVite, serveTestStatic, log as testLog } from "./test-vite";
 import { startMetricsUpdates } from "./services/domain-metrics";
+import { initializeTestEnvironment } from "../test/server/index";
 
 const app = express();
 app.use(express.json());
@@ -26,6 +28,15 @@ app.use((req, res, next) => {
     log("Initializing server...");
     const server = await registerRoutes(app);
 
+    // Initialize test environment
+    try {
+      await initializeTestEnvironment();
+      testLog("Test environment initialized");
+    } catch (error) {
+      console.error("Failed to initialize test environment:", error);
+      // Continue server startup even if test environment fails
+    }
+
     // Start domain metrics update service
     try {
       startMetricsUpdates();
@@ -46,8 +57,10 @@ app.use((req, res, next) => {
     // Setup Vite for development or serve static files for production
     if (app.get("env") === "development") {
       await setupVite(app, server);
+      await setupTestVite(app, server);
     } else {
       serveStatic(app);
+      serveTestStatic(app);
     }
 
     // Start server
@@ -57,6 +70,7 @@ app.use((req, res, next) => {
       host: "0.0.0.0",
     }, () => {
       log(`Server running on port ${port}`);
+      testLog(`Test environment available at http://localhost:${port}/test/`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);

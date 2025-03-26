@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { HeartIcon, Heart, Plus, PlusCircle } from "lucide-react";
+import { HeartIcon, Heart, Plus, PlusCircle, Edit, Check, X, Toggle } from "lucide-react";
 
 // Interface for feedback questions
 interface FeedbackQuestion {

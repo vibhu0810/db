@@ -40,6 +40,11 @@ export interface IStorage {
   createDomain(domain: InsertDomain): Promise<Domain>;
   updateDomain(id: number, domain: Partial<Domain>): Promise<Domain>;
   deleteDomain(id: number): Promise<void>;
+  
+  // User-specific domain operations
+  getUserDomains(userId: number): Promise<Domain[]>; 
+  createUserDomain(userId: number, domain: InsertDomain): Promise<Domain>;
+  getGlobalDomains(): Promise<Domain[]>;
 
   // Order operations
   getOrder(id: number): Promise<Order | undefined>;
@@ -394,6 +399,7 @@ export class DatabaseStorage implements IStorage {
 
   // Domain operations
   async getDomains(): Promise<Domain[]> {
+    // For compatibility: get all domains (both global and user-specific)
     return await db.select().from(domains);
   }
 
@@ -403,7 +409,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDomain(domainData: InsertDomain): Promise<Domain> {
-    const [domain] = await db.insert(domains).values(domainData).returning();
+    // Set the isGlobal flag to true for backward compatibility
+    const dataWithGlobalFlag = {
+      ...domainData,
+      isGlobal: true
+    };
+    const [domain] = await db.insert(domains).values(dataWithGlobalFlag).returning();
     return domain;
   }
 
@@ -441,6 +452,36 @@ export class DatabaseStorage implements IStorage {
       console.error('Error in deleteDomain:', error);
       throw error;
     }
+  }
+
+  // User-specific domain operations
+  async getUserDomains(userId: number): Promise<Domain[]> {
+    return await db.select()
+      .from(domains)
+      .where(
+        or(
+          // Get domains that belong to this user
+          eq(domains.userId, userId),
+          // Also include global domains
+          eq(domains.isGlobal, true)
+        )
+      );
+  }
+  
+  async createUserDomain(userId: number, domainData: InsertDomain): Promise<Domain> {
+    const dataWithUserInfo = {
+      ...domainData,
+      isGlobal: false,
+      userId: userId
+    };
+    const [domain] = await db.insert(domains).values(dataWithUserInfo).returning();
+    return domain;
+  }
+  
+  async getGlobalDomains(): Promise<Domain[]> {
+    return await db.select()
+      .from(domains)
+      .where(eq(domains.isGlobal, true));
   }
 
   // Order operations

@@ -148,6 +148,8 @@ export const domains = pgTable("domains", {
   neTat: text("ne_tat"), // Niche Edit Turnaround Time
   guidelines: text("guidelines"),
   lastMetricsUpdate: timestamp("last_metrics_update"), // New field for tracking Ahrefs updates
+  isGlobal: boolean("is_global").default(true).notNull(), // Indicates if this is a global domain (admin) or user-specific
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }), // For user-specific domains
 });
 
 // Create insert schema for domains

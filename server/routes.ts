@@ -1401,7 +1401,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       console.log("Fetching domains...");
-      const domains = await storage.getDomains();
+      
+      let domains;
+      if (req.user.is_admin) {
+        // Admin users see all domains
+        domains = await storage.getDomains();
+      } else {
+        // Regular users only see their own domains and global domains
+        domains = await storage.getUserDomains(req.user.id);
+      }
+      
       console.log("Retrieved domains:", domains);
       res.json(domains);
     } catch (error) {
@@ -1432,11 +1441,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Add domain creation route (admin only)
+  // Add domain creation route (admin creates global domains, users create their own)
   app.post("/api/domains", async (req, res) => {
     try {
-      if (!req.user?.is_admin) {
-        return res.status(403).json({ error: "Unauthorized: Admin access required" });
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
       
       console.log("Creating domain with data:", req.body);
@@ -1447,8 +1456,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Parse and validate the domain data
         const domainData = insertDomainSchema.parse(processedData);
-        const domain = await storage.createDomain(domainData);
-        console.log("Created domain:", domain);
+        
+        let domain;
+        if (req.user.is_admin) {
+          // Admin creates a global domain
+          domain = await storage.createDomain(domainData);
+          console.log("Admin created global domain:", domain);
+        } else {
+          // Regular user creates their own domain
+          domain = await storage.createUserDomain(req.user.id, domainData);
+          console.log("User created domain:", domain);
+        }
+        
         res.status(201).json(domain);
       } catch (parseError) {
         console.error("Domain validation error:", parseError);
@@ -1533,7 +1552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error('Domains with both types must have both GP and NE prices');
           }
           
-          // Create the domain with validated data
+          // Create the domain with validated data - imported domains are always global
           await storage.createDomain({
             websiteName: domainData.websiteName || domainData.websiteUrl,
             websiteUrl: domainData.websiteUrl,
@@ -1546,7 +1565,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             nicheEditPrice,
             gpTat: type === 'guest_post' || type === 'both' ? (domainData.gpTat || '7') : null,
             neTat: type === 'niche_edit' || type === 'both' ? (domainData.neTat || '5') : null,
-            guidelines: domainData.guidelines || null
+            guidelines: domainData.guidelines || null,
+            isGlobal: true // Imported domains are always global
           });
           
           successCount++;

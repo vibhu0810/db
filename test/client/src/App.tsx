@@ -14,6 +14,9 @@ import AdminDashboard from './pages/admin/dashboard';
 import ManagerDashboard from './pages/manager/dashboard';
 import InventoryDashboard from './pages/inventory/dashboard';
 
+// Admin Features
+import FeedbackDashboard from './pages/admin/feedback';
+
 // Protected route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   // This would normally check authentication status
@@ -37,6 +40,11 @@ function App() {
         <Route path="/test/admin/dashboard">
           <ProtectedRoute>
             <AdminDashboard />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/test/admin/feedback">
+          <ProtectedRoute>
+            <FeedbackDashboard />
           </ProtectedRoute>
         </Route>
         

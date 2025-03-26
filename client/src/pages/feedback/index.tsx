@@ -874,18 +874,25 @@ function UserFeedbackTab() {
 
 function AdminFeedbackTab() {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<"feedback" | "questions">("feedback");
+  const [newQuestion, setNewQuestion] = useState<string>("");
+  const [editingQuestion, setEditingQuestion] = useState<{id: number, question: string} | null>(null);
   
+  // Fetch feedback data
   const { data: feedbackData = [], isLoading, isError, error } = useQuery<Feedback[]>({
     queryKey: ['/api/feedback/all'],
   });
   
-  console.log("Admin Feedback Tab - received feedback data:", feedbackData);
-  console.log("Admin Feedback Tab - isLoading:", isLoading, "isError:", isError);
+  // Fetch feedback questions
+  const { 
+    data: feedbackQuestions = [], 
+    isLoading: isQuestionsLoading,
+    refetch: refetchQuestions
+  } = useQuery<FeedbackQuestion[]>({
+    queryKey: ['/api/feedback/questions'],
+  });
   
-  if (isError) {
-    console.error("Admin Feedback Tab - Error fetching feedback:", error);
-  }
-  
+  // Generate monthly feedback mutation
   const generateMutation = useMutation<{ count: number }>({
     mutationFn: async () => {
       const response = await apiRequest("/api/feedback/generate", {
@@ -910,7 +917,115 @@ function AdminFeedbackTab() {
     }
   });
   
-  if (isLoading) {
+  // Create new question mutation
+  const createQuestionMutation = useMutation({
+    mutationFn: async (questionText: string) => {
+      const response = await apiRequest('/api/feedback/questions', {
+        method: 'POST',
+        body: JSON.stringify({ question: questionText }),
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Question added",
+        description: "The new question has been added successfully",
+      });
+      setNewQuestion("");
+      queryClient.invalidateQueries({ queryKey: ['/api/feedback/questions'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error adding question",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Update question mutation
+  const updateQuestionMutation = useMutation({
+    mutationFn: async ({ id, question }: { id: number, question: string }) => {
+      const response = await apiRequest(`/api/feedback/questions/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ question }),
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Question updated",
+        description: "The question has been updated successfully",
+      });
+      setEditingQuestion(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/feedback/questions'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error updating question",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Toggle question active status mutation
+  const toggleQuestionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest(`/api/feedback/questions/${id}/toggle`, {
+        method: 'PATCH',
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Status updated",
+        description: "Question status has been toggled successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/feedback/questions'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error updating status",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleCreateQuestion = () => {
+    if (newQuestion.trim().length < 10) {
+      toast({
+        title: "Question too short",
+        description: "The question must be at least 10 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    createQuestionMutation.mutate(newQuestion);
+  };
+  
+  const handleUpdateQuestion = () => {
+    if (!editingQuestion) return;
+    
+    if (editingQuestion.question.trim().length < 10) {
+      toast({
+        title: "Question too short",
+        description: "The question must be at least 10 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    updateQuestionMutation.mutate(editingQuestion);
+  };
+  
+  const handleToggleQuestion = (id: number) => {
+    toggleQuestionMutation.mutate(id);
+  };
+  
+  if (isLoading && activeTab === "feedback") {
     return (
       <div className="space-y-4">
         <Skeleton className="h-12 w-full" />
@@ -919,7 +1034,7 @@ function AdminFeedbackTab() {
     );
   }
   
-  if (isError) {
+  if (isError && activeTab === "feedback") {
     return (
       <Card className="w-full text-center p-8">
         <CardContent>
@@ -939,118 +1054,290 @@ function AdminFeedbackTab() {
   
   const feedbackByUser: Record<string, Feedback[]> = {};
   
-  // Group feedback by user
-  if (feedbackData && feedbackData.length > 0) {
-    console.log("Admin Feedback Tab - grouping feedback by user");
+  // Group feedback by user for the feedback tab
+  if (activeTab === "feedback" && feedbackData && feedbackData.length > 0) {
     feedbackData.forEach((feedback: Feedback) => {
-      console.log("Processing feedback:", feedback);
-      if (!feedback.user) {
-        console.log("Warning: Feedback is missing user data:", feedback);
-      }
       const userKey = feedback.user?.id.toString() || 'unknown';
       if (!feedbackByUser[userKey]) {
         feedbackByUser[userKey] = [];
       }
       feedbackByUser[userKey].push(feedback);
     });
-    console.log("Feedback grouped by user:", feedbackByUser);
-  } else {
-    console.log("Admin Feedback Tab - no feedback data to group");
   }
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Customer Feedback</h2>
-        <Button 
-          onClick={() => generateMutation.mutate()} 
-          disabled={generateMutation.isPending}
-        >
-          {generateMutation.isPending ? "Generating..." : "Generate Monthly Feedback Requests"}
-        </Button>
+      {/* Top navigation tabs */}
+      <div className="border-b">
+        <div className="flex">
+          <Button
+            variant="ghost"
+            className={`relative px-4 py-2 -mb-px text-sm font-medium ${
+              activeTab === "feedback"
+                ? "text-primary border-b-2 border-primary"
+                : "text-muted-foreground"
+            }`}
+            onClick={() => setActiveTab("feedback")}
+          >
+            Customer Feedback
+          </Button>
+          <Button
+            variant="ghost"
+            className={`relative px-4 py-2 -mb-px text-sm font-medium ${
+              activeTab === "questions"
+                ? "text-primary border-b-2 border-primary"
+                : "text-muted-foreground"
+            }`}
+            onClick={() => setActiveTab("questions")}
+          >
+            Manage Questions
+          </Button>
+        </div>
       </div>
       
-      {Object.entries(feedbackByUser).length === 0 ? (
-        <Card className="w-full text-center p-8">
-          <CardContent>
-            <p className="text-muted-foreground my-8">
-              No feedback data available yet. Generate feedback requests for users to start collecting responses.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-8">
-          {Object.entries(feedbackByUser).map(([userId, userFeedback]) => {
-            // Sort feedback by most recent first
-            const sortedFeedback = [...userFeedback].sort((a, b) => 
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            );
-            
-            const user = sortedFeedback[0].user;
-            const completedFeedback = sortedFeedback.filter(f => f.isCompleted);
-            
-            // Calculate average rating across all completed feedback
-            let overallAverage = 0;
-            if (completedFeedback.length > 0) {
-              overallAverage = completedFeedback.reduce((acc, curr) => 
-                acc + parseFloat(curr.averageRating), 0) / completedFeedback.length;
-            }
-            
-            return (
-              <Card key={userId} className="w-full">
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle>{user?.companyName || user?.username || "Unknown User"}</CardTitle>
-                      <CardDescription>{user?.email || ""}</CardDescription>
-                    </div>
-                    {completedFeedback.length > 0 && (
-                      <div className="text-right">
-                        <div className="text-sm text-muted-foreground">Average Rating</div>
-                        <div className="flex items-center justify-end gap-2">
-                          <span className="text-xl font-bold text-red-500">
-                            {overallAverage.toFixed(1)}
-                          </span>
-                          <HeartRatingDisplay rating={overallAverage} />
+      {activeTab === "feedback" && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Customer Feedback</h2>
+            <Button 
+              onClick={() => generateMutation.mutate()} 
+              disabled={generateMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {generateMutation.isPending ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                  Generating...
+                </>
+              ) : "Generate Monthly Feedback Requests"}
+            </Button>
+          </div>
+          
+          {Object.entries(feedbackByUser).length === 0 ? (
+            <Card className="w-full text-center p-8">
+              <CardContent>
+                <p className="text-muted-foreground my-8">
+                  No feedback data available yet. Generate feedback requests for users to start collecting responses.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-8">
+              {Object.entries(feedbackByUser).map(([userId, userFeedback]) => {
+                // Sort feedback by most recent first
+                const sortedFeedback = [...userFeedback].sort((a, b) => 
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                );
+                
+                const user = sortedFeedback[0].user;
+                const completedFeedback = sortedFeedback.filter(f => f.isCompleted);
+                
+                // Calculate average rating across all completed feedback
+                let overallAverage = 0;
+                if (completedFeedback.length > 0) {
+                  overallAverage = completedFeedback.reduce((acc, curr) => 
+                    acc + parseFloat(curr.averageRating || "0"), 0) / completedFeedback.length;
+                }
+                
+                return (
+                  <Card key={userId} className="w-full">
+                    <CardHeader>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <CardTitle>{user?.companyName || user?.username || "Unknown User"}</CardTitle>
+                          <CardDescription>{user?.email || ""}</CardDescription>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue={sortedFeedback[0].id.toString()}>
-                    <TabsList className="mb-4">
-                      {sortedFeedback.map(feedback => (
-                        <TabsTrigger key={feedback.id} value={feedback.id.toString()}>
-                          {formatMonth(feedback.month)} {feedback.year}
-                          {!feedback.isCompleted && (
-                            <span className="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
-                              Pending
-                            </span>
-                          )}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                    
-                    {sortedFeedback.map(feedback => (
-                      <TabsContent key={feedback.id} value={feedback.id.toString()}>
-                        {feedback.isCompleted ? (
-                          <FeedbackDisplay feedback={feedback} showHistory={true} />
-                        ) : (
-                          <div className="p-4 bg-muted rounded-lg text-center">
-                            <p className="text-muted-foreground">
-                              Feedback request is pending. User has not submitted their feedback yet.
-                            </p>
+                        {completedFeedback.length > 0 && (
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">Average Rating</div>
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="text-xl font-bold text-red-500">
+                                {overallAverage.toFixed(1)}
+                              </span>
+                              <HeartRatingDisplay rating={overallAverage} />
+                            </div>
                           </div>
                         )}
-                      </TabsContent>
-                    ))}
-                  </Tabs>
-                </CardContent>
-              </Card>
-            );
-          })}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Tabs defaultValue={sortedFeedback[0].id.toString()}>
+                        <TabsList className="mb-4">
+                          {sortedFeedback.map(feedback => (
+                            <TabsTrigger key={feedback.id} value={feedback.id.toString()}>
+                              {formatMonth(feedback.month)} {feedback.year}
+                              {!feedback.isCompleted && (
+                                <span className="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+                                  Pending
+                                </span>
+                              )}
+                            </TabsTrigger>
+                          ))}
+                        </TabsList>
+                        
+                        {sortedFeedback.map(feedback => (
+                          <TabsContent key={feedback.id} value={feedback.id.toString()}>
+                            {feedback.isCompleted ? (
+                              <FeedbackDisplay feedback={feedback} showHistory={true} />
+                            ) : (
+                              <div className="p-4 bg-muted rounded-lg text-center">
+                                <p className="text-muted-foreground">
+                                  Feedback request is pending. User has not submitted their feedback yet.
+                                </p>
+                              </div>
+                            )}
+                          </TabsContent>
+                        ))}
+                      </Tabs>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
+      )}
+      
+      {activeTab === "questions" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Manage Feedback Questions</CardTitle>
+            <CardDescription>Add, edit or disable feedback questions that will be shown to customers</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Add new question */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Add New Question</h3>
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <Textarea 
+                    placeholder="Enter new feedback question..." 
+                    value={newQuestion}
+                    onChange={(e) => setNewQuestion(e.target.value)}
+                    className="h-20"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Question must be at least 10 characters long.
+                  </p>
+                </div>
+                <Button 
+                  onClick={handleCreateQuestion}
+                  disabled={createQuestionMutation.isPending || newQuestion.trim().length < 10}
+                  className="self-end whitespace-nowrap"
+                >
+                  {createQuestionMutation.isPending ? (
+                    <>
+                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Question
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            {/* Question list */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Existing Questions</h3>
+              
+              {isQuestionsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="p-4 rounded-lg bg-muted/50 border border-muted-foreground/10 space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <div className="flex justify-end space-x-2">
+                        <Skeleton className="h-10 w-20" />
+                        <Skeleton className="h-10 w-20" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : feedbackQuestions.length === 0 ? (
+                <div className="p-8 text-center border rounded-lg bg-muted/10">
+                  <div className="text-muted-foreground">No feedback questions found. Add your first question above.</div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {(feedbackQuestions as FeedbackQuestion[]).map((question: FeedbackQuestion) => (
+                    <div 
+                      key={question.id} 
+                      className={`p-4 rounded-lg border ${
+                        question.isActive 
+                          ? 'bg-card' 
+                          : 'bg-muted/20 opacity-75'
+                      }`}
+                    >
+                      {editingQuestion && editingQuestion.id === question.id ? (
+                        <div className="space-y-3">
+                          <Textarea
+                            value={editingQuestion.question}
+                            onChange={(e) => setEditingQuestion({...editingQuestion, question: e.target.value})}
+                            className="w-full"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setEditingQuestion(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={handleUpdateQuestion}
+                              disabled={updateQuestionMutation.isPending}
+                            >
+                              {updateQuestionMutation.isPending ? "Saving..." : "Save Changes"}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className={`px-2 py-1 text-xs rounded-full ${
+                              question.isActive 
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                                : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                            }`}>
+                              {question.isActive ? 'Active' : 'Inactive'}
+                            </div>
+                            <div className="text-sm">{question.question}</div>
+                          </div>
+                          <div className="flex items-center gap-2 self-end sm:self-auto">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setEditingQuestion({
+                                id: question.id,
+                                question: question.question
+                              })}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              variant={question.isActive ? "destructive" : "outline"} 
+                              size="sm"
+                              onClick={() => handleToggleQuestion(question.id)}
+                              disabled={toggleQuestionMutation.isPending}
+                            >
+                              {question.isActive ? 'Disable' : 'Enable'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

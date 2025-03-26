@@ -589,8 +589,8 @@ export default function OrderDetailsPage() {
               </div>
             )}
             
-            {/* Add Edit Order and Cancel Order buttons if order is In Progress and user owns the order OR user is admin */}
-            {order.status === "In Progress" && (isAdmin || order.userId === user?.id) && (
+            {/* Add Edit Order and Cancel Order buttons: Admin can edit any order, users can only edit In Progress orders */}
+            {(isAdmin || (order.status === "In Progress" && order.userId === user?.id)) && (
               <div className="mt-4 flex space-x-2">
                 {/* Edit Order Button */}
                 {isEditing ? (

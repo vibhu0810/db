@@ -373,9 +373,9 @@ export default function UserDomainsPage() {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter((domain: Domain) => 
-        domain.websiteName.toLowerCase().includes(term) || 
-        domain.websiteUrl.toLowerCase().includes(term) || 
-        domain.niche.toLowerCase().includes(term)
+        (domain.websiteName ? domain.websiteName.toLowerCase().includes(term) : false) || 
+        (domain.websiteUrl ? domain.websiteUrl.toLowerCase().includes(term) : false) || 
+        (domain.niche ? domain.niche.toLowerCase().includes(term) : false)
       );
     }
     
@@ -629,19 +629,23 @@ export default function UserDomainsPage() {
                               <TableRow key={domain.id}>
                                 <TableCell className="font-medium w-[250px]">{domain.websiteName}</TableCell>
                                 <TableCell>
-                                  <a 
-                                    href={domain.websiteUrl.startsWith('http') ? domain.websiteUrl : `https://${domain.websiteUrl}`} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-blue-600 hover:underline"
-                                  >
-                                    {domain.websiteUrl}
-                                    <LinkIcon size={14} />
-                                  </a>
+                                  {domain.websiteUrl ? (
+                                    <a 
+                                      href={domain.websiteUrl && domain.websiteUrl.startsWith('http') ? domain.websiteUrl : `https://${domain.websiteUrl}`} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1 text-blue-600 hover:underline"
+                                    >
+                                      {domain.websiteUrl}
+                                      <LinkIcon size={14} />
+                                    </a>
+                                  ) : (
+                                    <span className="text-muted-foreground">-</span>
+                                  )}
                                 </TableCell>
                                 <TableCell>{domain.domainRating || "-"}</TableCell>
                                 <TableCell>{domain.websiteTraffic ? domain.websiteTraffic.toLocaleString() : "-"}</TableCell>
-                                <TableCell>{domain.niche}</TableCell>
+                                <TableCell>{domain.niche || "-"}</TableCell>
                                 <TableCell>
                                   <Badge variant={domain.type === "both" ? "default" : domain.type === "guest_post" ? "secondary" : "outline"}>
                                     {domain.type === "guest_post" ? "Guest Post" : domain.type === "niche_edit" ? "Niche Edit" : "Both"}

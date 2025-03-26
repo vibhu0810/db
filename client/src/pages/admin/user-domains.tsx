@@ -381,11 +381,12 @@ export default function UserDomainsPage() {
     
     // Apply type filter
     if (filterType !== "all") {
-      filtered = filtered.filter((domain: Domain) => 
-        domain.type === filterType || 
-        (filterType === "guest_post" && domain.type === "both") ||
-        (filterType === "niche_edit" && domain.type === "both")
-      );
+      filtered = filtered.filter((domain: Domain) => {
+        const domainType = domain.type || 'guest_post'; // Default to guest_post if type is null
+        return domainType === filterType || 
+          (filterType === "guest_post" && domainType === "both") ||
+          (filterType === "niche_edit" && domainType === "both");
+      });
     }
     
     // Apply sorting
@@ -647,8 +648,8 @@ export default function UserDomainsPage() {
                                 <TableCell>{domain.websiteTraffic ? domain.websiteTraffic.toLocaleString() : "-"}</TableCell>
                                 <TableCell>{domain.niche || "-"}</TableCell>
                                 <TableCell>
-                                  <Badge variant={domain.type === "both" ? "default" : domain.type === "guest_post" ? "secondary" : "outline"}>
-                                    {domain.type === "guest_post" ? "Guest Post" : domain.type === "niche_edit" ? "Niche Edit" : "Both"}
+                                  <Badge variant={(domain.type === "both") ? "default" : (domain.type === "guest_post") ? "secondary" : (domain.type === "niche_edit") ? "outline" : "secondary"}>
+                                    {domain.type === "guest_post" ? "Guest Post" : domain.type === "niche_edit" ? "Niche Edit" : domain.type === "both" ? "Both" : "Guest Post"}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>

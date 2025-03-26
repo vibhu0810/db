@@ -662,6 +662,8 @@ function CreateInvoiceDialog() {
 }
 
 function AdminInvoicesTab() {
+  const { user } = useAuth();
+  const isAdmin = user?.is_admin || false;
   const { toast } = useToast();
   const [invoices, setInvoices] = useState<InvoiceWithUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -827,20 +829,22 @@ function AdminInvoicesTab() {
       {/* Billing & Payment Options Section - Moved to top */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         {/* User Billing Preferences */}
-        <div>
-          <Collapsible className="w-full">
-            <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
-              <div className="flex items-center space-x-2 font-medium">
-                <UserCircle className="h-5 w-5" />
-                <span>Billing Preferences</span>
-              </div>
-              <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="border border-t-0 rounded-b-md p-4">
-              <BillingPreferences user={null} hidePaymentDetails={true} />
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
+        {!isAdmin && (
+          <div>
+            <Collapsible className="w-full">
+              <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
+                <div className="flex items-center space-x-2 font-medium">
+                  <UserCircle className="h-5 w-5" />
+                  <span>Billing Preferences</span>
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="border border-t-0 rounded-b-md p-4">
+                <BillingPreferences user={user} hidePaymentDetails={true} />
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
         
         {/* Payment Methods Details */}
         <div>
@@ -1160,6 +1164,7 @@ function AdminInvoicesTab() {
 
 function UserInvoicesTab() {
   const { user } = useAuth();
+  const isAdmin = user?.is_admin || false;
   const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1252,20 +1257,22 @@ function UserInvoicesTab() {
       {/* Billing & Payment Options Section - Moved to top */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         {/* User Billing Preferences */}
-        <div>
-          <Collapsible className="w-full">
-            <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
-              <div className="flex items-center space-x-2 font-medium">
-                <UserCircle className="h-5 w-5" />
-                <span>Billing Preferences</span>
-              </div>
-              <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="border border-t-0 rounded-b-md p-4">
-              <BillingPreferences user={user} hidePaymentDetails={true} />
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
+        {!isAdmin && (
+          <div>
+            <Collapsible className="w-full">
+              <CollapsibleTrigger className="flex justify-between w-full items-center px-4 py-2 border rounded-t-md bg-muted/40 hover:bg-muted/60 transition-colors">
+                <div className="flex items-center space-x-2 font-medium">
+                  <UserCircle className="h-5 w-5" />
+                  <span>Billing Preferences</span>
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="border border-t-0 rounded-b-md p-4">
+                <BillingPreferences user={user} hidePaymentDetails={true} />
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
         
         {/* Payment Methods Details */}
         <div>

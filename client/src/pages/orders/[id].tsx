@@ -428,7 +428,7 @@ export default function OrderDetailsPage() {
                   <div className="truncate">
                     {order.sourceUrl === "not_applicable" 
                       ? (order.title && order.title !== "not_applicable" 
-                         ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
+                         ? `${order.title}${order.website?.url ? ` - ${order.website.url}` : ""}`
                          : "No source URL provided")
                       : order.sourceUrl
                     }
@@ -440,7 +440,7 @@ export default function OrderDetailsPage() {
                     onClick={() => copyToClipboard(
                       order.sourceUrl === "not_applicable"
                         ? (order.title && order.title !== "not_applicable" 
-                           ? `${order.title}${order.website?.name ? ` - ${order.website.name}` : ""}`
+                           ? `${order.title}${order.website?.url ? ` - ${order.website.url}` : ""}`
                            : "")
                         : order.sourceUrl
                     )}

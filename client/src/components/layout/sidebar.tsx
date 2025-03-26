@@ -35,6 +35,7 @@ const adminNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Domains", href: "/domains", icon: Globe },
+  { name: "User Domains", href: "/admin/user-domains", icon: Globe },
   { name: "Reports", href: "/reports", icon: BarChart },
   { name: "Kanban Board", href: "/kanban", icon: Kanban },
   { name: "Invoices", href: "/invoices", icon: FileText },

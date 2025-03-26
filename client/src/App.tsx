@@ -20,6 +20,7 @@ import ForgotPasswordPage from "./pages/forgot-password";
 import ResetPasswordPage from "./pages/reset-password";
 import AuthDebugPage from "./pages/debug/auth";
 import AdminTicketTools from "./pages/admin/ticket-tools";
+import UserDomainsPage from "./pages/admin/user-domains";
 
 function App() {
   return (
@@ -116,6 +117,16 @@ function App() {
         <Route path="/admin/ticket-tools">
           <ProtectedRoute>
             <AdminTicketTools />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/user-domains/:userId">
+          <ProtectedRoute>
+            <UserDomainsPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/user-domains">
+          <ProtectedRoute>
+            <UserDomainsPage />
           </ProtectedRoute>
         </Route>
         <Route path="/debug/auth">

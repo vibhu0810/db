@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Home, Users, Package, ClipboardList, MessageSquare, 
-  Settings, LifeBuoy, BarChart, Globe, LogOut, MenuIcon,
-  DollarSign, FileText, CreditCard
+  LayoutDashboard, ShoppingCart, Users, CreditCard, 
+  LogOut, ChevronLeft, ChevronRight, Globe, BarChart2,
+  MessageSquare, Settings, HelpCircle, User, Bell,
+  Layers, Database, CircleDollarSign, FileText, Mail
 } from 'lucide-react';
-import { Link, useLocation } from 'wouter';
-import { User } from '../../../shared/schema';
+import { useLocation } from 'wouter';
+
+interface User {
+  id: number;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  profilePicture?: string;
+  role?: 'admin' | 'user_manager' | 'inventory_manager' | 'user';
+  is_admin?: boolean;
+}
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -16,173 +27,383 @@ interface SidebarItemProps {
   onClick?: () => void;
 }
 
+const SidebarItem: React.FC<SidebarItemProps> = ({ 
+  icon, 
+  label, 
+  href, 
+  active, 
+  expanded,
+  onClick 
+}) => {
+  return (
+    <a
+      href={href}
+      className={`flex items-center py-3 px-4 rounded-lg text-sm transition-colors ${
+        active 
+          ? 'bg-primary text-primary-foreground' 
+          : 'hover:bg-primary/10 text-foreground'
+      }`}
+      onClick={onClick}
+    >
+      <div className="flex items-center">
+        <div className="mr-3">{icon}</div>
+        {expanded && <span>{label}</span>}
+      </div>
+    </a>
+  );
+};
+
 interface SidebarProps {
   user: User | null;
   expanded: boolean;
   toggle: () => void;
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({
-  icon,
-  label,
-  href,
-  active,
-  expanded,
-  onClick
-}) => {
-  return (
-    <Link href={href}>
-      <a
-        className={`flex items-center p-3 my-1 rounded-md transition-colors duration-200 ${
-          active
-            ? 'bg-primary text-primary-foreground'
-            : 'hover:bg-primary/10 text-foreground'
-        }`}
-        onClick={onClick}
-      >
-        <span className="mr-3">{icon}</span>
-        {expanded && <span>{label}</span>}
-      </a>
-    </Link>
-  );
-};
-
 export const RoleSidebar: React.FC<SidebarProps> = ({ user, expanded, toggle }) => {
   const [location] = useLocation();
-  const isActive = (href: string) => location === href;
-
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('/api/test/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   
-      if (response.ok) {
-        window.location.href = '/test/login';
+  // Load unread notification count
+  useEffect(() => {
+    async function loadNotifications() {
+      try {
+        const response = await fetch('/api/test/notifications/unread-count');
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadNotificationCount(data.count);
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error);
       }
-    } catch (error) {
-      console.error('Logout failed:', error);
     }
-  };
-
-  // Items visible to all roles
-  const commonNavItems = [
-    { icon: <Home size={20} />, label: 'Dashboard', href: '/test' },
-    { icon: <ClipboardList size={20} />, label: 'My Orders', href: '/test/orders' },
-    { icon: <Globe size={20} />, label: 'Domains', href: '/test/domains' },
-    { icon: <MessageSquare size={20} />, label: 'Messaging', href: '/test/messages' },
-    { icon: <LifeBuoy size={20} />, label: 'Support', href: '/test/support' },
-  ];
-
-  // Items visible only to admin
-  const adminNavItems = [
-    { icon: <Users size={20} />, label: 'User Management', href: '/test/users' },
-    { icon: <Package size={20} />, label: 'Domain Management', href: '/test/admin/domains' },
-    { icon: <BarChart size={20} />, label: 'Reports', href: '/test/reports' },
-    { icon: <FileText size={20} />, label: 'Invoices', href: '/test/invoices' },
-    { icon: <DollarSign size={20} />, label: 'Pricing Tiers', href: '/test/pricing-tiers' },
-  ];
-
-  // Items visible only to user managers
-  const userManagerNavItems = [
-    { icon: <Users size={20} />, label: 'My Clients', href: '/test/my-clients' },
-    { icon: <ClipboardList size={20} />, label: 'Client Orders', href: '/test/client-orders' },
-  ];
-
-  // Items visible only to inventory managers
-  const inventoryManagerNavItems = [
-    { icon: <Package size={20} />, label: 'Domain Inventory', href: '/test/inventory' },
-    { icon: <DollarSign size={20} />, label: 'Domain Pricing', href: '/test/domain-pricing' },
-  ];
-
-  // Filter navbar items based on user role
-  let navItems = [...commonNavItems];
-
-  if (user) {
-    if (user.is_admin) {
-      navItems = [...navItems, ...adminNavItems];
-    } else if (user.role === 'user_manager') {
-      navItems = [...navItems, ...userManagerNavItems];
-    } else if (user.role === 'inventory_manager') {
-      navItems = [...navItems, ...inventoryManagerNavItems];
+    
+    if (user) {
+      loadNotifications();
+      // Set up notification polling
+      const interval = setInterval(loadNotifications, 60000); // Poll every minute
+      return () => clearInterval(interval);
     }
-  }
-
-  // Always add settings at the end
-  navItems.push({ icon: <Settings size={20} />, label: 'Settings', href: '/test/settings' });
-
-  return (
-    <div
-      className={`flex flex-col h-screen bg-card border-r transition-all duration-300 ${
-        expanded ? 'w-64' : 'w-16'
-      }`}
-    >
-      <div className="flex items-center justify-between p-4 border-b">
-        {expanded ? (
-          <div className="flex items-center gap-2">
-            <img 
-              src="/test/assets/logo.svg" 
-              alt="Logo" 
-              className="h-8 w-8" 
-            />
-            <span className="font-bold text-lg">SaaSxLinks</span>
-          </div>
-        ) : (
-          <img 
-            src="/test/assets/logo-sm.svg" 
-            alt="Logo" 
-            className="h-8 w-8 mx-auto" 
-          />
+  }, [user]);
+  
+  // Get role - either from role field or from is_admin flag
+  const userRole = user?.role || (user?.is_admin ? 'admin' : 'user');
+  
+  // Base menu items for all roles
+  const baseMenuItems = [
+    {
+      label: 'Profile Settings',
+      icon: <Settings size={20} />,
+      href: '/test/profile',
+      roles: ['admin', 'user_manager', 'inventory_manager', 'user']
+    },
+    {
+      label: 'Notifications',
+      icon: <div className="relative">
+        <Bell size={20} />
+        {unreadNotificationCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+          </span>
         )}
+      </div>,
+      href: '/test/notifications',
+      roles: ['admin', 'user_manager', 'inventory_manager', 'user']
+    },
+    {
+      label: 'Support',
+      icon: <HelpCircle size={20} />,
+      href: '/test/support',
+      roles: ['admin', 'user_manager', 'inventory_manager', 'user']
+    },
+    {
+      label: 'Logout',
+      icon: <LogOut size={20} />,
+      href: '/test/logout',
+      roles: ['admin', 'user_manager', 'inventory_manager', 'user']
+    }
+  ];
+  
+  // Admin role menu items
+  const adminMenuItems = [
+    {
+      label: 'Dashboard',
+      icon: <LayoutDashboard size={20} />,
+      href: '/test/admin/dashboard',
+      roles: ['admin']
+    },
+    {
+      label: 'Orders',
+      icon: <ShoppingCart size={20} />,
+      href: '/test/admin/orders',
+      roles: ['admin']
+    },
+    {
+      label: 'Clients',
+      icon: <Users size={20} />,
+      href: '/test/admin/clients',
+      roles: ['admin']
+    },
+    {
+      label: 'Staff',
+      icon: <User size={20} />,
+      href: '/test/admin/staff',
+      roles: ['admin']
+    },
+    {
+      label: 'Domain Inventory',
+      icon: <Globe size={20} />,
+      href: '/test/admin/domains',
+      roles: ['admin']
+    },
+    {
+      label: 'Invoices',
+      icon: <CircleDollarSign size={20} />,
+      href: '/test/admin/invoices',
+      roles: ['admin']
+    },
+    {
+      label: 'Reports',
+      icon: <BarChart2 size={20} />,
+      href: '/test/admin/reports',
+      roles: ['admin']
+    },
+    {
+      label: 'Support Tickets',
+      icon: <MessageSquare size={20} />,
+      href: '/test/admin/support',
+      roles: ['admin']
+    },
+    {
+      label: 'Email Manager',
+      icon: <Mail size={20} />,
+      href: '/test/admin/email',
+      roles: ['admin']
+    },
+    {
+      label: 'System Settings',
+      icon: <Settings size={20} />,
+      href: '/test/admin/settings',
+      roles: ['admin']
+    },
+  ];
+  
+  // User Manager menu items
+  const userManagerMenuItems = [
+    {
+      label: 'Dashboard',
+      icon: <LayoutDashboard size={20} />,
+      href: '/test/manager/dashboard',
+      roles: ['user_manager']
+    },
+    {
+      label: 'Clients',
+      icon: <Users size={20} />,
+      href: '/test/manager/clients',
+      roles: ['user_manager']
+    },
+    {
+      label: 'Orders',
+      icon: <ShoppingCart size={20} />,
+      href: '/test/manager/orders',
+      roles: ['user_manager']
+    },
+    {
+      label: 'Support Tickets',
+      icon: <MessageSquare size={20} />,
+      href: '/test/manager/support',
+      roles: ['user_manager']
+    },
+    {
+      label: 'Reports',
+      icon: <BarChart2 size={20} />,
+      href: '/test/manager/reports',
+      roles: ['user_manager']
+    },
+  ];
+  
+  // Inventory Manager menu items
+  const inventoryManagerMenuItems = [
+    {
+      label: 'Dashboard',
+      icon: <LayoutDashboard size={20} />,
+      href: '/test/inventory/dashboard',
+      roles: ['inventory_manager']
+    },
+    {
+      label: 'Domain Inventory',
+      icon: <Globe size={20} />,
+      href: '/test/inventory/domains',
+      roles: ['inventory_manager']
+    },
+    {
+      label: 'Add Domain',
+      icon: <Layers size={20} />,
+      href: '/test/inventory/domains/add',
+      roles: ['inventory_manager']
+    },
+    {
+      label: 'Domain Metrics',
+      icon: <Database size={20} />,
+      href: '/test/inventory/metrics',
+      roles: ['inventory_manager']
+    },
+    {
+      label: 'Import Domains',
+      icon: <FileText size={20} />,
+      href: '/test/inventory/import',
+      roles: ['inventory_manager']
+    },
+  ];
+  
+  // Regular user menu items
+  const userMenuItems = [
+    {
+      label: 'Dashboard',
+      icon: <LayoutDashboard size={20} />,
+      href: '/test/dashboard',
+      roles: ['user']
+    },
+    {
+      label: 'Orders',
+      icon: <ShoppingCart size={20} />,
+      href: '/test/orders',
+      roles: ['user']
+    },
+    {
+      label: 'New Order',
+      icon: <Layers size={20} />,
+      href: '/test/orders/new',
+      roles: ['user']
+    },
+    {
+      label: 'Domain Catalog',
+      icon: <Globe size={20} />,
+      href: '/test/domains',
+      roles: ['user']
+    },
+    {
+      label: 'Invoices',
+      icon: <CreditCard size={20} />,
+      href: '/test/invoices',
+      roles: ['user']
+    },
+    {
+      label: 'Support Tickets',
+      icon: <MessageSquare size={20} />,
+      href: '/test/support',
+      roles: ['user']
+    },
+  ];
+  
+  // Combine all menu items based on user role
+  let menuItems = [];
+  if (userRole === 'admin') {
+    menuItems = [...adminMenuItems];
+  } else if (userRole === 'user_manager') {
+    menuItems = [...userManagerMenuItems];
+  } else if (userRole === 'inventory_manager') {
+    menuItems = [...inventoryManagerMenuItems];
+  } else {
+    menuItems = [...userMenuItems];
+  }
+  
+  // Add base menu items
+  menuItems = [...menuItems, ...baseMenuItems.filter(item => item.roles.includes(userRole))];
+  
+  return (
+    <div className={`h-screen bg-card border-r flex flex-col transition-all duration-300 ${
+      expanded ? 'w-64' : 'w-20'
+    }`}>
+      {/* Sidebar header */}
+      <div className="p-4 border-b flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground">
+            <Globe size={20} />
+          </div>
+          {expanded && (
+            <h1 className="ml-3 text-lg font-bold">SaaS×Links</h1>
+          )}
+        </div>
         <button 
           onClick={toggle}
-          className="p-1 rounded-md hover:bg-accent"
+          className="p-1 rounded-lg hover:bg-muted"
         >
-          <MenuIcon size={20} />
+          {expanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
         </button>
       </div>
-
-      <div className="flex-1 overflow-y-auto p-2">
-        <nav className="flex flex-col space-y-1">
-          {navItems.map((item) => (
-            <SidebarItem
-              key={item.href}
-              icon={item.icon}
-              label={item.label}
-              href={item.href}
-              active={isActive(item.href)}
-              expanded={expanded}
-            />
-          ))}
-        </nav>
-      </div>
-
-      <div className="p-4 border-t">
-        <button
-          onClick={handleLogout}
-          className="flex items-center w-full p-2 rounded-md hover:bg-primary/10 transition-colors duration-200"
-        >
-          <LogOut size={20} className="mr-3" />
-          {expanded && <span>Log out</span>}
-        </button>
-      </div>
-
-      {user && expanded && (
-        <div className="p-4 border-t flex items-center">
-          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center mr-3">
-            {user.firstName?.[0] || user.username[0]}
+      
+      {/* User profile */}
+      <div className={`p-4 border-b flex ${expanded ? 'items-start' : 'justify-center'}`}>
+        {user ? (
+          <div className={`flex ${expanded ? 'items-start' : 'flex-col items-center'}`}>
+            <div className="flex-shrink-0">
+              {user.profilePicture ? (
+                <img 
+                  src={user.profilePicture} 
+                  alt={`${user.firstName || user.username}'s profile`}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <User size={20} />
+                </div>
+              )}
+            </div>
+            {expanded && (
+              <div className="ml-3">
+                <p className="font-medium truncate max-w-[160px]">
+                  {user.firstName 
+                    ? `${user.firstName} ${user.lastName || ''}`
+                    : user.username
+                  }
+                </p>
+                <p className="text-xs text-muted-foreground truncate max-w-[160px]">
+                  {user.email}
+                </p>
+                <p className="text-xs capitalize mt-1">
+                  <span className="px-2 py-0.5 bg-primary/10 rounded-full text-primary">
+                    {userRole === 'user_manager' 
+                      ? 'User Manager' 
+                      : userRole === 'inventory_manager'
+                        ? 'Inventory Manager'
+                        : userRole
+                    }
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
-          <div className="overflow-hidden">
-            <p className="font-medium truncate">{user.firstName || user.username}</p>
-            <p className="text-sm text-muted-foreground truncate">
-              {user.is_admin ? 'Admin' : user.role.replace('_', ' ')}
-            </p>
+        ) : (
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-muted animate-pulse"></div>
+            {expanded && (
+              <div className="ml-3 space-y-2">
+                <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                <div className="h-3 w-32 bg-muted rounded animate-pulse"></div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+      
+      {/* Menu items */}
+      <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+        {menuItems.map((item, index) => (
+          <SidebarItem
+            key={index}
+            icon={item.icon}
+            label={item.label}
+            href={item.href}
+            active={location === item.href}
+            expanded={expanded}
+          />
+        ))}
+      </div>
+      
+      {/* App version */}
+      <div className="p-4 text-center text-xs text-muted-foreground border-t">
+        {expanded ? 'v1.0.0 • Multi-Role Edition' : 'v1.0.0'}
+      </div>
     </div>
   );
 };
-
-export default RoleSidebar;

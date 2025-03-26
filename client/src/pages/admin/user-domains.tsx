@@ -474,22 +474,28 @@ export default function UserDomainsPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Select value={currentUserId?.toString() || ""} onValueChange={handleUserChange}>
-            <SelectTrigger className="w-[220px]">
-              <SelectValue placeholder="Select a user" />
-            </SelectTrigger>
-            <SelectContent>
-              {usersLoading ? (
-                <div className="p-2">Loading users...</div>
-              ) : (
-                users?.filter((u: User) => !u.is_admin).map((user: User) => (
-                  <SelectItem key={user.id} value={user.id.toString()}>
-                    {user.companyName || user.username}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+          {!currentUserId ? (
+            <Select value={currentUserId?.toString() || ""} onValueChange={handleUserChange}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Select a user" />
+              </SelectTrigger>
+              <SelectContent>
+                {usersLoading ? (
+                  <div className="p-2">Loading users...</div>
+                ) : (
+                  users?.filter((u: User) => !u.is_admin).map((user: User) => (
+                    <SelectItem key={user.id} value={user.id.toString()}>
+                      {user.companyName || user.username}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Button variant="outline" onClick={() => navigate('/admin/user-domains')}>
+              Change User
+            </Button>
+          )}
           
           {currentUserId && (
             <Button 

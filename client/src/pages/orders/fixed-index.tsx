@@ -889,11 +889,13 @@ export default function Orders() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {users.map((user: User) => (
-                                <SelectItem key={user.id} value={user.id.toString()}>
-                                  {user.companyName || user.username}
-                                </SelectItem>
-                              ))}
+                              {users
+                                .filter((user: User) => !user.is_admin)
+                                .map((user: User) => (
+                                  <SelectItem key={user.id} value={user.id.toString()}>
+                                    {user.companyName || user.username}
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -1042,11 +1044,13 @@ export default function Orders() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Users</SelectItem>
-                    {users.map((user: User) => (
-                      <SelectItem key={user.id} value={user.id.toString()}>
-                        {user.companyName || user.username}
-                      </SelectItem>
-                    ))}
+                    {users
+                      .filter((user: User) => !user.is_admin)
+                      .map((user: User) => (
+                        <SelectItem key={user.id} value={user.id.toString()}>
+                          {user.companyName || user.username}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               )}

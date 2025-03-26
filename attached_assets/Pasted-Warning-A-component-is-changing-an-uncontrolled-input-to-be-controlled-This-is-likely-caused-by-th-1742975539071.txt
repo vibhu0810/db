@@ -1,0 +1,52 @@
+Warning: A component is changing an uncontrolled input to be controlled. This is likely caused by the value changing from undefined to a defined value, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://reactjs.org/link/controlled-components%s 
+    at input
+    at _c (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/input.tsx:20:11)
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5NS6LSN7.js?v=c27aea51:70:11
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5NS6LSN7.js?v=c27aea51:51:11
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/form.tsx:129:9
+    at div
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/form.tsx:71:6
+    at Controller (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BW5TH624.js?v=c27aea51:313:35)
+    at FormField (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/form.tsx:32:6)
+    at form
+    at FormProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BW5TH624.js?v=c27aea51:102:11)
+    at DomainForm (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/pages/domains/index.tsx:579:25)
+    at div
+    at div
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:125:13
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:154:7
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5NS6LSN7.js?v=c27aea51:70:11
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5NS6LSN7.js?v=c27aea51:51:11
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:125:13
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:353:5
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:1218:13
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:1141:58
+    at Presence (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:574:11)
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:1132:64
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5NS6LSN7.js?v=c27aea51:70:11
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5NS6LSN7.js?v=c27aea51:51:11
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:125:13
+    at https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:556:22
+    at Presence (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:574:11)
+    at Provider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XSD2Y4RK.js?v=c27aea51:38:15)
+    at DialogPortal (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:1095:11)
+    at _c3 (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/ui/sheet.tsx:68:12)
+    at Provider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XSD2Y4RK.js?v=c27aea51:38:15)
+    at Dialog (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2XIKL6DO.js?v=c27aea51:1036:5)
+    at div
+    at div
+    at div
+    at DomainsPage (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/pages/domains/index.tsx:183:41)
+    at main
+    at div
+    at div
+    at DashboardContent (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/layout/dashboard-shell.tsx:27:29)
+    at SidebarProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/hooks/use-sidebar.tsx:26:35)
+    at DashboardShell (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/components/layout/dashboard-shell.tsx:145:34)
+    at ProtectedRoute (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/lib/protected-route.tsx:21:34)
+    at Route (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c27aea51:206:16)
+    at Switch (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c27aea51:262:17)
+    at div
+    at App
+    at AuthProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/src/hooks/use-auth.tsx:37:32)
+    at QueryClientProvider (https://b62911d1-db35-4b2e-a422-b493f70d73bd-00-uwtz8x1y3zzr.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=c27aea51:2881:3)

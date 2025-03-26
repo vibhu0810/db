@@ -174,6 +174,12 @@ export const RoleSidebar: React.FC<SidebarProps> = ({ user, expanded, toggle }) 
       roles: ['admin']
     },
     {
+      label: 'Feedback',
+      icon: <BarChart2 size={20} />,
+      href: '/test/admin/feedback',
+      roles: ['admin']
+    },
+    {
       label: 'Email Manager',
       icon: <Mail size={20} />,
       href: '/test/admin/email',

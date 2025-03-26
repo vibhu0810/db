@@ -23,6 +23,7 @@ interface UserWithStats {
   email: string;
   companyName: string;
   country: string;
+  is_admin: boolean;
   orders: {
     total: number;
     completed: number;
@@ -79,7 +80,11 @@ export default function UsersPage() {
 
   // Ensure users is an array before filtering
   const filteredUsers = Array.isArray(users) 
-    ? users.filter((user: UserWithStats) =>
+    ? users
+      // First filter out admin users
+      .filter((user: UserWithStats) => !user.is_admin)
+      // Then apply search filter
+      .filter((user: UserWithStats) =>
         user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -155,7 +160,9 @@ export default function UsersPage() {
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Array.isArray(users) ? users.length : 0}</div>
+            <div className="text-2xl font-bold">
+              {Array.isArray(users) ? users.filter(u => !u.is_admin).length : 0}
+            </div>
           </CardContent>
         </Card>
 
@@ -165,7 +172,7 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Array.isArray(users) ? users.filter((u) => u.orders?.total > 0).length : 0}
+              {Array.isArray(users) ? users.filter((u) => !u.is_admin && u.orders?.total > 0).length : 0}
             </div>
           </CardContent>
         </Card>
@@ -176,7 +183,9 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Array.isArray(users) ? users.reduce((sum, user) => sum + user.orders.total, 0) : 0}
+              {Array.isArray(users) 
+                ? users.filter(u => !u.is_admin).reduce((sum, user) => sum + user.orders.total, 0) 
+                : 0}
             </div>
           </CardContent>
         </Card>
@@ -187,7 +196,9 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${Array.isArray(users) ? users.reduce((sum, user) => sum + user.orders.totalSpent, 0).toFixed(2) : "0.00"}
+              ${Array.isArray(users) 
+                ? users.filter(u => !u.is_admin).reduce((sum, user) => sum + user.orders.totalSpent, 0).toFixed(2) 
+                : "0.00"}
             </div>
           </CardContent>
         </Card>

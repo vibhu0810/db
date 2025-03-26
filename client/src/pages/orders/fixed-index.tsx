@@ -1329,7 +1329,7 @@ export default function Orders() {
                 paginatedOrders.map((order: Order) => {
                   const isGuestPost = getOrderType(order) === "guest_post";
                   const sourceDisplay = isGuestPost 
-                    ? (order.title || "Untitled") + (order.website ? ` - ${order.website.name}` : "")
+                    ? (order.title || "Untitled") + (order.website ? ` - ${order.website.url}` : "")
                     : order.sourceUrl;
                     
                   return (

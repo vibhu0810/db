@@ -154,18 +154,33 @@ export const domains = pgTable("domains", {
 // Create base domain insert schema
 const baseDomainSchema = createInsertSchema(domains).omit({ id: true });
 
-// Create domain insert schema with validation based on domain type
-export const insertDomainSchema = baseDomainSchema.refine((data) => {
+// Create domain insert schema with data transformation and validation
+export const insertDomainSchema = baseDomainSchema
+.transform(data => {
+  // Handle empty numeric fields by converting them to null
+  return {
+    ...data,
+    // Convert empty strings or 0 to null for numeric fields
+    domainRating: data.domainRating === "" || data.domainRating === "0" ? null : data.domainRating,
+    domainAuthority: data.domainAuthority === "" || data.domainAuthority === "0" ? null : data.domainAuthority,
+    websiteTraffic: data.websiteTraffic === 0 ? null : data.websiteTraffic,
+    guestPostPrice: data.guestPostPrice === "" ? null : data.guestPostPrice,
+    nicheEditPrice: data.nicheEditPrice === "" ? null : data.nicheEditPrice,
+    // Handle empty strings for non-required text fields
+    gpTat: data.gpTat === "" ? null : data.gpTat,
+    neTat: data.neTat === "" ? null : data.neTat,
+    guidelines: data.guidelines === "" ? null : data.guidelines,
+  };
+})
+.refine((data) => {
   // Validation for Guest Post domains
   if (data.type === "guest_post") {
     // Must have guest post price and TAT
-    if (!data.guestPostPrice || data.guestPostPrice === "" ||
-        !data.gpTat || data.gpTat === "") {
+    if (!data.guestPostPrice || !data.gpTat) {
       return false;
     }
     // Must not have niche edit price or TAT
-    if ((data.nicheEditPrice && data.nicheEditPrice !== "") ||
-        (data.neTat && data.neTat !== "")) {
+    if (data.nicheEditPrice || data.neTat) {
       return false;
     }
   }
@@ -173,13 +188,11 @@ export const insertDomainSchema = baseDomainSchema.refine((data) => {
   // Validation for Niche Edit domains
   if (data.type === "niche_edit") {
     // Must have niche edit price and TAT
-    if (!data.nicheEditPrice || data.nicheEditPrice === "" ||
-        !data.neTat || data.neTat === "") {
+    if (!data.nicheEditPrice || !data.neTat) {
       return false;
     }
     // Must not have guest post price or TAT
-    if ((data.guestPostPrice && data.guestPostPrice !== "") ||
-        (data.gpTat && data.gpTat !== "")) {
+    if (data.guestPostPrice || data.gpTat) {
       return false;
     }
   }
@@ -187,10 +200,8 @@ export const insertDomainSchema = baseDomainSchema.refine((data) => {
   // Validation for Both type domains
   if (data.type === "both") {
     // Must have both prices and TATs
-    if (!data.guestPostPrice || data.guestPostPrice === "" || 
-        !data.nicheEditPrice || data.nicheEditPrice === "" ||
-        !data.gpTat || data.gpTat === "" ||
-        !data.neTat || data.neTat === "") {
+    if (!data.guestPostPrice || !data.nicheEditPrice || 
+        !data.gpTat || !data.neTat) {
       return false;
     }
   }

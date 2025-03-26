@@ -1436,14 +1436,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.user?.is_admin) {
         return res.status(403).json({ error: "Unauthorized: Admin access required" });
       }
+      
       console.log("Creating domain with data:", req.body);
-      const domainData = insertDomainSchema.parse(req.body);
-      const domain = await storage.createDomain(domainData);
-      console.log("Created domain:", domain);
-      res.status(201).json(domain);
+      
+      // Handle special case for empty numeric fields by converting them
+      let processedData = { ...req.body };
+      
+      try {
+        // Parse and validate the domain data
+        const domainData = insertDomainSchema.parse(processedData);
+        const domain = await storage.createDomain(domainData);
+        console.log("Created domain:", domain);
+        res.status(201).json(domain);
+      } catch (parseError) {
+        console.error("Domain validation error:", parseError);
+        if (parseError instanceof z.ZodError) {
+          return res.status(400).json({ 
+            error: "Validation failed", 
+            details: parseError.errors 
+          });
+        }
+        throw parseError; // Re-throw if not a Zod error
+      }
     } catch (error) {
       console.error("Error creating domain:", error);
-      res.status(500).json({ error: "Failed to create domain" });
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ 
+        error: "Failed to create domain",
+        message: errorMessage
+      });
     }
   });
 
